@@ -127,7 +127,7 @@ const mutations = {
 
 const actions = {
     initTiles: ({ commit }) => {
-        commit('SET_TILES', $.createTiles(9, 9));
+        commit('SET_TILES', $.createTiles(9, 9));  
     },
     shuffleTiles: ({ commit, state }) => {
         var _vm = [];
