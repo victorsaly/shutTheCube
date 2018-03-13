@@ -83,7 +83,7 @@ export default {
  
   
    /* transform: translate(-50%, -50%);  */
-  background: url('/static/explosion.png') no-repeat;
+  background: url('../assets/explosion.png') no-repeat;
   background-position: 0 0;
   animation: explosion-animation 1s steps(28);
 }

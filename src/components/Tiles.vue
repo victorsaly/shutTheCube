@@ -246,7 +246,7 @@ a {
   /* top: 50%; */
   top: -25px;
   /* transform: translate(-50%, -50%); */
-  background: url('/static/explosion.png') no-repeat;
+  background: url('../assets/explosion.png') no-repeat;
   background-position: 0 0;
   animation: explosion-animation 1s steps(28);
       margin-left: -29px;
