@@ -6,7 +6,7 @@ import { EAFNOSUPPORT } from 'constants';
 const state = {
     tiles: [],
     sumTilesInUse: 0,
-    sumTilesTaken:0
+    sumTilesTaken: 0
 };
 
 const mutations = {
@@ -122,12 +122,12 @@ const mutations = {
     'SET_SUM_TILES_TAKEN'(state, sum) {
         state.sumTilesTaken = sum
     },
-    
+
 }
 
 const actions = {
     initTiles: ({ commit }) => {
-        commit('SET_TILES', $.createTiles(9, 9));  
+        commit('SET_TILES', $.createTiles(9,9));
     },
     shuffleTiles: ({ commit, state }) => {
         var _vm = [];
@@ -216,18 +216,18 @@ const actions = {
 
             var tilesPlayable = _.map(
                 //_.omitBy(
-                    _.uniq(_.flatMapDeep(state.tiles,
-                function (n) {
+                _.uniq(_.flatMapDeep(state.tiles,
+                    function (n) {
 
-                    return _.flatMapDeep(n, function (i) {
-                        if (!i.isInUse && !i.isTaken)
-                            return i.index
-                    })
-                }))
+                        return _.flatMapDeep(n, function (i) {
+                            if (!i.isInUse && !i.isTaken)
+                                return i.index
+                        })
+                    }))
                 //, _.isUndefined)
-                , function(value, index) {
-                return [value];
-            });
+                , function (value, index) {
+                    return [value];
+                });
             var test = tilesPlayable.join('');
 
             console.log('Tiles Playable                ', tilesPlayable);
@@ -272,12 +272,13 @@ const actions = {
             console.log('Tiles Combinations available  ' + _combinations_available);
             console.log('Tile Playable available       ' + _tiles_playable);
             console.log('-------------------------')
+            if (combinations_available.length > 0) {
+                commit('SET_GAME_NOTE', 'Combinations available  ' + combinations_available)
+            } else {
+                commit('SET_GAME_NOTE', '')
+            }
 
             state.tiles.forEach(function (vm) {
-
-                
-
-
 
                 //set tiles available for playing
                 _.filter(vm, function (t) {
@@ -304,48 +305,33 @@ const actions = {
                         commit('SET_TILE', newTile);
                     };
 
-
-                    //return t.index
                 })
 
 
-               
+
 
             })
 
 
-            // var sumIsInUse = 0;
-            // state.tiles.forEach(function (vm) {
-            //     sumIsInUse += _.sum(_.filter(vm, function (t) {
-            //         return (t.isInUse == true && t.isCollateral == false)
-            //     }).map(function (t) { return t.index }));
-            // });
-
-            if (payload){
+            if (payload) {
                 if (state.sumTilesInUse == diceSum) {
-                    dispatch('setIsTaken').then(()=>{
-                        dispatch('sumTilesInUse').then(()=>{
-                            dispatch('sumTilesTaken').then(()=>{
+                    dispatch('setIsTaken').then(() => {
+                        dispatch('sumTilesInUse').then(() => {
+                            dispatch('sumTilesTaken').then(() => {
+                                commit('SET_GAME_NOTE', 'Roll the dice');
                                 commit('SET_GAME_ISNEXT', true);
+                                commit('SET_DICE_IN_USE', false);
                             });
                         });
                     });
-                }else if (_combinations_available.length<=0 
-                    //&& 
-                   // !(state.sumTilesInUse == diceSum)
-                    //&& (rootState.game.state!='isNext')
-                ){
-                    debugger;
-                   
+                } else if (_combinations_available.length <= 0
+
+                ) {
+
                     commit('GAME_OVER', true);
                 }
             }
-            
-            //debugger
-
             resolve()
-
-
         });
 
     }

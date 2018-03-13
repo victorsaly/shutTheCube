@@ -206,19 +206,14 @@ a {
   color: #333;
 }
 .isTaken {
-  /* border-color: #dedede !important; */
   color: gray;
   cursor: not-allowed;
   opacity: 0.3 !important;
   background: gray;
 }
 
-/* .isInUse {
-  color: yellow !important;
-  cursor: not-allowed;
-} */
 
-.isInUse[data-v-3632a1b6] {
+.isInUse {
     color: yellow !important;
     cursor: not-allowed;
     background: gray;
@@ -227,25 +222,29 @@ a {
 
 .isAvailable {
   color: #000;
+   -webkit-transition: background 0.2s linear;
+    -moz-transition: background 0.2s linear;
+    -o-transition: background 0.2s linear;
+    transition: background 0.2s linear;
 }
 
-.isNotAvailable[data-v-3632a1b6] {
+.isNotAvailable {
     color: #444 !important;
     opacity: 0.5;
     cursor: not-allowed;
     background: cadetblue;
+     -webkit-transition: background 0.3s linear;
+    -moz-transition: background 0.3s linear;
+    -o-transition: background 0.3s linear;
+    transition: background 0.3s linear;
 }
 
 
 .explosion {
   width: 100px;
   height: 100px;
-  /* position: relative; */
    position: absolute; 
-  /* left: 50%; */
-  /* top: 50%; */
   top: -25px;
-  /* transform: translate(-50%, -50%); */
   background: url('../assets/explosion.png') no-repeat;
   background-position: 0 0;
   animation: explosion-animation 1s steps(28);
@@ -262,6 +261,23 @@ a {
   100% {
     background-position: -2800px 0;
   }
+}
+
+
+/* Portrait and Landscape */
+@media only screen 
+  and (min-device-width: 320px) 
+  and (max-device-width: 568px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+    .box {
+  height: 35px;
+  width: 35px;
+  line-height: 180%;
+  cursor: pointer;
+  float: left;
+  border-bottom: 4px solid #444;
+}
+
 }
 
 </style>

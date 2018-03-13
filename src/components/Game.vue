@@ -1,15 +1,10 @@
 <template>
   <div class="Game">
-    
-
-    <app-tiles v-for="(tiles, index) in tilesObj" :index="index" :allTiles="tilesObj" :tiles="tiles" :key="tiles.index"></app-tiles>
-    
-    
-   <div id="dice" :class="{blocked: !game.state == 'isStart' && game.state == 'isNext'}">
+   <app-tiles v-for="(tiles, index) in tilesObj" :index="index" :allTiles="tilesObj" :tiles="tiles" :key="tiles.index"></app-tiles>
+        
+   <div id="dice" :class="{blocked: game.diceInUse || (!game.state == 'isStart' && game.state == 'isNext')}">
         <app-dice v-for="dice in game.dice" :dice="dice" :key="dice.id"></app-dice>
     </div>
-
-
     <transition name="fade" mode="out-in">
       <button v-bind:key="game.state" v-if="buttonGameStateMessage"
       @click="gameState" 
@@ -28,61 +23,19 @@
                     {{ buttonGameStateMessage }}
                 </div>
             </div>
-
-      </button>
-      <!-- <button v-if="(!game.isStart && game.isOver)" @click="restartGame" 
-      class="no-outline list-reset flex mb-2 bg-yellow-light border-b-4 border-black rounded-b animate  action-button" style="max-width:200px; margin:0 auto;">
-            <div>
-                <div class="text-black text-center  px-2 pt-2 py-1  no-underline  " href="#">
-                    <i class="fa fa-times"></i>
-                </div>
-            </div>
-
-            <div class="flex-grow  ">
-                <div id="testReorder" class=" text-black text-center bg-red-light px-2 pt-2 py-1  no-underline" href="#">
-                    GAME OVER 
-                </div>
-            </div>
       </button>
     </transition>
 
-    <transition name="fade" mode="out-in">
-      <button v-if="(!game.isStart && game.isNext)" @click="initNextGame" class="no-outline list-reset flex mb-2 bg-yellow-light border-b-4 border-black rounded-b animate  action-button" style="max-width:200px; margin:0 auto;">
-              
-
-              <div class="flex-grow  ">
-                  <div id="testReorder" class=" text-black text-center bg-green-light px-2 pt-2 py-1  no-underline" href="#">
-                      ROLL DICE 
-                  </div>
-              </div>
-      </button> -->
-    </transition>
-
-    <!-- <transition name="fade" mode="out-in">
-      <button v-if="game.isStart" @click="initStartGame" class="no-outline list-reset flex mb-2 bg-yellow-light border-b-4 border-black rounded-b animate  action-button" style="max-width:100px; margin:0 auto;">
-              <div>
-                  <div class="text-black text-center  px-2 pt-2 py-1  no-underline  " href="#">
-                      <i class="fa fa-arrow-right"></i>
-                  </div>
-              </div>
-
-              <div class="flex-grow  ">
-                  <div id="testReorder" class="b  text-black text-center bg-green-light px-2 pt-2 py-1  no-underline" href="#">
-                      START 
-                  </div>
-              </div>
-      </button>
-    </transition> -->
-    <!-- <div class="flex  mb-2  justify-between bg-yellow-light border-b-4 border-black  pin-b pin-l  absolute rounded-b w-full"> -->
-            <!-- <div class="w-12  text-center bg-blue-light py-2 text-base">Time</div>
-            <div class="w-12  text-center py-2 text-base">0 Sec</div>
+      <!-- <div class="flex pin-b pin-l  absolute   mb-6  justify-between bg-yellow-light border-b-4 border-black rounded-b w-full">
+   <div class="w-12  text-center bg-blue-light py-2 text-base">
+     <i class="fa fa-commenting-o"></i>
+   </div>
             <div class="w-12 flex-grow  text-center py-2 text-base">
 
-                </div>
 
-            <div class="w-12  text-center  py-2 text-base"><animated-integer v-bind:value="pointsTotal"></animated-integer></div>
-            <div class="w-12  text-center bg-blue-light py-2 text-base">Score</div>
-  
+                {{game.note}} &nbsp; </div>
+
+     
         </div> -->
         
   </div>

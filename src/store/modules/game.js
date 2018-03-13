@@ -24,13 +24,12 @@ const mutations = {
     'SET_GAME_NOTE'(state, note){
         state.game.note = note;
     },
+    'SET_DICE_IN_USE'(state, bool){
+        state.game.diceInUse = bool;
+    },
     'GAME_OVER'(state){
-        state.game.numberPlay = 0;
-        state.game.timeleft = 0;
-        // state.game.isNext=false;
-        // state.game.isStart= false;
-        // state.game.isOver= true;
-        // state.game.isWin= false;        
+        //state.game.numberPlay = 0;
+        state.game.timeleft = 0;    
         state.game.note='Game Over';
         state.game.state='isOver'
         state.game.diceInUse=false;
@@ -40,10 +39,6 @@ const mutations = {
 
         state.game.numberPlay = 0;
         state.game.timeleft = 60;
-        // state.game.isNext=false;
-        // state.game.isStart= true;
-        // state.game.isOver= false;
-        // state.game.isWin= false;  
         state.game.state='isStart';     
         state.game.note='Restart Game';
         state.game.diceInUse=false;

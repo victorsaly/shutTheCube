@@ -68,20 +68,18 @@ export default {
 </script>
 <style scoped>
 .value{
-  padding-top: 31px;
+   padding-top: 31px; 
   font-size: 31px;
 }
 .position {
    width: 100px;
-  height: 100px;
+   height: 100px; 
 
      position: relative;
     /* left: 0; */
     top: 0;
 }
 .explosion {
- 
-  
    /* transform: translate(-50%, -50%);  */
   background: url('../assets/explosion.png') no-repeat;
   background-position: 0 0;
@@ -99,5 +97,19 @@ export default {
     background-position: -2800px 0;
   }
 }
-
+/* Portrait and Landscape */
+@media only screen 
+  and (min-device-width: 320px) 
+  and (max-device-width: 568px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+    .value{
+   padding-top:27px; 
+  font-size: 25px;
+}
+.position {
+   width: 100px;
+   height:auto;
+    top: -10px;
+}
+}
 </style>
