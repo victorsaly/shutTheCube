@@ -10,4 +10,8 @@
       event.preventDefault();
     }
     lastTouchEnd = now;
-  }, false);</script></html>
+  }, false);
+
+  document.documentElement.addEventListener('touchmove', function (event) {
+    event.preventDefault();      
+}, false);</script></html>
