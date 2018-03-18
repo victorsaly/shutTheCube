@@ -21,7 +21,7 @@
   </div>
   <div id="app">
   <!-- <transition name="fade" :duration="{ enter: 1000, leave: 1000 }" mode="in-out"> -->
-  <div style="height:70px;">
+  <div class="header">
    <app-header  v-if="gameIsVisible"></app-header>
   </div>
   
@@ -132,6 +132,15 @@ a{
 .fade-enter, .fade-leave-active {
   opacity: 0
 }
+@media only screen 
+  and (min-device-width: 300px) 
+  and (max-device-width: 568px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+  .header{
+    height:70px;
+  }
+}
+
 #warning-message { display: none; }
 @media only screen and (orientation:landscape) and (max-width: 1024px){
     .isMobile #app { display:none; }

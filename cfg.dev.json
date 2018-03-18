@@ -1,0 +1,10 @@
+{
+    "firebaseCfg": {
+      "apiKey": "YOUR-KEY",
+      "authDomain": "your-app.firebaseapp.com",
+      "databaseURL": "https://your-app.firebaseio.com",
+      "projectId": "your-app",
+      "storageBucket": "your-app.appspot.com",
+      "messagingSenderId": "YOUR-MSG-ID"
+    }
+  }
