@@ -1,5 +1,4 @@
 <template>
-    
     <transition-group :duration="300" name="flip-list" tag="ul">
         <li v-for="(t, p) in tiles" v-bind:key="t.id">
           <div style="position:relative">
@@ -264,15 +263,27 @@ a {
 }
 
 
+/* Portrait */
+@media only screen 
+  and (max-device-width: 320px) 
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: portrait) {
+    .box {      
+      width: 30px !important;
+      height: 28px !important;   
+      line-height: 160% !important;   
+    }
+}
+
 /* Portrait and Landscape */
 @media only screen 
   and (min-device-width: 320px) 
   and (max-device-width: 568px)
   and (-webkit-min-device-pixel-ratio: 2) {
     .box {
-  height: 35px;
+  height: 36px;
   width: 35px;
-  line-height: 180%;
+  line-height: 200%;
   cursor: pointer;
   float: left;
   border-bottom: 4px solid #444;

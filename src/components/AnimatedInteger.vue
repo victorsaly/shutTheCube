@@ -6,7 +6,7 @@
 </div>
 </template>
 <script>
-import TWEEN from 'tween'
+import TWEEN from "tween";
 
 export default {
   props: {
@@ -14,7 +14,7 @@ export default {
       type: Number,
       required: true
     },
-    title:{
+    title: {
       type: String,
       required: false
     }
@@ -22,12 +22,11 @@ export default {
   data: function() {
     return {
       tweeningValue: 0,
-      isFinished:false
+      isFinished: false
     };
   },
   watch: {
     value: function(newValue, oldValue) {
-      
       this.tween(oldValue, newValue);
     }
   },
@@ -43,7 +42,7 @@ export default {
           requestAnimationFrame(animate);
         }
       }
-      let t  = new TWEEN.Tween({
+      let t = new TWEEN.Tween({
         tweeningValue: startValue
       })
         .to(
@@ -59,29 +58,28 @@ export default {
       animate();
       let self = this;
       t.onComplete(function() {
-        console.log('done!')
         self.isFinished = true;
-        });
+      });
     }
   }
 };
 </script>
 <style scoped>
-.value{
-   padding-top: 31px; 
+.value {
+  padding-top: 31px;
   font-size: 31px;
 }
 .position {
-   width: 100px;
-   height: 100px; 
+  width: 100px;
+  height: 100px;
 
-     position: relative;
-    /* left: 0; */
-    top: 0;
+  position: relative;
+  /* left: 0; */
+  top: 0;
 }
 .explosion {
-   /* transform: translate(-50%, -50%);  */
-  background: url('../assets/explosion.png') no-repeat;
+  /* transform: translate(-50%, -50%);  */
+  background: url("../assets/explosion.png") no-repeat;
   background-position: 0 0;
   animation: explosion-animation 1s steps(28);
 }
@@ -98,18 +96,15 @@ export default {
   }
 }
 /* Portrait and Landscape */
-@media only screen 
-  and (min-device-width: 320px) 
-  and (max-device-width: 568px)
-  and (-webkit-min-device-pixel-ratio: 2) {
-    .value{
-   padding-top:27px; 
-  font-size: 25px;
-}
-.position {
-   width: 100px;
-   height:auto;
+@media only screen and (min-device-width: 320px) and (max-device-width: 568px) and (-webkit-min-device-pixel-ratio: 2) {
+  .value {
+    padding-top: 27px;
+    font-size: 25px;
+  }
+  .position {
+    width: 100px;
+    height: auto;
     top: -10px;
-}
+  }
 }
 </style>

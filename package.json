@@ -13,11 +13,14 @@
   },
   "dependencies": {
     "delay": "^2.0.0",
+    "firebase": "^4.1.3",
     "font-awesome": "^4.7.0",
     "lodash": "^4.17.4",
     "tween": "^0.9.0",
     "vue": "^2.5.2",
+    "vue-nprogress": "^0.1.5",
     "vue-router": "^3.0.1",
+    "vue-toasted": "^1.1.24",
     "vuex": "^3.0.1"
   },
   "devDependencies": {

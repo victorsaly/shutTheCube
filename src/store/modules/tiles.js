@@ -1,4 +1,4 @@
-import $ from '../../services/dataServices'
+import $ from '../../services/gameServices'
 import _ from 'lodash'
 import delay from 'delay'
 import { EAFNOSUPPORT } from 'constants';
@@ -126,8 +126,8 @@ const mutations = {
 }
 
 const actions = {
-    initTiles: ({ commit }) => {
-        commit('SET_TILES', $.createTiles(9,9));
+    initTiles: ({ commit }, size) => {
+        commit('SET_TILES', $.createTiles(9, size || 9));
     },
     shuffleTiles: ({ commit, state }) => {
         var _vm = [];
@@ -230,7 +230,7 @@ const actions = {
                 });
             var test = tilesPlayable.join('');
 
-            console.log('Tiles Playable                ', tilesPlayable);
+            //console.log('Tiles Playable                ', tilesPlayable);
             //debugger;
             //     /* Get all possible combinations for the available tiles */
             var combinations = $.strConbinations(tilesPlayable.join(''));
@@ -247,15 +247,15 @@ const actions = {
 
 
             var sum = diceSum - state.sumTilesInUse;
-            console.log('sumIsInUse:                   ' + state.sumTilesInUse);
-            console.log('diceSum:                      ' + diceSum);
+            //console.log('sumIsInUse:                   ' + state.sumTilesInUse);
+            //console.log('diceSum:                      ' + diceSum);
             //     /* Get filtered tiles that the sum of the combiantion match the tiles available */
             var combinations_available = combinations.length > 0 ? _.filter(combinations, function (t) {
                 return sum == t.split('').reduce(function (a, b) {
                     return a + parseInt(b);
                 }, 0);
             }) : [];
-            console.log('Tiles Set Combinations Available  ' + combinations_available);
+            //console.log('Tiles Set Combinations Available  ' + combinations_available);
 
             var _combinations_available = [];
             combinations_available.forEach((t) => {
@@ -269,11 +269,11 @@ const actions = {
             })
 
             var _tiles_playable = _.uniq(_combinations_available.join('').split(''));
-            console.log('Tiles Combinations available  ' + _combinations_available);
-            console.log('Tile Playable available       ' + _tiles_playable);
-            console.log('-------------------------')
+            //console.log('Tiles Combinations available  ' + _combinations_available);
+            //console.log('Tile Playable available       ' + _tiles_playable);
+            //console.log('-------------------------')
             if (combinations_available.length > 0) {
-                commit('SET_GAME_NOTE', 'Combinations available  ' + combinations_available)
+                commit('SET_GAME_NOTE', 'Combinations</br>' + combinations_available)
             } else {
                 commit('SET_GAME_NOTE', '')
             }

@@ -3,7 +3,8 @@ import game from '../../data/game';
 import _ from 'lodash'
 
 const state = {
-    game : []
+    game : [],
+    gameIsVisible: false
 };
 
 
@@ -11,6 +12,10 @@ const mutations = {
     'SET_GAME' (state, game){
         state.game = game;
     },
+    'SET_GAME_IS_VISIBLE' (state, bool){
+        state.gameIsVisible = bool;
+    },
+    
     'SET_GAME_ISNEXT'(state, status){
         // state.game.isNext = status;
         state.game.state= status ? 'isNext' : '';
@@ -103,6 +108,9 @@ const getters = {
         return _.sum(_.filter(game.dice, function (t) {
             return (t.isAvailable == true)
         }).map(function (t) { return t.number }));
+    },
+    gameIsVisible: state => {
+        return state.gameIsVisible;
     }
 };
 
