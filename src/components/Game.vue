@@ -27,7 +27,7 @@
       <template v-else>
 
 
-         <div  class="no-outline list-reset flex mb-2  animate  action-button" style="max-width:200px; margin:0 auto;">
+         <div  class="no-outline list-reset flex mb-2  animate  action-button" style="margin:0 auto;">
         
 
             <div class="flex-grow  ">
