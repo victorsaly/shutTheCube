@@ -1,5 +1,7 @@
 <template>
   <div class="Game">
+     
+
    <app-tiles v-for="(tiles, index) in tilesObj" :index="index" :allTiles="tilesObj" :tiles="tiles" :key="tiles.index"></app-tiles>
         
    <div id="dice" :class="[{blocked: game.diceInUse || (!game.state == 'isStart' && game.state == 'isNext')}]">
@@ -8,7 +10,7 @@
     <transition name="fade" mode="out-in">
       <button v-bind:key="game.state" v-if="buttonGameStateMessage"
       @click="gameState" 
-      class="no-outline list-reset flex mb-2 bg-yellow-light border-b-4 border-black rounded-b animate  action-button" style="max-width:200px; margin:0 auto;">
+      class="no-outline list-reset flex mb-2 bg-yellow-light border-b-4 border-black rounded-b   action-button" style="max-width:200px; margin:0 auto;">
         
          <div>
                 <div class="text-black text-center  px-2 pt-2 py-1  no-underline  ">
@@ -51,19 +53,29 @@ import { mapActions } from "vuex";
 import Tiles from "./Tiles";
 import Dice from "./Dice";
 import AnimatedInteger from "./AnimatedInteger";
+import $ from "../services/gameServices";
+var Shake = require("shake.js");
+let shakeEvent = new Shake({
+  threshold: (navigator.userAgent.match(/Android/i)) ? 4 : 8, // optional shake strength threshold
+  timeout: 1000 // optional, determines the frequency of event generation
+});
 export default {
   name: "Game",
   data() {
-    return {      
+    return {
+      msg: "new message",
       diceObj: {}
     };
   },
   computed: {
     tilesObj() {
-      return this.$store.getters.tiles;
+      return this.$store.getters.tiles == null ? {} : this.$store.getters.tiles;
     },
     game() {
       return this.$store.getters.game;
+    },
+    gameIsLoading() {
+      return this.$store.getters.gameIsLoading;
     },
     pointsTotal() {
       return this.$store.getters.sumTilesTaken;
@@ -93,15 +105,20 @@ export default {
       }
     },
     buttonGameStateIcon() {
-      switch (this.game.state) {
-        case "isNext":
-          return "fa fa-arrow-right";
-        case "isOver":
-          return "fa fa-times";
-        case "isStart":
-          return "fa fa-arrow-right";
-        case "isWin":
-          return "fa fa-check";
+      if (this.gameIsLoading) {
+        return "fa fa-refresh fa-spin";
+      } else {
+        switch (this.game.state) {
+          //
+          case "isNext":
+            return "fa fa-arrow-right";
+          case "isOver":
+            return "fa fa-times";
+          case "isStart":
+            return "fa fa-arrow-right";
+          case "isWin":
+            return "fa fa-check";
+        }
       }
     }
   },
@@ -110,6 +127,12 @@ export default {
       restartGame: "restartGame"
     }),
     gameState() {
+      this.$store.commit("SET_IS_LOADING", true);
+      const audio = new Audio();
+      audio.src = document.querySelector("#click2").src;
+      audio.currentTime = 0;
+      audio.play();
+      //new Audio(require('../../static/click2.mp3')).play();
       switch (this.game.state) {
         case "isNext":
           this.initNextGame();
@@ -129,13 +152,21 @@ export default {
     //   this.$store.dispatch("shuffleTiles");
     // },
     initStartGame() {
-      this.$store.dispatch("startGame").then(() => {
-        this.$store.dispatch("setTiles", true);
+      let self = this;
+
+      self.$store.dispatch("startGame").then(() => {
+        self.$store.dispatch("setTiles", true).then(() => {
+          self.$store.commit("SET_IS_LOADING", false);
+        });
       });
     },
     initNextGame() {
-      this.$store.dispatch("nextGame").then(() => {
-        this.$store.dispatch("setTiles", true);
+      let self = this;
+
+      self.$store.dispatch("nextGame").then(() => {
+        self.$store.dispatch("setTiles", true).then(() => {
+          self.$store.commit("SET_IS_LOADING", false);
+        });
       });
     }
   },
@@ -144,11 +175,27 @@ export default {
     appDice: Dice,
     animatedInteger: AnimatedInteger
   },
-  created() {}
+  destroy() {
+    shakeEvent.stop();
+  },
+  mounted() {
+    let self = this;
+    if ($.isMobile()) {
+      shakeEvent.start();
+      window.addEventListener(
+        "shake",
+        function() {
+          //alert("shake");
+          self.gameState();
+        },
+        false
+      );
+    }
+  }
 };
 </script>
 <style scoped>
-.height45{
+.height45 {
   height: 35px;
 }
 
@@ -170,8 +217,8 @@ export default {
 }
 
 .animate {
-  transition: all 0.8s;
-  -webkit-transition: all 0.8s;
+  /* transition: all 0.8s;
+  -webkit-transition: all 0.8s; */
 }
 div:focus {
   outline: blue solid 2px;

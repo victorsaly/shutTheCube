@@ -4,7 +4,7 @@ import delay from 'delay'
 import { EAFNOSUPPORT } from 'constants';
 
 const state = {
-    tiles: [],
+    tiles: {},
     sumTilesInUse: 0,
     sumTilesTaken: 0
 };
@@ -138,8 +138,10 @@ const actions = {
     },
     moveTiles: ({ commit, state }, payload) => {
         return new Promise((resolve, reject) => {
-            var tiles = $.moveTile((Object.assign({}, state.tiles[payload.tileIndex])), payload.id);
-            commit('SET_TILES_BY_INDEX', { tiles: tiles, index: payload.tileIndex });
+            if(state.tiles.length > 1){
+                var tiles = $.moveTile((Object.assign({}, state.tiles[payload.tileIndex])), payload.id);
+                commit('SET_TILES_BY_INDEX', { tiles: tiles, index: payload.tileIndex });
+            }
             resolve()
         })
 
@@ -213,67 +215,71 @@ const actions = {
 
             var tiles = [];
 
-
-            var tilesPlayable = _.map(
-                //_.omitBy(
-                _.uniq(_.flatMapDeep(state.tiles,
-                    function (n) {
-
-                        return _.flatMapDeep(n, function (i) {
-                            if (!i.isInUse && !i.isTaken)
-                                return i.index
-                        })
-                    }))
-                //, _.isUndefined)
-                , function (value, index) {
-                    return [value];
-                });
-            var test = tilesPlayable.join('');
-
-            //console.log('Tiles Playable                ', tilesPlayable);
-            //debugger;
-            //     /* Get all possible combinations for the available tiles */
-            var combinations = $.strConbinations(tilesPlayable.join(''));
-
-
-            if (combinations == null || combinations == undefined) {
-                combinations = [];
-            }
-
-
+            
             var diceSum = _.sum(_.filter(game.dice, function (t) {
                 return (t.isAvailable == true)
             }).map(function (t) { return t.number }));
 
 
             var sum = diceSum - state.sumTilesInUse;
+
+            let tilesCombinations = $.getTilesCombinations(state.tiles, sum);
+            const titleCombinationFlatten = _.flatMap(tilesCombinations);
+            // var tilesPlayable = _.map(
+            //     //_.omitBy(
+            //     _.uniq(_.flatMapDeep(state.tiles,
+            //         function (n) {
+
+            //             return _.flatMapDeep(n, function (i) {
+            //                 if (!i.isInUse && !i.isTaken)
+            //                     return i.index
+            //             })
+            //         }))
+            //     //, _.isUndefined)
+            //     , function (value, index) {
+            //         return [value];
+            //     });
+           
+
+            //console.log('Tiles Playable                ', tilesPlayable);
+            //debugger;
+            //     /* Get all possible combinations for the available tiles */
+            // var combinations = $.strConbinations(tilesPlayable.join(''));
+            
+
+            // if (combinations == null || combinations == undefined) {
+            //     combinations = [];
+            // }
+
+
             //console.log('sumIsInUse:                   ' + state.sumTilesInUse);
             //console.log('diceSum:                      ' + diceSum);
             //     /* Get filtered tiles that the sum of the combiantion match the tiles available */
-            var combinations_available = combinations.length > 0 ? _.filter(combinations, function (t) {
-                return sum == t.split('').reduce(function (a, b) {
-                    return a + parseInt(b);
-                }, 0);
-            }) : [];
-            //console.log('Tiles Set Combinations Available  ' + combinations_available);
+            // var combinations_available = combinations.length > 0 ? _.filter(combinations, function (t) {
+            //     return sum == t.split('').reduce(function (a, b) {
+            //         return a + parseInt(b);
+            //     }, 0);
+            // }) : [];
+            // //console.log('Tiles Set Combinations Available  ' + combinations_available);
 
-            var _combinations_available = [];
-            combinations_available.forEach((t) => {
-                if (t.length == 1) {
-                    _combinations_available.push(_.toSafeInteger(t))
-                } else {
-                    t.split('').forEach((x) => {
-                        _combinations_available.push(_.toSafeInteger(x))
-                    })
-                }
-            })
+            // var _combinations_available = [];
+            // combinations_available.forEach((t) => {
+            //     if (t.length == 1) {
+            //         _combinations_available.push(_.toSafeInteger(t))
+            //     } else {
+            //         t.split('').forEach((x) => {
+            //             _combinations_available.push(_.toSafeInteger(x))
+            //         })
+            //     }
+            // })
 
-            var _tiles_playable = _.uniq(_combinations_available.join('').split(''));
+            // var _tiles_playable = _.uniq(_combinations_available.join('').split(''));
             //console.log('Tiles Combinations available  ' + _combinations_available);
             //console.log('Tile Playable available       ' + _tiles_playable);
             //console.log('-------------------------')
-            if (combinations_available.length > 0) {
-                commit('SET_GAME_NOTE', 'Combinations</br>' + combinations_available)
+            if (titleCombinationFlatten.length > 0) {
+                //commit('SET_GAME_NOTE', 'Combinations</br>' + titleCombinationFlatten)
+               commit('SET_GAME_NOTE', '')
             } else {
                 commit('SET_GAME_NOTE', '')
             }
@@ -287,7 +293,8 @@ const actions = {
                 }).forEach(function (t) {
                     var newTile = {
                         //isAvailable: _.has(_tiles_playable, t.index.toString()),
-                        isAvailable: _.findIndex(_tiles_playable, function (x) { return x == (t.index.toString()) }) >= 0,
+                        //isAvailable: _.findIndex(_tiles_playable, function (x) { return x == (t.index.toString()) }) >= 0,
+                        isAvailable : _.findIndex(titleCombinationFlatten, function (x) { return x == t.index }) >= 0,
                         isInUse: t.isInUse,
                         isTaken: t.isTaken,
                         cssClass: t.cssClass,
@@ -324,7 +331,7 @@ const actions = {
                             });
                         });
                     });
-                } else if (_combinations_available.length <= 0
+                } else if (titleCombinationFlatten.length <= 0
 
                 ) {
 

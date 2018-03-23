@@ -16,6 +16,6 @@
     "theme_color": "#ffffff",
     "background_color": "#ffffff",
     "start_url": "https://victorsaly.github.io/shutTheCube/",
-    "display": "standalone",
+    "display": "fullscreen",
     "orientation": "portrait"
 }

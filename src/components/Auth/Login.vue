@@ -7,12 +7,12 @@
             <div class="border-teal p-8 border-t-12 bg-white mb-6 rounded-lg shadow-lg">
                 <div class="mb-4">
                     <label class="font-bold text-grey-darker block mb-2">Username or Email</label>
-                    <input type="text"  v-model="email"  class="block appearance-none w-full bg-white border border-grey-light hover:border-grey px-2 py-2 rounded shadow" placeholder="Your Username">
+                    <input type="email" required  v-model="email"  class="block appearance-none w-full bg-white border border-grey-light hover:border-grey px-2 py-2 rounded shadow" placeholder="Your Username">
                 </div>
 
                 <div class="mb-4">
                     <label class="font-bold text-grey-darker block mb-2">Password</label>
-                    <input type="password" v-model="password" class="block appearance-none w-full bg-white border border-grey-light hover:border-grey px-2 py-2 rounded shadow" placeholder="Your Password">
+                    <input type="password" required v-model="password" class="block appearance-none w-full bg-white border border-grey-light hover:border-grey px-2 py-2 rounded shadow" placeholder="Your Password">
                 </div>
 
                 <div class="flex items-center justify-between">

@@ -24,10 +24,7 @@
   <div class="header">
    <app-header  v-if="gameIsVisible"></app-header>
   </div>
-  
-  <!-- </transition> -->
-  <transition name="fade" mode="out-in">
-    <template v-if="!gameIsVisible">
+   <template v-if="!gameIsVisible">
       <div class="h-screen w-full absolute flex items-center justify-center bg-modal" 
       style="height: calc(100% - 200px);">
       <!-- @click.self="modal.visible = false" -->
@@ -50,7 +47,10 @@
         </div>
       </div>
     </template>
-    <template v-else>
+  <!-- </transition> -->
+  <transition name="fade" mode="out-in">
+   
+    <template v-if="gameIsVisible">
            <router-view/>
     </template>
  </transition>
@@ -60,65 +60,70 @@
 </template>
 
 <script>
-import Header from './components/Header';
-import $ from './services/gameServices'
+import Header from "./components/Header";
+import $ from "./services/gameServices";
 
 export default {
-
-  name: 'app',
+  name: "app",
   data: function() {
     return {
-      isMobile:false
+      isMobile: false
     };
   },
-   computed: {
+  computed: {
     gameIsVisible() {
       return this.$store.getters.gameIsVisible;
     },
-    tilesLength(){
-      return this.$store.getters.tiles == null ? 0 : this.$store.getters.tiles.length;
+    tilesLength() {
+      return this.$store.getters.tiles == null
+        ? 0
+        : this.$store.getters.tiles.length;
     }
   },
-  methods:{
-    setGame(size){
+  methods: {
+    setGame(size) {
+      this.$store.dispatch("initGame");
       this.$store.dispatch("initTiles", size);
-      this.$store.commit('SET_GAME_IS_VISIBLE', true);
+      this.$store.commit("SET_GAME_IS_VISIBLE", true);
     }
   },
   components: {
-     appHeader: Header
+    appHeader: Header
   },
-  created(){
-    this.$store.dispatch('initGame');
+  created() {
+    this.$store.dispatch("initGame");
     this.isMobile = $.isMobile();
   }
-}
+};
+
 </script>
 
 <style>
-@import url('https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css');
-@import url('https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.css');
-#app, body {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+@import url("https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.css");
+#app,
+body {
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color:#222;
-   -moz-user-focus: ignore;
+  color: #222;
+  -moz-user-focus: ignore;
   -moz-user-select: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
   -o-user-select: none;
   user-select: none;
-   /* margin-top: 20px; */
-  background: #dedede; 
+  /* margin-top: 20px; */
+  background: #dedede;
 }
-a{
+a {
   color: #222;
 }
-.fade-enter-active, .fade-leave-active {
+.fade-enter-active,
+.fade-leave-active {
   transition-property: opacity;
-  transition-duration: .25s;
+  transition-duration: 0.25s;
 }
 .fade-leave-active {
   /* transition-property: opacity; */
@@ -126,27 +131,33 @@ a{
   transition-delay: 0;
 }
 .fade-enter-active {
-  transition-delay: .25s;
+  transition-delay: 0.25s;
 }
 
-.fade-enter, .fade-leave-active {
-  opacity: 0
+.fade-enter,
+.fade-leave-active {
+  opacity: 0;
 }
-@media only screen 
-  and (min-device-width: 300px) 
-  and (max-device-width: 568px)
-  and (-webkit-min-device-pixel-ratio: 2) {
-  .header{
-    height:70px;
+@media only screen and (min-device-width: 300px) and (max-device-width: 568px) and (-webkit-min-device-pixel-ratio: 2) {
+  .header {
+    height: 70px;
   }
 }
 
-#warning-message { display: none; }
-@media only screen and (orientation:landscape) and (max-width: 1024px){
-    .isMobile #app { display:none; }
-    .isMobile #warning-message { display:block; }
+#warning-message {
+  display: none;
 }
-@media only screen and (orientation:portrait){
-    .isMobile #warning-message { display:none; }
+@media only screen and (orientation: landscape) and (max-width: 1024px) {
+  .isMobile #app {
+    display: none;
+  }
+  .isMobile #warning-message {
+    display: block;
+  }
+}
+@media only screen and (orientation: portrait) {
+  .isMobile #warning-message {
+    display: none;
+  }
 }
 </style>

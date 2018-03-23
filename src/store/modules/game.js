@@ -15,7 +15,9 @@ const mutations = {
     'SET_GAME_IS_VISIBLE' (state, bool){
         state.gameIsVisible = bool;
     },
-    
+    'SET_IS_LOADING' (state, bool){
+        state.game.isLoading = bool;
+    },
     'SET_GAME_ISNEXT'(state, status){
         // state.game.isNext = status;
         state.game.state= status ? 'isNext' : '';
@@ -61,7 +63,9 @@ const mutations = {
 };
 
 const actions = {
-    initGame: ({commit, payload}) => {
+    initGame: ({commit}, payload) => {
+        commit('SET_SUM_TILES_TAKEN', 0);
+        commit('SET_SUM_TILES_IN_USE', 0);
         if (payload==null){
             commit('SET_GAME', game);
         }else {
@@ -70,7 +74,7 @@ const actions = {
     },
     startGame:({commit, dispatch}) => {
         return new Promise((resolve, reject) => {
-            commit('RESTART_TILES');
+            //commit('RESTART_TILES');
             dispatch('shuffleTiles');
             commit('START_GAME');
             commit('ROLL_DICE');
@@ -111,7 +115,10 @@ const getters = {
     },
     gameIsVisible: state => {
         return state.gameIsVisible;
-    }
+    },
+    gameIsLoading: state => {
+        return state.game.isLoading;
+    },
 };
 
 export default {

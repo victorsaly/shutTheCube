@@ -1,8 +1,13 @@
 <template>
+<div>
+  <!-- <audio ref="audioElm" id="tada" src="../assets/tada.mp3"></audio> -->
 <ul class="list-reset flex justify-between w-full items-center  mb-2">
             <li class="w-12">
-                
-                    
+                 <router-link to="/game" class="inline-block text-black text-center bg-green-light px-2 py-2 m-2 ml-2 border-b-4 border-black rounded-b  no-underline w-10">
+                     
+                      <i class="fa fa-home"></i>
+                      
+                    </router-link>
                      <router-link to="/login" class="inline-block text-black text-center bg-green-light px-2 py-2 m-2 ml-2 border-b-4 border-black rounded-b  no-underline w-10">
                     <template v-if="isAuthenticated" id="userIdentityName">          
                       {{abbreviations}}    
@@ -26,7 +31,7 @@
                <img src="../assets/Logo_STB.png" style="max-height:30px;"> 
             </li>
 <li>
-  <animated-integer v-bind:title="'Points'" v-bind:value="pointsTotal"></animated-integer>
+  <animated-integer :isAudio="true" v-bind:title="'Points'" v-bind:value="pointsTotal"></animated-integer>
 </li>
             <li class="w-12 mr-2">
 
@@ -40,7 +45,7 @@
             </li>
             
         </ul>
-   
+</div>
 </template>
 <script>
 import { mapGetters } from "vuex";
@@ -80,6 +85,9 @@ export default {
 };
 </script>
 <style scoped>
+.active{
+  display: none;
+}
 /* Portrait */
 @media only screen   
   and (max-device-width: 330px)

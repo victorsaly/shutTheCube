@@ -9,6 +9,7 @@ Vue.use(Router)
 
 let router = new Router({
   //mode: 'history', 
+  linkExactActiveClass: "active", // active class for *exact* links.
   base: process.env.NODE_ENV === 'production' ? '/shutTheCube/' : '/',
   routes: [
     {

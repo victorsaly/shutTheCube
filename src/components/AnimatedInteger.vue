@@ -1,15 +1,21 @@
 <template>
 
 <div class="position" :class="{explosion : isFinished}">
-<div class="value">{{ tweeningValue }}</div>
+<div class="value">{{ tweeningValue }}</div> 
 <span>{{title}}</span>
+
 </div>
 </template>
 <script>
 import TWEEN from "tween";
-
+// var audioTada;
 export default {
   props: {
+    isAudio:{
+      type: Boolean,
+      required:false
+    },
+    
     value: {
       type: Number,
       required: true
@@ -57,8 +63,16 @@ export default {
         .start();
       animate();
       let self = this;
+     
+      if (self.isAudio) {     
+          var audio = new Audio();
+          audio.src = document.querySelector('#tada').src;
+          audio.currentTime = 0;
+          audio.play();   
+      }
+
       t.onComplete(function() {
-        self.isFinished = true;
+        self.isFinished = true;      
       });
     }
   }

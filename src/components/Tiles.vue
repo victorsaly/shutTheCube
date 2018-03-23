@@ -59,6 +59,13 @@ export default {
   methods: {
     selectTile: function(tile, position, index) {
       if (tile.isAvailable && !tile.isTaken && (this.sumTilesInUse + tile.index <= this.diceSum)) {
+        //var audio = new Audio('../assets/click.mp3');
+
+        const audio = new Audio();
+        audio.src = document.querySelector('#click').src;
+        audio.currentTime = 0;
+        audio.play();
+
         //get number of rows
         var numberOfRows = this.allTiles.length;
         var forIndexTop = numberOfRows - this.index;
@@ -97,10 +104,27 @@ export default {
       }else{
         //alert('unavailable')
         //Make an animation that it's not available pending....
-        
+        this.setTileShake(tile, index);
       }
     },
-
+    async setTileShake(tile, index) {
+     
+      // small hack to reset it by removing it before changing the target
+      var _tile = Object.assign({}, tile);
+      _tile.action = "shake";
+      _tile.isCollateral = index != this.index;
+      var self = this;
+      await this.$store
+        .dispatch("setTileByIndex", { tile: _tile, index: index })
+        .then(() => {
+          setTimeout(() => {
+            var _tile = Object.assign({}, tile);
+            _tile.action = "";
+            this.$store
+              .dispatch("setTileByIndex", { tile: _tile, index: index });
+          }, 500);
+        });
+    },
     async setTile(tile, index) {
      
       // small hack to reset it by removing it before changing the target
@@ -142,10 +166,14 @@ export default {
     //     },
     changeTile: function(tileIndex, id) {
       var self = this;
+       self.$store.commit("SET_IS_LOADING",true);
       this.$store
         .dispatch("moveTiles", { tileIndex: tileIndex, id: id })
         .then(() => {
-          self.$store.dispatch("setTiles", tileIndex == self.index);
+         
+          self.$store.dispatch("setTiles", tileIndex == self.index).then(()=>{
+            self.$store.commit("SET_IS_LOADING",false);
+          });
         });
       // this.tiles.move(
       //   _.findIndex(this.tiles, ["index", index]),
