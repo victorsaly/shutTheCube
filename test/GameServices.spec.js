@@ -7,10 +7,9 @@ describe('gameServices', () => {
   })
   it('tile combinations produced', () => {
     let tiles = gameServices.createTiles(9,9)
-    let tilesCombinations = gameServices.getTilesCombinations(tiles, 4);
+    let tilesCombinations = gameServices.getTilesIndexCombinations(tiles, 4);
     console.log(tilesCombinations);
     expect(tilesCombinations.length).toBeGreaterThan(0)
-    
   })
   
 })

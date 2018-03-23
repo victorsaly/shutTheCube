@@ -301,6 +301,103 @@ export default {
 
         return _.concat(tilesPlayableNumbers, combinationDupeNumbers);
 
+    },
+    getTilesIndexCombinations: function (tiles, sum) {
+
+         /* find the playable tiles */
+         let tilesPlayable = 
+         // remove undefined values
+         _.without(
+             // distinct values
+             _.uniq(
+                 // flat arrays into one
+                 _.flatMapDeep(tiles,
+                 function (n) {
+                     // filter by allowed indexes tiles numbers
+                     return _.flatMapDeep(n, function (i) {
+                         if (!i.isInUse && !i.isTaken)
+                             return i.index
+                     })
+                 })
+                 ), undefined)
+
+
+        /* find the playable tiles */
+        let tilesPlayableNonUnique = _.sortBy(_.filter(_.map(
+                _.flatMapDeep(tiles,
+                function (n) {
+
+                    return _.flatMapDeep(n, function (i) {
+                        if (!i.isInUse && !i.isTaken && i.index <= sum){
+                            return i.index
+                        }else{
+                            return false
+                        }
+                            
+                    })
+                })
+            , function (value, index) {
+                return value;
+            }), function(n){
+                    return n;
+            }), function(n){
+                return n;
+        })
+
+
+        var tilesPlayableNumbers = 
+        // get only unique arrays
+        _.uniqWith(
+            c.power(
+           // flatten tiles to the same level [1],[1] => { 1, 1} 
+           _.flatMapDeep(tilesPlayable)).lazyFilter(function (a) {
+            //Lazy filter (after loading data) looping and filtering only items that match
+            return _.toSafeInteger(_.sum(a)) == sum;
+          }).toArray(), 
+          _.isEqual);
+       
+
+        let groupByNumber = _.groupBy(tilesPlayableNonUnique, Math.floor);
+       
+
+        var reduceListTilesNumbers = [];
+        
+        _.each(groupByNumber, function(numbers, index){
+            var reduceTileNumber = [];
+            var sumNumbers = 0;
+            _.each(numbers, function(n){
+                sumNumbers += n;
+                if (sumNumbers<=sum){
+                    reduceTileNumber.push(n);
+                }
+            })
+            //console.log( _.intersection(_.flatMap(tilesPlayableNumbers),reduceTileNumber))
+            //console.log( _.intersection(_.flatMap(tilesPlayableNumbers),reduceTileNumber).length)
+            if (reduceTileNumber.length > 1 && _.intersection(_.flatMap(tilesPlayableNumbers),reduceTileNumber).length == 0){
+                //console.log(_.intersection(tilesPlayableNumbers,reduceTileNumber).length)
+                //console.log(reduceTileNumber)
+                //console.log(tilesPlayable)
+                reduceListTilesNumbers.push(reduceTileNumber);
+            }
+        })
+       
+            
+
+         console.log(reduceListTilesNumbers)
+         var combinationDupeNumbers = 
+         // get only unique arrays
+         _.uniqWith(
+             c.power(
+            // flatten tiles to the same level [1],[1] => { 1, 1} 
+            _.flatMapDeep(reduceListTilesNumbers)).lazyFilter(function (a) {
+             //Lazy filter (after loading data) looping and filtering only items that match
+             return _.toSafeInteger(_.sum(a)) == sum;
+           }).toArray(), 
+           _.isEqual);
+
+
+        return _.uniq(_.flatMapDeep(_.concat(tilesPlayableNumbers, combinationDupeNumbers)));
+
     }
 };
 

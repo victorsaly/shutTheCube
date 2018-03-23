@@ -219,81 +219,18 @@ const actions = {
             var diceSum = _.sum(_.filter(game.dice, function (t) {
                 return (t.isAvailable == true)
             }).map(function (t) { return t.number }));
-
-
             var sum = diceSum - state.sumTilesInUse;
-
-            let tilesCombinations = $.getTilesCombinations(state.tiles, sum);
-            const titleCombinationFlatten = _.flatMap(tilesCombinations);
-            // var tilesPlayable = _.map(
-            //     //_.omitBy(
-            //     _.uniq(_.flatMapDeep(state.tiles,
-            //         function (n) {
-
-            //             return _.flatMapDeep(n, function (i) {
-            //                 if (!i.isInUse && !i.isTaken)
-            //                     return i.index
-            //             })
-            //         }))
-            //     //, _.isUndefined)
-            //     , function (value, index) {
-            //         return [value];
-            //     });
-           
-
-            //console.log('Tiles Playable                ', tilesPlayable);
-            //debugger;
-            //     /* Get all possible combinations for the available tiles */
-            // var combinations = $.strConbinations(tilesPlayable.join(''));
+            const titleCombinationFlatten =  $.getTilesIndexCombinations(state.tiles, sum);
             
-
-            // if (combinations == null || combinations == undefined) {
-            //     combinations = [];
-            // }
-
-
-            //console.log('sumIsInUse:                   ' + state.sumTilesInUse);
-            //console.log('diceSum:                      ' + diceSum);
-            //     /* Get filtered tiles that the sum of the combiantion match the tiles available */
-            // var combinations_available = combinations.length > 0 ? _.filter(combinations, function (t) {
-            //     return sum == t.split('').reduce(function (a, b) {
-            //         return a + parseInt(b);
-            //     }, 0);
-            // }) : [];
-            // //console.log('Tiles Set Combinations Available  ' + combinations_available);
-
-            // var _combinations_available = [];
-            // combinations_available.forEach((t) => {
-            //     if (t.length == 1) {
-            //         _combinations_available.push(_.toSafeInteger(t))
-            //     } else {
-            //         t.split('').forEach((x) => {
-            //             _combinations_available.push(_.toSafeInteger(x))
-            //         })
-            //     }
-            // })
-
-            // var _tiles_playable = _.uniq(_combinations_available.join('').split(''));
-            //console.log('Tiles Combinations available  ' + _combinations_available);
-            //console.log('Tile Playable available       ' + _tiles_playable);
-            //console.log('-------------------------')
-            if (titleCombinationFlatten.length > 0) {
-                //commit('SET_GAME_NOTE', 'Combinations</br>' + titleCombinationFlatten)
-               commit('SET_GAME_NOTE', '')
-            } else {
-                commit('SET_GAME_NOTE', '')
-            }
+            commit('SET_GAME_NOTE', '')
 
             state.tiles.forEach(function (vm) {
-
                 //set tiles available for playing
                 _.filter(vm, function (t) {
                     return (t.isTaken == false
                         && t.isInUse == false)
                 }).forEach(function (t) {
                     var newTile = {
-                        //isAvailable: _.has(_tiles_playable, t.index.toString()),
-                        //isAvailable: _.findIndex(_tiles_playable, function (x) { return x == (t.index.toString()) }) >= 0,
                         isAvailable : _.findIndex(titleCombinationFlatten, function (x) { return x == t.index }) >= 0,
                         isInUse: t.isInUse,
                         isTaken: t.isTaken,
