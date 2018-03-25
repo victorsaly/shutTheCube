@@ -45,7 +45,7 @@ export default {
             for (var x = 0; x < tiles[i].length; x++) {
                 var copy = Object.assign({}, tiles[i][x]);
                 copy.id = this.createGuid();
-                copy.isTaken = _.sample([true,false]);
+                copy.isTaken = false; //_.sample([true,false]);
                 _tile.push(copy);
             }
             _tiles.push(_tile);
@@ -105,7 +105,7 @@ export default {
                 tile.cssClass = 'bg-green-lighter';
                 break;
             case 2:
-                tile.cssClass = ' bg-purple-dark';
+                tile.cssClass = ' bg-purple-lighter';
                 break;
             case 3:
                 tile.cssClass = 'bg-blue-light';
@@ -114,16 +114,16 @@ export default {
                 tile.cssClass = 'bg-purple-light';
                 break;
             case 5:
-                tile.cssClass = 'bg-yellow-dark';
+                tile.cssClass = 'bg-yellow-lighter';
                 break;
             case 6:
-                tile.cssClass = 'bg-indigo-dark';
+                tile.cssClass = 'bg-indigo-lighter';
                 break;
             case 7:
                 tile.cssClass = 'bg-red-light';
                 break;
             case 8:
-                tile.cssClass = 'bg-red-dark';
+                tile.cssClass = 'bg-red-lighter';
                 break;
             case 9:
                 tile.cssClass = 'bg-yellow-light';
@@ -371,19 +371,12 @@ export default {
                     reduceTileNumber.push(n);
                 }
             })
-            //console.log( _.intersection(_.flatMap(tilesPlayableNumbers),reduceTileNumber))
-            //console.log( _.intersection(_.flatMap(tilesPlayableNumbers),reduceTileNumber).length)
-            if (reduceTileNumber.length > 1 && _.intersection(_.flatMap(tilesPlayableNumbers),reduceTileNumber).length == 0){
-                //console.log(_.intersection(tilesPlayableNumbers,reduceTileNumber).length)
-                //console.log(reduceTileNumber)
-                //console.log(tilesPlayable)
+            if (_.intersection(_.flatMap(tilesPlayableNumbers),reduceTileNumber).length == 0){
                 reduceListTilesNumbers.push(reduceTileNumber);
             }
         })
        
             
-
-         console.log(reduceListTilesNumbers)
          var combinationDupeNumbers = 
          // get only unique arrays
          _.uniqWith(

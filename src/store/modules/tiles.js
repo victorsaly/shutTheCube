@@ -17,7 +17,7 @@ const mutations = {
         state.tiles
             .forEach(function (tile) {
                 tile.forEach(function (t) {
-                    t.isAvailable = true;
+                    t.isAvailable = false;
                     t.isInUse = false;
                     t.isTaken = false;
                 })
@@ -206,6 +206,30 @@ const actions = {
             resolve(sumTaken);
         });
     },
+    setGamePoints: ({ commit, state }) => {
+        return new Promise((resolve, reject) => {
+            var gamePoints = 0;
+            state.tiles.forEach(function (vm) {
+                gamePoints += _.sum(_.filter(vm, function (t) {
+                    return (t.isInUse == true && t.isCollateral == false)
+                }).map(function (t) { return t.index }));
+            });
+            commit('SET_GAME_POINTS', gamePoints);
+            resolve(gamePoints);
+        });
+    },
+    setGameBonus: ({ commit, state }) => {
+        return new Promise((resolve, reject) => {
+            var gameBonus = 0;
+            state.tiles.forEach(function (vm) {
+                gameBonus += _.sum(_.filter(vm, function (t) {
+                    return (t.isInUse == true && t.isCollateral == true)
+                }).map(function (t) { return t.index }));
+            });
+            commit('SET_GAME_BONUS', gameBonus);
+            resolve(gameBonus);
+        });
+    },
     setTiles: ({ commit, state, rootState, dispatch }, payload) => {
 
         return new Promise((resolve, reject) => {
@@ -258,21 +282,31 @@ const actions = {
 
 
             if (payload) {
+                dispatch('setGamePoints')
+                dispatch('setGameBonus')
                 if (state.sumTilesInUse == diceSum) {
                     dispatch('setIsTaken').then(() => {
                         dispatch('sumTilesInUse').then(() => {
                             dispatch('sumTilesTaken').then(() => {
-                                commit('SET_GAME_NOTE', 'Roll the dice');
-                                commit('SET_GAME_ISNEXT', true);
+                                if (state.sumTilesTaken == state.tiles.length * 45){
+                                    commit('SHUT_THE_BOX');
+                                }else{
+                                    commit('SET_GAME_NOTE', 'Roll the dice');
+                                    commit('SET_GAME_ISNEXT', true);
+                                }                                
                                 commit('SET_DICE_IN_USE', false);
                             });
                         });
                     });
-                } else if (titleCombinationFlatten.length <= 0
-
-                ) {
-
-                    commit('GAME_OVER', true);
+                } else if (titleCombinationFlatten.length <= 0) {
+                    dispatch('sumTilesTaken').then(() => {
+                        if (state.sumTilesTaken == state.tiles.length * 45){
+                            commit('SHUT_THE_BOX');
+                        }else{
+                            commit('GAME_OVER', true);
+                        }
+                    })
+                    
                 }
             }
             resolve()

@@ -1,27 +1,19 @@
 <template>
-
-<div class="position" :class="{explosion : isFinished}">
-<div class="value">{{ tweeningValue }}</div> 
-<span>{{title}}</span>
-
-</div>
+<span  v-html="diceHtml"></span> 
 </template>
 <script>
 import TWEEN from "tween";
 export default {
   props: {
-    isAudio:{
-      type: Boolean,
-      required:false
-    },
-    
+   
     value: {
       type: Number,
       required: true
-    },
-    title: {
-      type: String,
-      required: false
+    }
+  },
+  computed:{
+    diceHtml(){
+      return "&#x268" + (Math.abs((this.tweeningValue - 1)) < 0 ? 0 : Math.abs((this.tweeningValue - 1)));
     }
   },
   data: function() {
@@ -54,7 +46,7 @@ export default {
           {
             tweeningValue: endValue
           },
-          500
+          300
         )
         .onUpdate(function() {
           vm.tweeningValue = this.tweeningValue.toFixed(0);
@@ -62,14 +54,6 @@ export default {
         .start();
       animate();
       let self = this;
-     
-      // if (self.isAudio) {     
-      //     var audio = new Audio();
-      //     audio.src = document.querySelector('#tada').src;
-      //     audio.currentTime = 0;
-      //     audio.play();   
-      // }
-
       t.onComplete(function() {
         self.isFinished = true;      
       });
@@ -78,49 +62,19 @@ export default {
 };
 </script>
 <style scoped>
-.value {
-  padding-top: 31px;
-  font-size: 31px;
-}
-span{
-  color: #fefefe;
-}
-.position {
-  width: 100px;
-  height: 100px;
 
-  position: relative;
-  /* left: 0; */
-  top: 0;
+
+span {
+  font-size: 100px;
 }
-.explosion {
-  /* transform: translate(-50%, -50%);  */
-  background: url("../assets/explosion.png") no-repeat;
-  background-position: 0 0;
-  animation: explosion-animation 1s steps(28);
-}
-.explosion:hover {
-  background-position: -2800px 0;
-  transition: background 1s steps(28);
-}
-@keyframes explosion-animation {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: -2800px 0;
-  }
-}
+
 /* Portrait and Landscape */
 @media only screen and (min-device-width: 320px) and (max-device-width: 568px) and (-webkit-min-device-pixel-ratio: 2) {
-  .value {
-    padding-top: 27px;
-    font-size: 25px;
+  span {
+    font-size: 50px;
   }
-  .position {
-    width: 100px;
-    height: auto;
-    top: -10px;
+  .shutTheBox span{
+    font-size: 70px;
   }
 }
 </style>

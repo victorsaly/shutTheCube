@@ -8,10 +8,9 @@
           {isAvailable : t.isAvailable}, 
           {isNotAvailable: !t.isAvailable}, 
           {isTaken : t.isTaken}, 
+          {isCollateral : t.isCollateral}, 
           {isInUse: t.isInUse}, 'animated ' + t.action]"  
-                  
           class="
-          
                       box
                       active 
                       text-black 
@@ -21,9 +20,9 @@
                       rounded  
                       no-underline 
                       animate 
-                      action-button sm:text-sm md:text-lg lg:text-xl xl:text-2xl
-                      
+                      action-button sm:text-sm  xl:text-2xl
                       ">
+                      <!-- md:text-lg lg:text-xl -->
                     <p class="number">{{ t.index }}</p>
                 </div>
          </div>
@@ -44,27 +43,31 @@ Array.prototype.move = function(old_index, new_index) {
   return this; // for testing purposes
 };
 //import delay from 'delay'
-
 export default {
-  
-  props: ["tiles", "index", "allTiles"],
+  props: ["tiles", "index", "allTiles", "clickAudio"],
   computed: {
     diceSum() {
       return this.$store.getters.diceSum;
     },
-    sumTilesInUse(){
-      return this.$store.getters.sumTilesInUse
+    sumTilesInUse() {
+      return this.$store.getters.sumTilesInUse;
     }
   },
   methods: {
     selectTile: function(tile, position, index) {
-      if (tile.isAvailable && !tile.isTaken && (this.sumTilesInUse + tile.index <= this.diceSum)) {
+      if (
+        tile.isAvailable &&
+        !tile.isTaken &&
+        this.sumTilesInUse + tile.index <= this.diceSum
+      ) {
         //var audio = new Audio('../assets/click.mp3');
 
-        const audio = new Audio();
-        audio.src = document.querySelector('#click').src;
-        audio.currentTime = 0;
-        audio.play();
+        //this.clickAudio.pause();
+
+        if (this.clickAudio) {
+          this.clickAudio.load();
+          this.clickAudio.play();
+        }
 
         //get number of rows
         var numberOfRows = this.allTiles.length;
@@ -76,7 +79,10 @@ export default {
           for (var i = this.index - 1; i > -1; i--) {
             // where i is my new index;
             //console.log(i);
-            if (this.allTiles[i][position].index == tile.index && !this.allTiles[i][position].isTaken) {
+            if (
+              this.allTiles[i][position].index == tile.index &&
+              !this.allTiles[i][position].isTaken
+            ) {
               //console.log("Tile from top array" + i + " is the same");
               this.setTile(this.allTiles[i][position], i);
             } else {
@@ -84,7 +90,10 @@ export default {
             }
           }
         } else if (this.index == 1) {
-          if (this.allTiles[0][position].index == tile.index && !this.allTiles[0][position].isTaken) {
+          if (
+            this.allTiles[0][position].index == tile.index &&
+            !this.allTiles[0][position].isTaken
+          ) {
             //console.log("Tile from first level array 0 is the same");
             this.setTile(this.allTiles[0][position], 0);
           }
@@ -92,23 +101,24 @@ export default {
 
         //find similar numbers from the lower array level
         for (var i = this.index + 1; i < numberOfRows; i++) {
-          if (this.allTiles[i][position].index == tile.index && !this.allTiles[i][position].isTaken) {
+          if (
+            this.allTiles[i][position].index == tile.index &&
+            !this.allTiles[i][position].isTaken
+          ) {
             //console.log("Tile from bottom array " + (i + 1) + " is the same");
             this.setTile(this.allTiles[i][position], i);
           } else {
             break;
           }
         }
-
         this.setTile(tile, index);
-      }else{
+      } else {
         //alert('unavailable')
         //Make an animation that it's not available pending....
         this.setTileShake(tile, index);
       }
     },
     async setTileShake(tile, index) {
-     
       // small hack to reset it by removing it before changing the target
       var _tile = Object.assign({}, tile);
       _tile.action = "shake";
@@ -120,13 +130,14 @@ export default {
           setTimeout(() => {
             var _tile = Object.assign({}, tile);
             _tile.action = "";
-            this.$store
-              .dispatch("setTileByIndex", { tile: _tile, index: index });
+            this.$store.dispatch("setTileByIndex", {
+              tile: _tile,
+              index: index
+            });
           }, 500);
         });
     },
     async setTile(tile, index) {
-     
       // small hack to reset it by removing it before changing the target
       var _tile = Object.assign({}, tile);
       _tile.action = "rotateIn";
@@ -145,7 +156,7 @@ export default {
             this.$store
               .dispatch("setTileByIndex", { tile: _tile, index: index })
               .then(() => {
-                self.changeTile(index, tile.id);                
+                self.changeTile(index, tile.id);
               });
           }, 500);
         });
@@ -155,31 +166,21 @@ export default {
 
       // });
     },
-    //     setTile:function(tile, index){
-    //         var _tile = Object.assign({}, tile);
-    //         _tile.action = "rotateIn";
-    //         _tile.isInUse = true;
-    //         this.$store.dispatch("setTileByIndex", { tile: _tile, index: index }).then(delay(1)).then(()=>{
-    // this.changeTile(index, tile.id);
-    //         });
-
-    //     },
     changeTile: function(tileIndex, id) {
       var self = this;
-       self.$store.commit("SET_IS_LOADING",true);
+      self.$store.commit("SET_IS_LOADING", true);
       this.$store
         .dispatch("moveTiles", { tileIndex: tileIndex, id: id })
         .then(() => {
-         
-          self.$store.dispatch("setTiles", tileIndex == self.index).then(()=>{
-            self.$store.commit("SET_IS_LOADING",false);
+          self.$store.dispatch("setTiles", tileIndex == self.index).then(() => {
+            self.$store.commit("SET_IS_LOADING", false);
           });
         });
-      // this.tiles.move(
-      //   _.findIndex(this.tiles, ["index", index]),
-      //   this.tiles.length - 1
-      // );
     }
+  },
+  created() {
+    //console.log('created tiles');
+    //this.clickAudio.load();
   }
 };
 </script>
@@ -190,10 +191,6 @@ export default {
 .flip-list-move {
   transition: transform 0.5s;
 }
-h1,
-h2 {
-  font-weight: normal;
-}
 ul {
   list-style-type: none;
   padding: 0;
@@ -201,9 +198,6 @@ ul {
 li {
   display: inline-block;
   margin: 0 5px 0 0;
-}
-a {
-  color: #42b983;
 }
 
 .rotateIn {
@@ -233,49 +227,54 @@ a {
   color: #333;
 }
 .isTaken {
-  color: gray;
+  color: white !important;
   cursor: not-allowed;
   opacity: 0.3 !important;
-  background: gray;
+  background: #222;
 }
 
-
 .isInUse {
-    color: yellow !important;
-    cursor: not-allowed;
-    background: gray;
-    opacity: 0.3;
+  color: yellow !important;
+  cursor: not-allowed;
+  background: gray;
+  opacity: 0.7;
+}
+
+.isCollateral {
+  color: greenyellow !important;
+  cursor: not-allowed;
+  background: gray;
+  /* opacity: 0.3; */
 }
 
 .isAvailable {
   color: #000;
-   -webkit-transition: background 0.2s linear;
-    -moz-transition: background 0.2s linear;
-    -o-transition: background 0.2s linear;
-    transition: background 0.2s linear;
+  -webkit-transition: background 0.2s linear;
+  -moz-transition: background 0.2s linear;
+  -o-transition: background 0.2s linear;
+  transition: background 0.2s linear;
 }
 
 .isNotAvailable {
-    color: #444 !important;
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: cadetblue;
-     -webkit-transition: background 0.3s linear;
-    -moz-transition: background 0.3s linear;
-    -o-transition: background 0.3s linear;
-    transition: background 0.3s linear;
+  color: #444 !important;
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: cadetblue;
+  -webkit-transition: background 0.3s linear;
+  -moz-transition: background 0.3s linear;
+  -o-transition: background 0.3s linear;
+  transition: background 0.3s linear;
 }
-
 
 .explosion {
   width: 100px;
   height: 100px;
-   position: absolute; 
+  position: absolute;
   top: -25px;
-  background: url('../assets/explosion.png') no-repeat;
+  background: url("../assets/explosion.png") no-repeat;
   background-position: 0 0;
   animation: explosion-animation 1s steps(28);
-      margin-left: -29px;
+  margin-left: -29px;
 }
 .explosion:hover {
   background-position: -2800px 0;
@@ -290,33 +289,36 @@ a {
   }
 }
 
-
 /* Portrait */
-@media only screen 
-  and (max-device-width: 320px) 
-  and (-webkit-min-device-pixel-ratio: 2)
-  and (orientation: portrait) {
-    .box {      
-      width: 30px !important;
-      height: 28px !important;   
-      line-height: 160% !important;   
-    }
+@media only screen and (max-device-width: 320px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait) {
+  .box {
+    width: 30px !important;
+    height: 28px !important;
+    line-height: 160% !important;
+  }
+  
 }
 
 /* Portrait and Landscape */
-@media only screen 
-  and (min-device-width: 320px) 
-  and (max-device-width: 568px)
-  and (-webkit-min-device-pixel-ratio: 2) {
-    .box {
-  height: 36px;
-  width: 35px;
-  line-height: 200%;
-  cursor: pointer;
-  float: left;
-  border-bottom: 4px solid #444;
-}
+@media only screen and (min-device-width: 320px) and (max-device-width: 568px) and (-webkit-min-device-pixel-ratio: 2) {
+  .box {
+    height: 36px;
+    width: 35px;
+    line-height: 200%;
+    cursor: pointer;
+    float: left;
+    border-bottom: 4px solid #444;
+  }
 
+  .shutTheBox .box{
+     width: 70px !important;
+    height: 68px !important;
+    font-size:40px;    
+    line-height: 160% !important;
+  }
+  .shutTheBox li{
+  
+  margin: 10px 15px 0 15px;
+  }
 }
-
 </style>

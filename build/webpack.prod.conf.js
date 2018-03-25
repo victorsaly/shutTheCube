@@ -10,8 +10,10 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const OptimizeCSSPlugin = require('optimize-css-assets-webpack-plugin')
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
+const WebpackAutoInject = require('webpack-auto-inject-version');
 
 const env = require('../config/prod.env')
+
 
 const webpackConfig = merge(baseWebpackConfig, {
   module: {
@@ -28,6 +30,19 @@ const webpackConfig = merge(baseWebpackConfig, {
     chunkFilename: utils.assetsPath('js/[id].[chunkhash].js')
   },
   plugins: [
+    new WebpackAutoInject({
+      //PACKAGE_JSON_PATH: '../package.json',
+
+      components: {
+        AutoIncreaseVersion: true,
+      },
+      componentsOptions: {
+        AutoIncreaseVersion: {
+          runInWatchMode: false // it will increase version with every single build!
+        }
+      }
+    }),
+
     // http://vuejs.github.io/vue-loader/en/workflow/production.html
     new webpack.DefinePlugin({
       'process.env': env

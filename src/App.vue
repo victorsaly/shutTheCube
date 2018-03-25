@@ -1,6 +1,6 @@
 <template>
  <div 
- :class="[{isMobile : isMobile && tilesLength > 1},  {'container' : !isMobile}]"
+ :class="[{isMobile : isMobile && tilesLength > 1}, {shutTheBox : tilesLength == 1},  {'container' : !isMobile}]"
  class="w-full h-screen bg-gradient-brand  mx-auto relative ">  
   <div id="warning-message">
 
@@ -21,7 +21,7 @@
   </div>
   <div id="app">
   <!-- <transition name="fade" :duration="{ enter: 1000, leave: 1000 }" mode="in-out"> -->
-  <div class="header">
+  <div :class="{header:tilesLength > 2 }">
    <app-header  v-if="gameIsVisible"></app-header>
   </div>
    <template v-if="!gameIsVisible">
@@ -32,6 +32,8 @@
            <!-- overflow-y-scroll -->
             <div class="mb-4">
                  <img src="./assets/Logo_STB.png" style="max-height:30px;"> 
+                 <span style="font-size:9px;position:absolute;">v{{version}}
+                 </span>
             </div>
             <div class="mb-8">
                 <p>Select the game you want to play.</p>
@@ -62,12 +64,13 @@
 <script>
 import Header from "./components/Header";
 import $ from "./services/gameServices";
-
+import {version} from "../package.json"
 export default {
   name: "app",
   data: function() {
     return {
-      isMobile: false
+      isMobile: false,
+      version:version
     };
   },
   computed: {
@@ -82,8 +85,8 @@ export default {
   },
   methods: {
     setGame(size) {
-      this.$store.dispatch("initGame");
       this.$store.dispatch("initTiles", size);
+      this.$store.dispatch("restartGame");
       this.$store.commit("SET_GAME_IS_VISIBLE", true);
     }
   },
@@ -93,9 +96,18 @@ export default {
   created() {
     this.$store.dispatch("initGame");
     this.isMobile = $.isMobile();
+  },
+  mounted() {
+    window.addToHomescreen({
+      maxDisplayCount: 3,
+      displayPace: 0,
+      skipFirstVisit:false
+    });
+  },
+  destroyed() {
+    //this.song.stop()
   }
 };
-
 </script>
 
 <style>
@@ -115,8 +127,56 @@ body {
   -o-user-select: none;
   user-select: none;
   /* margin-top: 20px; */
-  background: #dedede;
 }
+body {
+  background: #51d88a;
+  background: linear-gradient(0deg, #1a8b4b, #51d88a, #38c172, #1b8649);
+  /* background-size: 100% 100%; */
+  /* background: linear-gradient(-45deg, #EE7752, #E73C7E, #23A6D5, #23D5AB);
+	background-size: 400% 400%;
+	-webkit-animation: Gradient 15s ease infinite;
+	-moz-animation: Gradient 15s ease infinite;
+	animation: Gradient 15s ease infinite; */
+}
+.container{
+  max-width: 570px;
+}
+@-webkit-keyframes Gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@-moz-keyframes Gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes Gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 a {
   color: #222;
 }

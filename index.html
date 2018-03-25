@@ -14,10 +14,11 @@
   <link rel="shortcut icon" href="static/favicon.ico?v=M4yPzROyvm">
   <meta name="apple-mobile-web-app-title" content="ShutTheCube">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="white">
   <meta name="application-name" content="ShutTheCube">
   <meta name="msapplication-TileColor" content="#2b5797">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#51D88A">
   <title>Shut The Cube</title>
 </head>
 
@@ -27,14 +28,22 @@
   <!-- sound files -->
   <audio id="click" src="static/click.mp3"></audio>
   <audio id="click2" src="static/click2.mp3"></audio>
-  <audio id="tada" src="static/tada.mp3"></audio>
+  <!-- <audio id="tada" src="static/tada.mp3"></audio> -->
 </body>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-116395322-1"></script>
 <script>
-  //https://stackoverflow.com/questions/37808180/disable-viewport-zooming-ios-10-safari
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-116395322-1');
+</script>
+
+<script>
   document.addEventListener('touchmove', function (event) {
     if (event.scale !== 1) { event.preventDefault(); }
   }, false);
-
   var lastTouchEnd = 0;
   document.addEventListener('touchend', function (event) {
     var now = (new Date()).getTime();
@@ -43,7 +52,6 @@
     }
     lastTouchEnd = now;
   }, false);
-
   document.documentElement.addEventListener('touchmove', function (event) {
     event.preventDefault();      
 }, false);

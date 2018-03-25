@@ -4,7 +4,7 @@ import _ from 'lodash'
 
 const state = {
     game : [],
-    gameIsVisible: false
+    gameIsVisible: false,
 };
 
 
@@ -17,6 +17,16 @@ const mutations = {
     },
     'SET_IS_LOADING' (state, bool){
         state.game.isLoading = bool;
+    },
+    'SET_GAME_BONUS'(state, bonus){
+        state.game.gameBonus= bonus;
+    },
+    'SET_GAME_POINTS'(state, points){
+        state.game.gamePoints= points;
+    },
+    'SET_GAME_STATE'(state, status){
+        // state.game.isNext = status;
+        state.game.state= status;
     },
     'SET_GAME_ISNEXT'(state, status){
         // state.game.isNext = status;
@@ -42,6 +52,12 @@ const mutations = {
         state.game.diceInUse=false;
 
     },
+    'SHUT_THE_BOX'(state){                
+        state.game.note='Shut The Box';
+        state.game.state='isWin'
+        state.game.diceInUse=false;
+        state.game.timeleft = 0;    
+    },
     'RESTART_GAME'(state){
 
         state.game.numberPlay = 0;
@@ -58,6 +74,7 @@ const mutations = {
             d.html = '&#x268' + (d.number - 1);
         });
         state.game.diceInUse = true;
+       // debugger;
         state.game.numberPlay++;
     }
 };
@@ -68,6 +85,7 @@ const actions = {
         commit('SET_SUM_TILES_IN_USE', 0);
         if (payload==null){
             commit('SET_GAME', game);
+            commit('SET_GAME_STATE', 'isStart')
         }else {
             commit('SET_GAME', payload);
         }
@@ -99,8 +117,11 @@ const actions = {
     },
     restartGame:({commit, dispatch}) => {
         commit('RESTART_TILES');
-        dispatch('shuffleTiles');
+        //dispatch('shuffleTiles');
         commit('RESTART_GAME');
+        commit('SET_SUM_TILES_TAKEN', 0);
+        commit('SET_SUM_TILES_IN_USE', 0);
+        commit("SET_IS_LOADING", false);
     },
 };
 
@@ -119,6 +140,12 @@ const getters = {
     gameIsLoading: state => {
         return state.game.isLoading;
     },
+    gamePoints: state => {
+        return state.game.gamePoints;
+    },
+    gameBonus: state => {
+        return state.game.gameBonus;
+    }
 };
 
 export default {

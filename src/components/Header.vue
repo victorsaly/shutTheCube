@@ -1,6 +1,5 @@
 <template>
 <div>
-  <!-- <audio ref="audioElm" id="tada" src="../assets/tada.mp3"></audio> -->
 <ul class="list-reset flex justify-between w-full items-center  mb-2">
             <li class="w-12">
                  <router-link to="/game" class="inline-block text-black text-center bg-green-light px-2 py-2 m-2 ml-2 border-b-4 border-black rounded-b  no-underline w-10">
@@ -21,8 +20,7 @@
                     </router-link>   
                 
             </li>
-            <!-- <li>{{user}}</li> -->
-<li>
+<li style="color:greenyellow">
   
   <animated-integer :title="'Play'" v-bind:value="numberPlay"></animated-integer>
   
@@ -30,8 +28,8 @@
             <li class="flex-grow " id="logo">
                <img src="../assets/Logo_STB.png" style="max-height:30px;"> 
             </li>
-<li>
-  <animated-integer :isAudio="true" v-bind:title="'Points'" v-bind:value="pointsTotal"></animated-integer>
+<li style="color:yellow">
+  <animated-integer :isAudio="true" v-bind:title="'Total Points'" v-bind:value="pointsTotal"></animated-integer>
 </li>
             <li class="w-12 mr-2">
 
