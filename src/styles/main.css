@@ -1,0 +1,199 @@
+@import "tailwindcss";
+
+/*
+ * The game was written against Tailwind 0.x, whose colour scale ("light" /
+ * "lighter" suffixes) was removed in Tailwind 1.0. Those names are re-declared
+ * here as theme tokens so the original design is reproduced exactly, and so the
+ * palette is now pinned in this repo rather than fetched from a CDN.
+ * Values taken verbatim from tailwindcss@0.7.4.
+ */
+@theme {
+  --color-black: #22292f;
+  --color-white: #fff;
+
+  --color-grey-darker: #606f7b;
+  --color-grey-dark: #8795a1;
+  --color-grey: #b8c2cc;
+  --color-grey-light: #dae1e7;
+
+  --color-red-light: #ef5753;
+  --color-red-lighter: #f9acaa;
+
+  --color-yellow-light: #fff382;
+  --color-yellow-lighter: #fff9c2;
+
+  --color-green-light: #51d88a;
+  --color-green-lighter: #a2f5bf;
+
+  --color-teal: #4dc0b5;
+  --color-teal-dark: #38a89d;
+
+  --color-blue: #3490dc;
+  --color-blue-dark: #2779bd;
+  --color-blue-light: #6cb2eb;
+
+  --color-indigo-lighter: #b2b7ff;
+
+  --color-purple-light: #a779e9;
+  --color-purple-lighter: #d6bbfc;
+}
+
+/* Utilities that existed in Tailwind 0.x and were removed in later majors. */
+@utility list-reset {
+  list-style: none;
+  padding: 0;
+}
+@utility no-outline {
+  outline: 0;
+}
+@utility flex-no-shrink {
+  flex-shrink: 0;
+}
+
+/* Custom utilities the original markup referenced but never defined. */
+@utility bg-gradient-brand {
+  background: linear-gradient(0deg, #1a8b4b, #51d88a, #38c172, #1b8649);
+}
+@utility bg-modal {
+  background-color: rgb(34 41 47 / 45%);
+}
+
+/* ---------- global app styles (ported from the old App.vue) ---------- */
+
+#app,
+body {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #222;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body {
+  margin: 0;
+  background: #51d88a;
+  background: linear-gradient(0deg, #1a8b4b, #51d88a, #38c172, #1b8649);
+}
+
+a {
+  color: #222;
+}
+
+.container {
+  max-width: 570px;
+}
+
+/* Vue 3 renamed the transition classes: *-enter became *-enter-from. */
+.fade-enter-active,
+.fade-leave-active {
+  transition-property: opacity;
+  transition-duration: 0.25s;
+}
+.fade-leave-active {
+  transition-duration: 0s;
+  transition-delay: 0s;
+}
+.fade-enter-active {
+  transition-delay: 0.25s;
+}
+.fade-enter-from,
+.fade-leave-active {
+  opacity: 0;
+}
+
+@media only screen and (min-device-width: 300px) and (max-device-width: 568px) and (-webkit-min-device-pixel-ratio: 2) {
+  .header {
+    height: 70px;
+  }
+}
+
+/* The board only lays out sensibly in portrait on a phone. */
+#warning-message {
+  display: none;
+}
+@media only screen and (orientation: landscape) and (max-width: 1024px) {
+  .isMobile #app {
+    display: none;
+  }
+  .isMobile #warning-message {
+    display: block;
+  }
+}
+@media only screen and (orientation: portrait) {
+  .isMobile #warning-message {
+    display: none;
+  }
+}
+
+/*
+ * The two animate.css animations the game used, inlined. Previously pulled from
+ * a CDN, which is the same fragility that broke the Tailwind import.
+ */
+.animated {
+  animation-duration: 0.5s;
+  animation-fill-mode: both;
+}
+@keyframes rotateIn {
+  from {
+    transform-origin: center;
+    transform: rotate3d(0, 0, 1, -200deg);
+    opacity: 0;
+  }
+  to {
+    transform-origin: center;
+    transform: none;
+    opacity: 1;
+  }
+}
+.rotateIn {
+  animation-name: rotateIn;
+}
+@keyframes shake {
+  from,
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translate3d(-10px, 0, 0);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translate3d(10px, 0, 0);
+  }
+}
+.shake {
+  animation-name: shake;
+}
+@keyframes flip {
+  from {
+    transform: perspective(400px) rotate3d(0, 1, 0, -360deg);
+    animation-timing-function: ease-out;
+  }
+  40% {
+    transform: perspective(400px) translate3d(0, 0, 150px) rotate3d(0, 1, 0, -190deg);
+    animation-timing-function: ease-out;
+  }
+  50% {
+    transform: perspective(400px) translate3d(0, 0, 150px) rotate3d(0, 1, 0, -170deg);
+    animation-timing-function: ease-in;
+  }
+  80% {
+    transform: perspective(400px) scale3d(0.95, 0.95, 0.95);
+    animation-timing-function: ease-in;
+  }
+  to {
+    transform: perspective(400px);
+    animation-timing-function: ease-in;
+  }
+}
+.flip {
+  backface-visibility: visible;
+  animation-name: flip;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated {
+    animation: none !important;
+  }
+}

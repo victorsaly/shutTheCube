@@ -1,0 +1,22 @@
+{
+  "name": "Shut The Cube",
+  "short_name": "ShutTheCube",
+  "icons": [
+    {
+      "src": "android-chrome-192x192.png?v=M4yPzROyvm",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "android-chrome-256x256.png?v=M4yPzROyvm",
+      "sizes": "256x256",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#51d88a",
+  "background_color": "#1a8b4b",
+  "start_url": "https://victorsaly.github.io/shutTheCube/",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "description": "A dice-and-tiles game based on the classic Shut The Box."
+}
