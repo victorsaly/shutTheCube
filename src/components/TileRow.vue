@@ -4,82 +4,60 @@ import { useGameStore } from '@/stores/game'
 const props = defineProps({
   tiles: { type: Array, required: true },
   rowIndex: { type: Number, required: true },
-  allTiles: { type: Array, required: true },
+  /** [row, col] of the roving-tabindex cursor, so the grid has one tab stop. */
+  cursor: { type: Array, default: () => [0, 0] },
   playClick: { type: Function, default: () => {} }
 })
 
 const game = useGameStore()
 
-/** Settle the animation, slide the tile away, then re-evaluate the board. */
-const playTile = (rowIndex, tile) => {
-  game.useTile(rowIndex, tile.id, rowIndex !== props.rowIndex)
+const selectTile = (position) => {
+  const claimed = game.playTile(props.rowIndex, position)
+  if (claimed.length === 0) return
+
+  props.playClick()
   setTimeout(() => {
-    game.settleTile(rowIndex, tile.id)
-    game.isLoading = true
-    game.compactRow(rowIndex, tile.id)
-    // Only the row that was actually clicked resolves the turn; the matching
-    // tiles it pulls in from other rows must not resolve it a second time.
-    game.refreshAvailability(rowIndex === props.rowIndex)
-    game.isLoading = false
+    claimed.forEach(({ rowIndex, tile }) => {
+      game.settleTile(rowIndex, tile.id)
+      game.compactRow(rowIndex, tile.id)
+    })
+    game.refreshAvailability(true)
   }, 500)
 }
 
-/**
- * Playing a tile also claims the same face in adjacent rows at the same
- * position, running outward until the run breaks. That is the cube mechanic:
- * a column of matching faces collapses together, and the extra tiles score as
- * a bonus rather than counting toward the roll.
- */
-const claimMatchingRuns = (position, face) => {
-  const matches = (i) =>
-    props.allTiles[i]?.[position]?.index === face && !props.allTiles[i][position].isTaken
-
-  for (let i = props.rowIndex - 1; i >= 0 && matches(i); i--) {
-    playTile(i, props.allTiles[i][position])
-  }
-  for (let i = props.rowIndex + 1; i < props.allTiles.length && matches(i); i++) {
-    playTile(i, props.allTiles[i][position])
-  }
-}
-
-const selectTile = (tile, position) => {
-  const isLegal =
-    tile.isAvailable && !tile.isTaken && game.sumTilesInUse + tile.index <= game.diceSum
-
-  if (!isLegal) {
-    game.rejectTile(props.rowIndex, tile.id, false)
-    return
-  }
-
-  props.playClick()
-  claimMatchingRuns(position, tile.index)
-  playTile(props.rowIndex, tile)
+const stateOf = (t) => {
+  if (t.isTaken) return 'Shut'
+  if (t.isInUse) return t.isCollateral ? 'Selected as bonus' : 'Selected'
+  return t.isAvailable ? 'Playable' : 'Not playable'
 }
 </script>
 
 <template>
-  <TransitionGroup name="flip-list" tag="ul">
-    <li v-for="(t, position) in tiles" :key="t.id">
-      <div style="position: relative">
-        <div :class="{ explosion: t.isExplosion }" />
+  <TransitionGroup name="flip-list" tag="ul" role="row">
+    <li v-for="(t, position) in tiles" :key="t.id" role="gridcell">
+      <div class="cell">
+        <div v-if="t.isExplosion" class="explosion" aria-hidden="true" />
         <button
           type="button"
-          class="box text-black text-center border-b-4 border-black rounded no-underline animated"
+          class="box animated"
           :class="[
             t.cssClass,
             t.action,
             {
               isAvailable: t.isAvailable,
-              isNotAvailable: !t.isAvailable,
+              isNotAvailable: !t.isAvailable && !t.isTaken && !t.isInUse,
               isTaken: t.isTaken,
               isCollateral: t.isCollateral,
-              isInUse: t.isInUse
+              isInUse: t.isInUse,
+              isHinted: game.hintedIds.includes(t.id)
             }
           ]"
+          :data-cell="`${rowIndex}-${position}`"
+          :tabindex="cursor[0] === rowIndex && cursor[1] === position ? 0 : -1"
           :disabled="t.isTaken"
-          :aria-label="`Tile ${t.index}`"
+          :aria-label="`Tile ${t.index}. ${stateOf(t)}`"
           :aria-pressed="t.isInUse"
-          @click="selectTile(t, position)"
+          @click="selectTile(position)"
         >
           <span class="number">{{ t.index }}</span>
         </button>
@@ -93,112 +71,151 @@ const selectTile = (tile, position) => {
   transition: transform 0.5s;
 }
 ul {
-  list-style-type: none;
+  list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0 0 var(--gap);
+  display: flex;
+  justify-content: center;
+  gap: var(--gap);
 }
 li {
-  display: inline-block;
-  margin: 0 5px 0 0;
+  display: block;
+}
+.cell {
+  position: relative;
 }
 
 .box {
-  height: 45px;
-  width: 45px;
-  line-height: 180%;
-  cursor: pointer;
-  float: left;
-  border-bottom: 4px solid #444;
-  font: inherit;
-  font-size: 1rem;
+  width: var(--tile);
+  height: var(--tile);
+  font-family: inherit;
+  font-size: var(--tile-font);
+  font-weight: 600;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
+  cursor: pointer;
+  color: #22292f;
+  border: 0;
+  border-bottom: max(2px, calc(var(--tile) * 0.09)) solid #3d4852;
+  border-radius: max(3px, calc(var(--tile) * 0.14));
+  transition:
+    transform 0.12s ease,
+    filter 0.2s linear,
+    background 0.2s linear;
 }
 .box:focus-visible {
-  outline: 2px solid #2779bd;
-  outline-offset: 2px;
+  outline: 3px solid #1a3d2b;
+  outline-offset: 3px;
+  z-index: 2;
+}
+.isAvailable {
+  box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
+}
+.isAvailable:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+}
+.box:active:not(:disabled) {
+  transform: translateY(1px);
+  border-bottom-width: 2px;
 }
 
 .isTaken {
-  color: white !important;
+  color: #f5f7f6 !important;
   cursor: not-allowed;
-  opacity: 0.3 !important;
-  background: #222;
+  background: #1f2a24 !important;
+  border-bottom-color: #16201a;
+  opacity: 0.55;
 }
 .isInUse {
-  color: yellow !important;
+  color: #22292f !important;
   cursor: not-allowed;
-  background: gray;
-  opacity: 0.7;
+  background: #fff382 !important;
+  box-shadow: inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #22292f;
 }
 .isCollateral {
-  color: greenyellow !important;
-  cursor: not-allowed;
-  background: gray;
+  color: #22292f !important;
+  background: #a2f5bf !important;
+  box-shadow: inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #1a8b4b;
 }
-.isAvailable {
-  color: #000;
-  transition: background 0.2s linear;
-}
+/*
+ * The unavailable state used to be #444 on cadetblue at 50% opacity — 3.19:1,
+ * below the 4.5:1 WCAG AA needs, and it was the state most tiles were in most
+ * of the time. A white veil over the tile's own colour fades it while moving it
+ * toward white, so the dark number can only get more readable whatever the hue
+ * underneath. Worst case across the nine colours is 8.49:1.
+ *
+ * A `filter` would have been the obvious tool but it applies to the text too,
+ * and darkening the red tile took it to 2.6:1 — worse than the bug being fixed.
+ */
 .isNotAvailable {
-  color: #444 !important;
-  opacity: 0.5;
+  color: #22292f !important;
   cursor: not-allowed;
-  background: cadetblue;
-  transition: background 0.3s linear;
+  background-image: linear-gradient(rgb(255 255 255 / 55%), rgb(255 255 255 / 55%));
+  /*
+   * The veil alone reads as too similar to a playable tile at a glance, so the
+   * unplayable ones also sit back and lose their raised edge. Shape and size
+   * carry the signal, which keeps it legible for colour-blind players and
+   * leaves the contrast ratio untouched.
+   */
+  transform: scale(0.88);
+  border-bottom-color: transparent;
+  box-shadow: inset 0 0 0 1px rgb(34 41 47 / 12%);
+}
+.isHinted {
+  animation: hint-pulse 1s ease-in-out 3;
+  box-shadow: 0 0 0 max(2px, calc(var(--tile) * 0.07)) #22292f;
+}
+@keyframes hint-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.09);
+  }
 }
 
 .explosion {
-  width: 100px;
-  height: 100px;
   position: absolute;
-  top: -25px;
+  inset: 50% auto auto 50%;
+  width: calc(var(--tile) * 2.2);
+  height: calc(var(--tile) * 2.2);
+  translate: -50% -50%;
   background: url('../assets/explosion.png') no-repeat;
-  background-position: 0 0;
-  animation: explosion-animation 1s steps(28);
-  margin-left: -29px;
+  background-size: calc(var(--tile) * 61.6) calc(var(--tile) * 2.2);
+  animation: explosion-animation 0.9s steps(28);
   pointer-events: none;
+  z-index: 3;
 }
 @keyframes explosion-animation {
   0% {
     background-position: 0 0;
   }
   100% {
-    background-position: -2800px 0;
-  }
-}
-
-@media only screen and (max-device-width: 320px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait) {
-  .box {
-    width: 30px !important;
-    height: 28px !important;
-    line-height: 160% !important;
-  }
-}
-
-@media only screen and (min-device-width: 320px) and (max-device-width: 568px) and (-webkit-min-device-pixel-ratio: 2) {
-  .box {
-    height: 36px;
-    width: 35px;
-    line-height: 200%;
-  }
-  .shutTheBox .box {
-    width: 70px !important;
-    height: 68px !important;
-    font-size: 40px;
-    line-height: 160% !important;
-  }
-  .shutTheBox li {
-    margin: 10px 15px 0 15px;
+    background-position: calc(var(--tile) * -61.6) 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .flip-list-move {
+  .flip-list-move,
+  .box {
     transition: none;
   }
-  .explosion {
+  .isNotAvailable {
+    transform: none;
+    opacity: 0.85;
+  }
+  .explosion,
+  .isHinted {
     animation: none;
-    background: none;
+  }
+  .isHinted {
+    outline: 3px dashed #22292f;
+    outline-offset: 2px;
   }
 }
 </style>

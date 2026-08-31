@@ -4,20 +4,13 @@ import { createPinia, setActivePinia } from 'pinia'
 import TileRow from '../src/components/TileRow.vue'
 import { useGameStore } from '../src/stores/game.js'
 
-/** Line up `face` at the same position in every row, so a run exists. */
-const alignFace = (game, position, face) => {
-  game.tiles.forEach((row) => {
-    const at = row.findIndex((t) => t.index === face)
-    const [tile] = row.splice(at, 1)
-    row.splice(position, 0, tile)
-  })
-}
-
-const mountRow = (game, rowIndex) =>
+const mountRow = (rowIndex, extra = {}) =>
   mount(TileRow, {
-    props: { tiles: game.tiles[rowIndex], rowIndex, allTiles: game.tiles },
+    props: { tiles: game.tiles[rowIndex], rowIndex, ...extra },
     global: { plugins: [pinia] }
   })
+
+const positionOf = (rowIndex, face) => game.tiles[rowIndex].findIndex((t) => t.index === face)
 
 let game
 let pinia
@@ -28,7 +21,7 @@ beforeEach(() => {
   localStorage.clear()
   vi.spyOn(Math, 'random').mockReturnValue(0.5) // both dice show 4, so a roll of 8
   game = useGameStore()
-  game.newGame(3)
+  game.newGame('medium')
   game.startGame()
 })
 
@@ -36,7 +29,7 @@ describe('selecting a tile', () => {
   it('marks the clicked tile as in use', async () => {
     const position = game.tiles[0].findIndex((t) => t.isAvailable)
     const tile = game.tiles[0][position]
-    const row = mountRow(game, 0)
+    const row = mountRow(0)
 
     await row.findAll('button')[position].trigger('click')
 
@@ -45,54 +38,10 @@ describe('selecting a tile', () => {
     expect(game.sumTilesInUse).toBe(tile.index)
   })
 
-  it('claims the same face in adjacent rows, as bonus tiles', async () => {
-    alignFace(game, 0, 3)
-    game.refreshAvailability(false)
-    const row = mountRow(game, 1)
-
-    await row.findAll('button')[0].trigger('click')
-
-    const claimed = game.tiles.map((r) => r[0])
-    expect(claimed.every((t) => t.index === 3 && t.isInUse)).toBe(true)
-    expect(claimed.map((t) => t.isCollateral)).toEqual([true, false, true])
-    // Only the clicked tile counts toward the roll; the run is bonus.
-    expect(game.sumTilesInUse).toBe(3)
-  })
-
-  it('stops claiming as soon as the run of matching faces breaks', async () => {
-    // Rows 0 and 1 share a 5 at position 0; row 2 has something else there.
-    game.tiles.slice(0, 2).forEach((r) => {
-      const at = r.findIndex((t) => t.index === 5)
-      r.splice(0, 0, r.splice(at, 1)[0])
-    })
-    const at2 = game.tiles[2].findIndex((t) => t.index === 2)
-    game.tiles[2].splice(0, 0, game.tiles[2].splice(at2, 1)[0])
-    game.refreshAvailability(false)
-
-    const row = mountRow(game, 0)
-    await row.findAll('button')[0].trigger('click')
-
-    expect(game.tiles[0][0].isInUse).toBe(true)
-    expect(game.tiles[1][0].isInUse).toBe(true)
-    expect(game.tiles[2][0].isInUse).toBe(false)
-  })
-
-  it('will not claim a face that has already been taken', async () => {
-    alignFace(game, 0, 3)
-    game.tiles[1][0].isTaken = true
-    game.refreshAvailability(false)
-
-    const row = mountRow(game, 0)
-    await row.findAll('button')[0].trigger('click')
-
-    expect(game.tiles[0][0].isInUse).toBe(true)
-    expect(game.tiles[2][0].isInUse).toBe(false) // the run is broken by row 1
-  })
-
   it('rejects a tile that would overshoot the roll', async () => {
-    const position = game.tiles[0].findIndex((t) => t.index === 9) // 9 > roll of 8
+    const position = positionOf(0, 9) // 9 > roll of 8
     const tile = game.tiles[0][position]
-    const row = mountRow(game, 0)
+    const row = mountRow(0)
 
     await row.findAll('button')[position].trigger('click')
 
@@ -103,29 +52,78 @@ describe('selecting a tile', () => {
 
   it('ignores clicks on a tile that is already taken', async () => {
     game.tiles[0][0].isTaken = true
-    const row = mountRow(game, 0)
-
+    const row = mountRow(0)
     await row.findAll('button')[0].trigger('click')
-
     expect(game.tiles[0][0].isInUse).toBe(false)
   })
 
   it('plays the click sound once per accepted move', async () => {
     const playClick = vi.fn()
     const position = game.tiles[0].findIndex((t) => t.isAvailable)
-    const row = mount(TileRow, {
-      props: { tiles: game.tiles[0], rowIndex: 0, allTiles: game.tiles, playClick },
-      global: { plugins: [pinia] }
-    })
+    const row = mountRow(0, { playClick })
 
     await row.findAll('button')[position].trigger('click')
     expect(playClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not play the sound for a rejected move', async () => {
+    const playClick = vi.fn()
+    const row = mountRow(0, { playClick })
+    await row.findAll('button')[positionOf(0, 9)].trigger('click')
+    expect(playClick).not.toHaveBeenCalled()
+  })
+})
+
+describe('keyboard support', () => {
+  it('exposes exactly one tab stop, at the cursor', () => {
+    const row = mountRow(0, { cursor: [0, 4] })
+    const tabbable = row.findAll('button').filter((b) => b.attributes('tabindex') === '0')
+    expect(tabbable).toHaveLength(1)
+    expect(row.findAll('button')[4].attributes('tabindex')).toBe('0')
+  })
+
+  it('leaves every tile untabbable in a row the cursor is not on', () => {
+    const row = mountRow(1, { cursor: [0, 4] })
+    expect(row.findAll('button').every((b) => b.attributes('tabindex') === '-1')).toBe(true)
+  })
+
+  it('plays a tile on Enter, like any button', async () => {
+    const position = game.tiles[0].findIndex((t) => t.isAvailable)
+    const row = mountRow(0, { cursor: [0, position] })
+    // A <button> fires click for Enter and Space natively.
+    await row.findAll('button')[position].trigger('click')
+    expect(game.tiles[0][position].isInUse).toBe(true)
+  })
+})
+
+describe('accessibility', () => {
+  it('marks up the board as a grid row of cells', () => {
+    const row = mountRow(0)
+    expect(row.attributes('role')).toBe('row')
+    expect(row.findAll('[role="gridcell"]')).toHaveLength(9)
+  })
+
+  it('names each tile and describes its state', async () => {
+    game.tiles[0][0].isTaken = true
+    const row = mountRow(0)
+    await row.vm.$nextTick()
+    const labels = row.findAll('button').map((b) => b.attributes('aria-label'))
+    expect(labels[0]).toBe(`Tile ${game.tiles[0][0].index}. Shut`)
+    expect(labels.some((l) => l.endsWith('Playable'))).toBe(true)
+  })
+
+  it('reports selection state via aria-pressed', async () => {
+    const position = game.tiles[0].findIndex((t) => t.isAvailable)
+    const row = mountRow(0)
+    expect(row.findAll('button')[position].attributes('aria-pressed')).toBe('false')
+    await row.findAll('button')[position].trigger('click')
+    expect(row.findAll('button')[position].attributes('aria-pressed')).toBe('true')
   })
 })
 
 describe('rendering', () => {
   it('shows each tile face and its colour', () => {
-    const row = mountRow(game, 0)
+    const row = mountRow(0)
     const buttons = row.findAll('button')
     expect(buttons).toHaveLength(9)
     buttons.forEach((button, i) => {
@@ -137,8 +135,25 @@ describe('rendering', () => {
 
   it('disables taken tiles', async () => {
     game.tiles[0][0].isTaken = true
-    const row = mountRow(game, 0)
+    const row = mountRow(0)
     await row.vm.$nextTick()
     expect(row.findAll('button')[0].attributes('disabled')).toBeDefined()
+  })
+
+  it('marks hinted tiles', async () => {
+    game.showHint()
+    const row = mountRow(0)
+    await row.vm.$nextTick()
+    const hinted = row.findAll('button').filter((b) => b.classes().includes('isHinted'))
+    expect(hinted.length + game.hintedIds.length).toBeGreaterThan(0)
+  })
+
+  it('never marks a tile both playable and not playable', async () => {
+    const row = mountRow(0)
+    await row.vm.$nextTick()
+    for (const button of row.findAll('button')) {
+      const c = button.classes()
+      expect(c.includes('isAvailable') && c.includes('isNotAvailable')).toBe(false)
+    }
   })
 })

@@ -73,16 +73,51 @@ body {
 
 body {
   margin: 0;
+  min-height: 100dvh;
   background: #51d88a;
   background: linear-gradient(0deg, #1a8b4b, #51d88a, #38c172, #1b8649);
+  background-attachment: fixed;
 }
 
 a {
   color: #222;
 }
 
-.container {
-  max-width: 570px;
+/*
+ * Board sizing.
+ *
+ * The 2018 layout hard-coded 35px and 45px tiles behind `@media
+ * (device-width: …)` queries, which are deprecated and never respond to the
+ * actual window — the board stayed the same size from a phone to a 27" display
+ * and used 40% of the width. Tiles are now derived from whichever of the two
+ * axes runs out first, so the board fills whatever room it is given.
+ */
+.board-metrics {
+  --gap: clamp(3px, 0.9vmin, 9px);
+  --board-max: 44rem;
+  /* Room the header, dice row and action button need. */
+  --chrome: clamp(210px, 30dvh, 330px);
+  --avail-w: calc(min(100vw, var(--board-max)) - 1.5rem - 8 * var(--gap));
+  --avail-h: calc(100dvh - var(--chrome));
+  --tile: min(
+    calc(var(--avail-w) / 9),
+    calc((var(--avail-h) - (var(--rows) - 1) * var(--gap)) / var(--rows)),
+    5.5rem
+  );
+  --tile-font: clamp(0.75rem, calc(var(--tile) * 0.46), 2.75rem);
+}
+
+/* Screen-reader-only text that still gets announced. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Vue 3 renamed the transition classes: *-enter became *-enter-from. */
@@ -103,27 +138,16 @@ a {
   opacity: 0;
 }
 
-@media only screen and (min-device-width: 300px) and (max-device-width: 568px) and (-webkit-min-device-pixel-ratio: 2) {
-  .header {
-    height: 70px;
-  }
-}
-
 /* The board only lays out sensibly in portrait on a phone. */
 #warning-message {
   display: none;
 }
-@media only screen and (orientation: landscape) and (max-width: 1024px) {
+@media (orientation: landscape) and (max-height: 500px) {
   .isMobile #app {
     display: none;
   }
   .isMobile #warning-message {
     display: block;
-  }
-}
-@media only screen and (orientation: portrait) {
-  .isMobile #warning-message {
-    display: none;
   }
 }
 

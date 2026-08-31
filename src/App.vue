@@ -1,123 +1,223 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useGameStore } from '@/stores/game'
-import { useScoresStore } from '@/stores/scores'
+import { useStatsStore } from '@/stores/stats'
+import { MODE_LIST } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
 import { useInstallPrompt } from '@/composables/useInstallPrompt'
+import AppIcon from '@/components/AppIcon.vue'
 import GameBoard from '@/components/GameBoard.vue'
 import GameHeader from '@/components/GameHeader.vue'
+import StatsPanel from '@/components/StatsPanel.vue'
 
 const game = useGameStore()
-const scores = useScoresStore()
+const stats = useStatsStore()
 const { canInstall, prompt } = useInstallPrompt()
 const onMobile = ref(false)
+const showStats = ref(false)
 const version = __APP_VERSION__
 
 onMounted(() => {
   onMobile.value = isMobile()
 })
 
-const start = (rows) => {
-  game.newGame(rows)
+const start = (key) => {
+  game.newGame(key)
   game.isVisible = true
 }
 </script>
 
 <template>
-  <div
-    class="w-full h-screen bg-gradient-brand mx-auto relative"
-    :class="{
-      isMobile: onMobile && game.rows > 1,
-      shutTheBox: game.rows === 1,
-      container: !onMobile
-    }"
-  >
+  <div class="shell" :class="{ isMobile: onMobile, shutTheBox: game.rows === 1 }">
     <div id="warning-message">
-      <div class="w-full h-screen absolute flex items-center justify-center bg-green-light">
-        <div class="text-center">
-          <div class="mb-4">
-            <img src="./assets/Logo_STB.png" alt="Shut The Cube" style="max-height: 30px" />
-          </div>
-          <p>This app is only playable in portrait.</p>
-        </div>
+      <div class="warning">
+        <img src="./assets/Logo_STB.png" alt="Shut The Cube" />
+        <p>This app is only playable in portrait.</p>
       </div>
     </div>
 
     <div id="app">
-      <div :class="{ header: game.rows > 2 }">
-        <GameHeader v-if="game.isVisible" />
-      </div>
+      <GameHeader v-if="game.isVisible" />
 
-      <div
-        v-if="!game.isVisible"
-        class="h-screen w-full absolute flex items-center justify-center bg-modal"
-        style="height: calc(100% - 200px)"
-      >
-        <div class="bg-white rounded shadow p-8 m-4 max-w-xs max-h-full text-center">
-          <div class="mb-4">
-            <img src="./assets/Logo_STB.png" alt="Shut The Cube" style="max-height: 30px" />
+      <div v-if="!game.isVisible" class="menu-wrap">
+        <div class="card">
+          <div class="card-head">
+            <img src="./assets/Logo_STB.png" alt="Shut The Cube" />
             <span class="version">v{{ version }}</span>
           </div>
-          <p class="mb-8">Select the game you want to play.</p>
-          <div class="flex justify-center">
-            <button type="button" class="choice" @click="start(1)">
-              Shut The Box
-              <small v-if="scores.bestFor(1)">best {{ scores.bestFor(1) }}</small>
+
+          <StatsPanel v-if="showStats" @close="showStats = false" />
+
+          <template v-else>
+            <p class="lede">Pick a game.</p>
+            <ul class="modes">
+              <li v-for="mode in MODE_LIST" :key="mode.key">
+                <button type="button" :class="['choice', mode.key]" @click="start(mode.key)">
+                  <span class="choice-name">{{ mode.label }}</span>
+                  <span class="choice-blurb">{{ mode.blurb }}</span>
+                  <span v-if="stats.hasPlayed(mode.key)" class="choice-best">
+                    best {{ stats.bestFor(mode.key) }}
+                  </span>
+                </button>
+              </li>
+            </ul>
+
+            <button type="button" class="secondary" @click="showStats = true">
+              <AppIcon name="trophy" /> Your record
             </button>
-            <button type="button" class="choice ml-2" @click="start(9)">
-              Shut The Cube
-              <small v-if="scores.bestFor(9)">best {{ scores.bestFor(9) }}</small>
+            <button v-if="canInstall" type="button" class="install" @click="prompt">
+              Add to home screen
             </button>
-          </div>
-          <button v-if="canInstall" type="button" class="install" @click="prompt">
-            Add to home screen
-          </button>
+          </template>
         </div>
       </div>
 
-      <Transition name="fade" mode="out-in">
-        <GameBoard v-if="game.isVisible" />
-      </Transition>
+      <GameBoard v-if="game.isVisible" />
     </div>
   </div>
 </template>
 
 <style scoped>
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+#app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+  max-width: 46rem;
+  margin: 0 auto;
+}
+
+.warning {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: #51d88a;
+}
+.warning img {
+  max-height: 30px;
+}
+
+.menu-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+.card {
+  background: #fff;
+  border-radius: 0.6rem;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 22%);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 22rem;
+  max-height: 100%;
+  overflow-y: auto;
+}
+.card-head {
+  margin-bottom: 1rem;
+}
+.card-head img {
+  max-height: 30px;
+}
 .version {
   font-size: 9px;
   position: absolute;
+  color: #8795a1;
+}
+.lede {
+  margin: 0 0 1rem;
+  color: #606f7b;
+  font-size: 0.9rem;
+}
+
+.modes {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
 }
 .choice {
-  flex-shrink: 0;
+  width: 100%;
   display: block;
+  text-align: left;
   color: #fff;
-  background: #4dc0b5;
   border: 0;
-  border-radius: 0.25rem;
-  padding: 0.5rem 1rem;
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.75rem;
   cursor: pointer;
   font: inherit;
+  position: relative;
 }
-.choice:hover {
+.choice.beginner {
   background: #38a89d;
 }
-.choice small {
+.choice.medium {
+  background: #2779bd;
+}
+.choice.ninja {
+  background: #c3251f;
+}
+.choice:hover {
+  filter: brightness(1.08);
+}
+.choice-name {
   display: block;
-  font-size: 10px;
-  opacity: 0.85;
+  font-weight: 700;
+}
+.choice-blurb {
+  display: block;
+  font-size: 0.72rem;
+  opacity: 0.9;
+  margin-top: 1px;
+}
+.choice-best {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.75rem;
+  font-size: 0.68rem;
+  background: rgb(255 255 255 / 22%);
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+}
+
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #dae1e7;
+  color: #22292f;
+  border: 0;
+  border-radius: 0.4rem;
+  padding: 0.45rem 0.8rem;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
 }
 .install {
-  margin-top: 1.5rem;
+  display: block;
+  margin: 1rem auto 0;
   background: none;
   border: 0;
   color: #606f7b;
-  font-size: 12px;
+  font-size: 0.75rem;
   text-decoration: underline;
   cursor: pointer;
 }
 .choice:focus-visible,
+.secondary:focus-visible,
 .install:focus-visible {
-  outline: 2px solid #2779bd;
+  outline: 3px solid #22292f;
   outline-offset: 2px;
 }
 </style>

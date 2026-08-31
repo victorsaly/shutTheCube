@@ -15,8 +15,9 @@
   ],
   "theme_color": "#51d88a",
   "background_color": "#1a8b4b",
-  "start_url": "https://victorsaly.github.io/shutTheCube/",
-  "display": "fullscreen",
+  "start_url": "../",
+  "display": "standalone",
   "orientation": "portrait",
-  "description": "A dice-and-tiles game based on the classic Shut The Box."
+  "description": "A dice-and-tiles game based on the classic Shut The Box.",
+  "scope": "../"
 }

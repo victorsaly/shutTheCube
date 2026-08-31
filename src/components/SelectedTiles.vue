@@ -12,7 +12,7 @@ const remaining = computed(() => game.diceSum - tileSum.value)
   <div>
     <ul>
       <li v-for="t in game.selectedTiles" :key="t.id">
-        <div class="box text-black text-center border-b-4 border-black rounded animated flip" :class="t.cssClass">
+        <div class="box animated flip" :class="t.cssClass">
           <span class="number">{{ t.index }}</span>
         </div>
       </li>
@@ -44,43 +44,31 @@ p {
   min-height: 1.2em;
 }
 ul {
-  list-style-type: none;
+  list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0 0 0.25rem;
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 li {
-  display: inline-block;
-  margin: 0 5px 0 0;
+  display: block;
 }
 .box {
-  height: 45px;
-  width: 45px;
-  line-height: 190%;
-  float: left;
-  color: #222;
-  border-bottom: 4px solid #222;
-  font-size: 18px;
+  width: clamp(26px, calc(var(--tile, 40px) * 0.66), 44px);
+  height: clamp(26px, calc(var(--tile, 40px) * 0.66), 44px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #22292f;
+  font-weight: 600;
+  font-size: clamp(12px, calc(var(--tile, 40px) * 0.3), 20px);
+  border-bottom: 3px solid #22292f;
+  border-radius: 4px;
 }
 .animated {
   animation-duration: 0.3s;
   animation-fill-mode: both;
-}
-@media only screen and (max-device-width: 320px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait) {
-  .box {
-    width: 25px !important;
-    height: 23px !important;
-    font-size: 12px;
-    line-height: 160% !important;
-  }
-}
-@media only screen and (min-device-width: 320px) and (max-device-width: 568px) and (-webkit-min-device-pixel-ratio: 2) {
-  .box {
-    height: 36px;
-    width: 35px;
-    line-height: 200%;
-  }
-  p {
-    font-size: 14px;
-  }
 }
 </style>
