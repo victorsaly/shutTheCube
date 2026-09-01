@@ -12,6 +12,7 @@ import {
   sumTilesWhere
 } from '@/services/gameServices'
 import { EVENT_LIST, modeFor, runName } from './modes'
+import { useMatchStore } from './match'
 import { useStatsStore } from './stats'
 
 /** Face value of a complete row, 1+2+…+9. */
@@ -210,12 +211,31 @@ export const useGameStore = defineStore('game', () => {
 
   // ------------------------------------------------------------- lifecycle
 
-  /** Start a new game in the given mode. */
-  const newGame = (key) => {
+  /**
+   * Start a new game in the given mode. A pass-and-play handoff passes the
+   * match's `layout` so Player 2 gets the same faces and the same special
+   * tiles, with every play flag fresh.
+   */
+  const newGame = (key, layout = null) => {
     modeKey.value = modeFor(key).key
-    const board = createTiles(9, mode.value.rows)
-    if (mode.value.hasSurprises) seedSpecials(board, { wild: 2, locked: 2 })
-    tiles.value = board
+    if (layout) {
+      tiles.value = layout.map((row) =>
+        row.map((t) => ({
+          ...t,
+          wildValue: null,
+          isAvailable: false,
+          isInUse: false,
+          isTaken: false,
+          isCollateral: false,
+          isExplosion: false,
+          action: ''
+        }))
+      )
+    } else {
+      const board = createTiles(9, mode.value.rows)
+      if (mode.value.hasSurprises) seedSpecials(board, { wild: 2, locked: 2 })
+      tiles.value = board
+    }
     restart()
   }
 
@@ -349,7 +369,10 @@ export const useGameStore = defineStore('game', () => {
     announcement.value = won
       ? `You shut the box with ${sumTilesTaken.value} points.`
       : `${note.value}. Final score ${sumTilesTaken.value}.`
-    useStatsStore().record(modeKey.value, sumTilesTaken.value, won)
+    // A pass-and-play game belongs to the match, not to the solo record.
+    const match = useMatchStore()
+    if (match.active) match.record(sumTilesTaken.value, won, numberPlay.value)
+    else useStatsStore().record(modeKey.value, sumTilesTaken.value, won)
   }
 
   // ------------------------------------------------------------ turn logic

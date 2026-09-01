@@ -32,6 +32,11 @@ Any tile that would take a column with it carries a badge with the number of til
 hovering or focusing it previews the whole run, so the big moves are visible *before* you commit.
 Once the whole board is worth 6 or less, the second die is dropped automatically.
 
+**Pass & play:** flip the switch on the menu and any mode becomes a two-player match on one
+device — Player 1 finishes, hands the device over, and Player 2 chases their total on the *same
+board*: identical faces, identical special tiles, your own dice. Higher banked total wins; a
+shut-box tie goes to whoever needed fewer rolls. Match games stay out of the solo records.
+
 The nine-row modes seed a few **special tiles** — **★ Wild** counts as whatever you still need,
 **◆ Locked** only plays alone, matching the entire roll — and roughly one turn in six brings an
 **event**: a lucky third die, a reshuffle, or a tile turning wild. Neither changes scoring: a shut
@@ -60,7 +65,7 @@ A finished game shares like Wordle: one button hands the device's share sheet a 
 (🟩🟩🟩⬛…) and a challenge link. Each mode's link is its own page under
 [`public/challenge/`](public/challenge/) so the chat preview carries that mode's own 1200×630
 card — a query parameter cannot switch `og:image` on a static site — and then deals the recipient
-straight onto that board.
+straight onto that board. A finished match shares both players' block rows and the verdict.
 
 ### Your data
 

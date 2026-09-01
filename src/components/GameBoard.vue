@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useGameStore } from '@/stores/game'
+import { useMatchStore } from '@/stores/match'
 import { useStatsStore } from '@/stores/stats'
 import { SPECIALS } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
@@ -15,6 +16,7 @@ import TileRow from './TileRow.vue'
 import TweenedNumber from './TweenedNumber.vue'
 
 const game = useGameStore()
+const match = useMatchStore()
 const stats = useStatsStore()
 const toast = ref('')
 const actionEl = ref(null)
@@ -25,7 +27,26 @@ const BUTTON = {
   isStart: { message: 'START GAME', colour: 'action-accent', icon: 'dice' },
   isWin: { message: 'PLAY AGAIN', colour: 'action-accent', icon: 'check' }
 }
-const button = computed(() => BUTTON[game.state] ?? null)
+const button = computed(() => {
+  const base = BUTTON[game.state] ?? null
+  if (!base || !match.active || !game.isFinished) return base
+  return { ...base, message: match.stage === 'p1' ? 'PASS TO PLAYER 2' : 'REMATCH' }
+})
+const matchDone = computed(() => match.active && match.stage === 'done')
+const matchVerdict = computed(() =>
+  match.winner === 'draw' ? "It's a draw" : match.winner === 'p1' ? 'Player 1 wins' : 'Player 2 wins'
+)
+
+/* Player 1 is done: same mode, same board, fresh flags — hand it over. */
+const passToSecond = () => {
+  match.advance()
+  game.newGame(match.modeKey, match.layout)
+}
+/* A rematch is a new match on a new board. */
+const rematch = () => {
+  game.newGame(match.modeKey)
+  match.begin(match.modeKey, game.tiles)
+}
 
 /**
  * Only the special tiles actually on this board, so the legend explains what is
@@ -39,7 +60,11 @@ const legend = computed(() => {
   return [...present].map((kind) => SPECIALS[kind]).filter(Boolean)
 })
 const isPersonalBest = computed(
-  () => game.isFinished && game.sumTilesTaken > 0 && game.sumTilesTaken >= stats.bestFor(game.modeKey)
+  () =>
+    !match.active &&
+    game.isFinished &&
+    game.sumTilesTaken > 0 &&
+    game.sumTilesTaken >= stats.bestFor(game.modeKey)
 )
 const inPlay = computed(() => game.state === '')
 /* The tray never sits empty: between turns it says what it is for. */
@@ -50,14 +75,26 @@ const trayHint = computed(() =>
       ? 'Roll again — then pick tiles that match.'
       : ''
 )
-const shareResult = computed(() => ({
-  modeLabel: game.mode.label,
-  modeKey: game.modeKey,
-  score: game.sumTilesTaken,
-  max: game.rows * 45,
-  rolls: game.numberPlay,
-  won: game.state === 'isWin'
-}))
+const shareResult = computed(() =>
+  matchDone.value
+    ? {
+        match: true,
+        modeLabel: game.mode.label,
+        modeKey: game.modeKey,
+        max: game.rows * 45,
+        p1: match.results.p1,
+        p2: match.results.p2,
+        verdict: matchVerdict.value
+      }
+    : {
+        modeLabel: game.mode.label,
+        modeKey: game.modeKey,
+        score: game.sumTilesTaken,
+        max: game.rows * 45,
+        rolls: game.numberPlay,
+        won: game.state === 'isWin'
+      }
+)
 const timerLow = computed(() => game.mode.turnSeconds > 0 && game.secondsLeft <= 10)
 
 /* Each tile answers with its own note; the board is the instrument. */
@@ -82,7 +119,9 @@ const advance = () => {
       break
     case 'isOver':
     case 'isWin':
-      game.restart()
+      if (match.active && match.stage === 'p1') passToSecond()
+      else if (match.active) rematch()
+      else game.restart()
       break
   }
   game.isLoading = false
@@ -220,6 +259,31 @@ const onAction = async () => {
 
     <div class="board-area">
       <Confetti v-if="game.state === 'isWin'" />
+
+      <!-- Pass & play: whose game this is, said with the die itself — one pip
+           for Player 1, two for Player 2. Sits above the start overlay too, so
+           the person just handed the device knows before they touch anything. -->
+      <Transition name="pop">
+        <div
+          v-if="match.active && match.stage !== 'done'"
+          :key="match.stage"
+          class="player-flag"
+          role="status"
+        >
+          <svg class="flag-die" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="21" height="21" rx="5.5" class="flag-body" />
+            <template v-if="match.stage === 'p1'">
+              <circle cx="12" cy="12" r="2.6" class="flag-pip" />
+            </template>
+            <template v-else>
+              <circle cx="8" cy="8" r="2.6" class="flag-pip" />
+              <circle cx="16" cy="16" r="2.6" class="flag-pip" />
+            </template>
+          </svg>
+          <span v-if="match.stage === 'p1'">Player 1</span>
+          <span v-else>Player 2 · beat <b class="num">{{ match.target }}</b></span>
+        </div>
+      </Transition>
       <div
         class="tile-position board-metrics"
         :class="{ 'single-row': game.rows === 1 }"
@@ -250,14 +314,27 @@ const onAction = async () => {
                leads and the button that starts the next one follows it. -->
           <div v-if="game.isFinished" class="result panel-glass" :class="game.state">
             <p class="result-eyebrow micro">
-              {{ game.state === 'isWin' ? 'You did it' : game.note }}
+              <template v-if="matchDone">Pass &amp; play — final</template>
+              <template v-else-if="match.active">Pass &amp; play — Player 1</template>
+              <template v-else>{{ game.state === 'isWin' ? 'You did it' : game.note }}</template>
             </p>
             <h2 class="result-title display">
-              {{ game.state === 'isWin' ? 'BOX SHUT!' : 'Game over' }}
+              {{ matchDone ? matchVerdict : game.state === 'isWin' ? 'BOX SHUT!' : 'Game over' }}
             </h2>
-            <p class="result-score">
+            <p v-if="matchDone" class="match-scores">
+              <span :class="{ winner: match.winner === 'p1' }">
+                P1 <strong class="num">{{ match.results.p1.score }}</strong>
+              </span>
+              <span :class="{ winner: match.winner === 'p2' }">
+                P2 <strong class="num">{{ match.results.p2.score }}</strong>
+              </span>
+            </p>
+            <p v-else class="result-score">
               <strong class="num">{{ game.sumTilesTaken }}</strong>
               <span>of {{ game.rows * 45 }} points</span>
+            </p>
+            <p v-if="match.active && match.stage === 'p1'" class="handoff">
+              Player 1 banked <b class="num">{{ game.sumTilesTaken }}</b> — hand the device over.
             </p>
             <p v-if="isPersonalBest" class="pb">
               <AppIcon name="trophy" /> New personal best
@@ -268,7 +345,7 @@ const onAction = async () => {
             <button type="button" class="again display" @click="onAction">
               {{ button.message }} <kbd>Space</kbd>
             </button>
-            <ShareScore :result="shareResult" />
+            <ShareScore v-if="!match.active || matchDone" :result="shareResult" />
           </div>
 
           <button
@@ -417,6 +494,47 @@ const onAction = async () => {
   z-index: 1;
 }
 
+.player-flag {
+  position: absolute;
+  top: 0.45rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: rgb(9 29 22 / 85%);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.player-flag b {
+  color: var(--sel);
+  font-size: 0.85rem;
+}
+.flag-die {
+  width: 19px;
+  height: 19px;
+  flex: none;
+}
+.flag-body {
+  fill: var(--bone);
+  stroke: #10291d;
+  stroke-width: 1.6;
+}
+.flag-pip {
+  fill: #10291d;
+}
+
 .action-layer {
   position: absolute;
   inset: 0;
@@ -543,6 +661,31 @@ const onAction = async () => {
 }
 .isOver .result-title {
   color: var(--bad);
+}
+.match-scores {
+  margin: 0.45rem 0 0;
+  display: flex;
+  gap: 1.4rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.match-scores strong {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--bone);
+  margin-left: 0.3rem;
+}
+.match-scores .winner,
+.match-scores .winner strong {
+  color: var(--bonus);
+}
+.handoff {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: var(--bone);
+}
+.handoff b {
+  color: var(--sel);
 }
 .result-score {
   margin: 0.35rem 0 0;

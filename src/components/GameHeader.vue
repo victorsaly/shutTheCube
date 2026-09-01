@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useGameStore } from '@/stores/game'
+import { useMatchStore } from '@/stores/match'
 import { useStatsStore } from '@/stores/stats'
 import { isMuted, setMuted } from '@/services/sound'
 import AppIcon from './AppIcon.vue'
@@ -8,6 +9,7 @@ import BrandMark from './BrandMark.vue'
 import TweenedNumber from './TweenedNumber.vue'
 
 const game = useGameStore()
+const match = useMatchStore()
 const stats = useStatsStore()
 
 const muted = ref(isMuted())
@@ -22,7 +24,7 @@ const toggleMute = () => {
     <!-- Fixed, equal end columns keep the brand on the centre line. -->
     <div class="end">
       <button type="button" class="chip" title="Back to menu" aria-label="Back to menu"
-        @click="game.isVisible = false">
+        @click="((game.isVisible = false), match.reset())">
         <AppIcon name="home" />
       </button>
     </div>

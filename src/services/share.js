@@ -22,9 +22,27 @@ export const challengeUrl = (modeKey) => `${SITE_URL}/challenge/${encodeURICompo
 
 /**
  * One finished game as chat text.
- * { modeLabel, modeKey, score, max, rolls, won }
+ * Solo: { modeLabel, modeKey, score, max, rolls, won }
+ * Match: { match: true, modeLabel, modeKey, max, p1, p2, verdict }
  */
-export const scoreCard = ({ modeLabel, score, max, rolls, won }) => {
+export const scoreCard = (result) => {
+  if (result.match) {
+    const line = ({ score, won }) =>
+      `${won ? '🟩'.repeat(10) : barBlocks(score, result.max)} ${score}`
+    return [
+      `SHUT THE CUBE · ${result.modeLabel.toUpperCase()} · PASS & PLAY`,
+      '',
+      `P1 ${line(result.p1)}`,
+      `P2 ${line(result.p2)}`,
+      result.verdict,
+      '',
+      'Think you can beat it?'
+    ].join('\n')
+  }
+  return soloCard(result)
+}
+
+const soloCard = ({ modeLabel, score, max, rolls, won }) => {
   const verdict = won ? `📦 BOX SHUT in ${rolls} rolls!` : `${score} / ${max} · ${rolls} rolls`
   return [
     `SHUT THE CUBE · ${modeLabel.toUpperCase()}`,

@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useGameStore } from '@/stores/game'
+import { useMatchStore } from '@/stores/match'
 import { useStatsStore } from '@/stores/stats'
 import { MODE_LIST } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
@@ -13,6 +14,7 @@ import ModeMark from '@/components/ModeMark.vue'
 import StatsPanel from '@/components/StatsPanel.vue'
 
 const game = useGameStore()
+const match = useMatchStore()
 const stats = useStatsStore()
 const { canInstall, prompt } = useInstallPrompt()
 const onMobile = ref(false)
@@ -26,8 +28,13 @@ const SUBS = {
   ninja: 'Nine rows against the clock. 30 seconds a turn.'
 }
 
+/** 1 = solo, 2 = pass-and-play on this device. */
+const players = ref(1)
+
 const start = (key) => {
+  match.reset()
   game.newGame(key)
+  if (players.value === 2) match.begin(key, game.tiles)
   game.isVisible = true
 }
 
@@ -83,6 +90,16 @@ onUnmounted(() => {
           <p class="tagline">
             Roll the dice, shut the tiles that match. Clear the board and the box is yours.
           </p>
+
+          <div class="players" role="group" aria-label="Players">
+            <button type="button" class="pill" :aria-pressed="players === 1" @click="players = 1">
+              Solo
+            </button>
+            <button type="button" class="pill" :aria-pressed="players === 2" @click="players = 2">
+              Pass &amp; play
+              <small>2 players · same board · one device</small>
+            </button>
+          </div>
 
           <ul class="cards">
             <li v-for="(mode, i) in MODE_LIST" :key="mode.key">
@@ -246,6 +263,14 @@ onUnmounted(() => {
   line-height: 1.6;
   font-size: 14px;
   margin: 0 0 clamp(18px, 3.5vh, 36px);
+}
+
+.players {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: clamp(14px, 2.5vh, 22px);
 }
 
 /*
