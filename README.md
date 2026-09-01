@@ -5,6 +5,10 @@ with a nine-layer "cube" variant where a matching column of tiles collapses toge
 
 **Play it:** https://shutthecube.com/
 
+**Rules:** https://shutthecube.com/how-to-play.html
+
+**About:** https://shutthecube.com/about.html
+
 ## How to play
 
 Roll two dice, then select tiles that add up to the roll. Tiles you cannot reach sit back and fade.
