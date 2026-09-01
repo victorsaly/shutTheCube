@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { useStatsStore } from '@/stores/stats'
 import {
   claimSession,
   fetchBoard,
@@ -83,13 +84,19 @@ export const useArcadeStore = defineStore('arcade', () => {
         // The score they signed in to post, if that is why they signed in.
         const parked = takeParkedScore()
         if (parked) await postScore(parked)
+        // Anything played on this device before signing in goes up too.
+        await postBacklog()
         return
       }
     }
     if (!token.value) return
     const me = await whoAmI(token.value)
-    if (me) player.value = me
-    else token.value = null
+    if (me) {
+      player.value = me
+      await postBacklog()
+    } else {
+      token.value = null
+    }
   }
 
   /**
@@ -141,6 +148,36 @@ export const useArcadeStore = defineStore('arcade', () => {
   }
 
   /**
+   * Post any daily finished on this device that never reached the board —
+   * played before signing in, or while the network was down.
+   *
+   * The seed and move list were kept alongside the local result, so these can
+   * still be verified rather than taken on trust. Failures are silent: a
+   * backlog that will not post is not something to interrupt anyone about.
+   */
+  const postBacklog = async () => {
+    if (!token.value) return 0
+    const stats = useStatsStore()
+    let posted = 0
+    for (const entry of stats.unpostedDailies()) {
+      const result = await submitScore(token.value, {
+        mode: entry.mode,
+        period: entry.period,
+        seed: entry.seed,
+        score: entry.score,
+        rolls: entry.rolls,
+        won: entry.won,
+        moves: entry.moves
+      })
+      // A refusal is marked done too, so a score the server will never accept
+      // is not retried on every single sign-in for the next ninety days.
+      stats.markPosted(entry.mode, entry.period)
+      if (result?.ok) posted += 1
+    }
+    return posted
+  }
+
+  /**
    * Post a finished daily, if there is anything to post it with.
    *
    * Silently does nothing when signed out or when the game was not seeded —
@@ -151,7 +188,12 @@ export const useArcadeStore = defineStore('arcade', () => {
     lastRank.value = null
     if (!token.value || result?.seed == null || !result?.period) return null
     const posted = await submitScore(token.value, result)
-    if (posted?.ok) lastRank.value = posted.rank ?? null
+    if (posted?.ok) {
+      lastRank.value = posted.rank ?? null
+      // Mark it done locally, or the backlog sweep would post it all over
+      // again on the next sign-in.
+      useStatsStore().markPosted(result.mode, result.period)
+    }
     return posted
   }
 
@@ -171,6 +213,7 @@ export const useArcadeStore = defineStore('arcade', () => {
     setName,
     deleteAccount,
     loadBoard,
-    postScore
+    postScore,
+    postBacklog
   }
 })

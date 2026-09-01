@@ -439,7 +439,15 @@ export const useGameStore = defineStore('game', () => {
       stats.record(modeKey.value, sumTilesTaken.value, won)
       // Only the first go at a given day's board counts; a replay is practice.
       if (dayStamp.value) {
-        stats.recordDaily(modeKey.value, dayStamp.value, sumTilesTaken.value, won, numberPlay.value)
+        // The seed and moves travel with it, so a daily finished before
+        // signing in can still be posted once there is somewhere to post it.
+        stats.recordDaily(modeKey.value, dayStamp.value, {
+          score: sumTilesTaken.value,
+          won,
+          rolls: numberPlay.value,
+          seed: seed.value,
+          moves: moves.value
+        })
       }
     }
   }

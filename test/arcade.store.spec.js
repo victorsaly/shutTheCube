@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useArcadeStore } from '@/stores/arcade'
+import { useStatsStore } from '@/stores/stats'
 
 /**
  * The leaderboard is optional to the game, and these tests mostly pin that:
@@ -219,5 +220,94 @@ describe('leaving', () => {
     expect(await arcade.deleteAccount()).toBe(true)
     expect(arcade.signedIn).toBe(false)
     expect(localStorage.getItem('shutTheCube.session')).toBe(null)
+  })
+})
+
+describe('the backlog', () => {
+  const daily = {
+    mode: 'medium',
+    period: '2026-09-02',
+    seed: 1234,
+    score: 300,
+    rolls: 20,
+    won: false,
+    moves: [{ r: 0, f: 4 }]
+  }
+
+  it('posts a daily played before signing in', async () => {
+    // A finished daily sitting in local storage from before there was a session.
+    const stats = useStatsStore()
+    stats.recordDaily('medium', '2026-09-02', {
+      score: 300,
+      won: false,
+      rolls: 20,
+      seed: 1234,
+      moves: [{ r: 0, f: 4 }]
+    })
+    arcade.token = 'tok'
+    const fetcher = vi.fn(async () => jsonResponse({ ok: true, rank: 2 }))
+    vi.stubGlobal('fetch', fetcher)
+
+    expect(await arcade.postBacklog()).toBe(1)
+    expect(JSON.parse(fetcher.mock.calls[0][1].body).seed).toBe(1234)
+    // And it is not offered a second time.
+    expect(stats.unpostedDailies()).toHaveLength(0)
+  })
+
+  it('ignores a daily with no proof behind it', async () => {
+    const stats = useStatsStore()
+    stats.recordDaily('medium', '2026-09-02', { score: 300, won: false, rolls: 20 })
+    arcade.token = 'tok'
+    const fetcher = vi.fn()
+    vi.stubGlobal('fetch', fetcher)
+
+    expect(await arcade.postBacklog()).toBe(0)
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('stops retrying a score the server refuses', async () => {
+    const stats = useStatsStore()
+    stats.recordDaily('medium', '2026-09-02', {
+      score: 300,
+      won: false,
+      rolls: 20,
+      seed: 1234,
+      moves: [{ r: 0, f: 4 }]
+    })
+    arcade.token = 'tok'
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse({ error: 'that score does not check out' }, 422))
+    )
+
+    expect(await arcade.postBacklog()).toBe(0)
+    expect(stats.unpostedDailies()).toHaveLength(0)
+  })
+
+  it('does nothing when signed out', async () => {
+    const fetcher = vi.fn()
+    vi.stubGlobal('fetch', fetcher)
+    expect(await arcade.postBacklog()).toBe(0)
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('does not queue a score it has just posted live', async () => {
+    const stats = useStatsStore()
+    stats.recordDaily('medium', '2026-09-02', {
+      score: 300,
+      won: false,
+      rolls: 20,
+      seed: 1234,
+      moves: [{ r: 0, f: 4 }]
+    })
+    arcade.token = 'tok'
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse({ ok: true, rank: 1 }))
+    )
+
+    await arcade.postScore(daily)
+
+    expect(stats.unpostedDailies()).toHaveLength(0)
   })
 })

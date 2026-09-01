@@ -108,16 +108,47 @@ export const useStatsStore = defineStore('stats', () => {
    * board is practice, and overwriting it would make the day's score mean
    * nothing.
    */
-  const recordDaily = (key, stamp, score, won, rolls) => {
+  const recordDaily = (key, stamp, result) => {
     if (dailyResult(key, stamp)) return false
     const kept = Object.fromEntries(
-      Object.entries({ ...dailies.value, [stamp]: { ...(dailies.value[stamp] ?? {}), [key]: { score, won, rolls } } })
+      Object.entries({
+        ...dailies.value,
+        [stamp]: { ...(dailies.value[stamp] ?? {}), [key]: { ...result, posted: false } }
+      })
         .sort(([a], [b]) => (a < b ? -1 : 1))
         .slice(-DAY_MEMORY)
     )
     dailies.value = kept
     write(DAILY_KEY, dailies.value)
     return true
+  }
+
+  /**
+   * Dailies finished on this device that never reached the leaderboard —
+   * played before signing in, or while it was unreachable.
+   *
+   * The move list is kept with them, because without it the server has nothing
+   * to check the score against and could only take it on trust.
+   */
+  const unpostedDailies = () => {
+    const out = []
+    for (const [stamp, modes] of Object.entries(dailies.value)) {
+      for (const [mode, result] of Object.entries(modes ?? {})) {
+        if (result?.posted || result?.seed == null || !Array.isArray(result?.moves)) continue
+        out.push({ mode, period: stamp, ...result })
+      }
+    }
+    return out
+  }
+
+  const markPosted = (key, stamp) => {
+    const existing = dailies.value[stamp]?.[key]
+    if (!existing) return
+    dailies.value = {
+      ...dailies.value,
+      [stamp]: { ...dailies.value[stamp], [key]: { ...existing, posted: true } }
+    }
+    write(DAILY_KEY, dailies.value)
   }
 
   const reset = () => {
@@ -144,6 +175,8 @@ export const useStatsStore = defineStore('stats', () => {
     record,
     dailyResult,
     recordDaily,
+    unpostedDailies,
+    markPosted,
     reset
   }
 })

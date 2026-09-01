@@ -10,6 +10,8 @@ defineEmits(['close'])
 
 const arcade = useArcadeStore()
 const mode = ref('medium')
+/* 'today' is the day's board; 'alltime' totals every daily in this mode. */
+const period = ref('today')
 const today = todayStamp()
 const day = dayNumber(today)
 
@@ -21,10 +23,14 @@ const draft = ref('')
 const entries = computed(() => arcade.board?.entries ?? [])
 const mine = computed(() => entries.value.find((e) => e.name === arcade.name) ?? null)
 
-const load = () => arcade.loadBoard({ mode: mode.value, period: today })
+const load = () =>
+  arcade.loadBoard({
+    mode: mode.value,
+    period: period.value === 'alltime' ? 'alltime' : today
+  })
 
 onMounted(load)
-watch(mode, load)
+watch([mode, period], load)
 
 const startEditing = () => {
   draft.value = arcade.name
@@ -54,7 +60,10 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
   <section class="board" :class="{ 'panel-glass': !embedded, bare: embedded }" aria-labelledby="board-title">
     <header class="board-head">
       <div>
-        <p class="eyebrow micro">Daily <b class="num">#{{ day }}</b></p>
+        <p class="eyebrow micro">
+          <template v-if="period === 'today'">Daily <b class="num">#{{ day }}</b></template>
+          <template v-else>All time · every daily so far</template>
+        </p>
         <h2 v-if="!embedded" id="board-title" class="display">Leaderboard</h2>
         <span v-else id="board-title" class="visually-hidden">Daily leaderboard</span>
       </div>
@@ -84,6 +93,27 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
       </button>
     </div>
 
+    <div class="when" role="tablist" aria-label="Period">
+      <button
+        type="button"
+        role="tab"
+        class="when-tab"
+        :aria-selected="period === 'today'"
+        @click="period = 'today'"
+      >
+        Today
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="when-tab"
+        :aria-selected="period === 'alltime'"
+        @click="period = 'alltime'"
+      >
+        All time
+      </button>
+    </div>
+
     <p v-if="arcade.loadingBoard" class="state micro">Loading…</p>
 
     <!-- A board that cannot be reached is a quiet absence, never an error the
@@ -93,7 +123,11 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
     </p>
 
     <p v-else-if="entries.length === 0" class="state micro">
-      Nobody has posted a score on today’s board yet. Be first.
+      {{
+        period === 'today'
+          ? 'Nobody has posted a score on today’s board yet. Be first.'
+          : 'No dailies have been finished in this mode yet.'
+      }}
     </p>
 
     <ol v-else class="rows">
@@ -107,9 +141,15 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
         <span class="visually-hidden">Rank {{ entry.rank }}.</span>
         <span class="who">
           {{ entry.name }}
-          <b v-if="entry.won" class="shut micro" title="Shut the box">SHUT</b>
+          <b v-if="period === 'today' && entry.won" class="shut micro" title="Shut the box">SHUT</b>
         </span>
-        <span class="rolls num micro">{{ entry.rolls }} rolls</span>
+        <span class="rolls num micro">
+          <template v-if="period === 'alltime'">
+            {{ entry.days }} {{ entry.days === 1 ? 'day' : 'days' }}
+            <template v-if="entry.shut">· {{ entry.shut }} shut</template>
+          </template>
+          <template v-else>{{ entry.rolls }} rolls</template>
+        </span>
         <span class="score num">{{ entry.score }}</span>
       </li>
     </ol>
@@ -206,6 +246,30 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
 }
 .close:hover {
   color: var(--bone);
+}
+
+.when {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 9px;
+  background: rgb(0 0 0 / 20%);
+}
+.when-tab {
+  flex: 1;
+  padding: 6px 4px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.when-tab[aria-selected='true'] {
+  background: var(--ink-2);
+  color: var(--bone);
+  font-weight: 600;
 }
 
 .tabs {
