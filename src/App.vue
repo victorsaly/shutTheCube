@@ -72,6 +72,7 @@ const start = (key) => {
             <nav class="resource-links" aria-label="Game information">
               <a href="how-to-play.html">How to play</a>
               <a href="about.html">About</a>
+              <a href="privacy.html">Privacy</a>
             </nav>
           </template>
         </div>

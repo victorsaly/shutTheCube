@@ -9,6 +9,8 @@ with a nine-layer "cube" variant where a matching column of tiles collapses toge
 
 **About:** https://shutthecube.com/about.html
 
+**Privacy:** https://shutthecube.com/privacy.html
+
 ## How to play
 
 Roll two dice, then select tiles that add up to the roll. Tiles you cannot reach sit back and fade.
