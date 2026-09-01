@@ -20,13 +20,30 @@ and hovering or focusing it previews the whole run — so the big moves are visi
 commit to one rather than only after. Every tile of a claimed combination shares one colour,
 because it was one move; the bonus tiles are marked with a small dot.
 
+Once the whole board is worth **6 or less**, the second die is dropped automatically — two dice can
+roll higher than anything left and end a game on nothing but bad luck.
+
 ### Modes
 
 | Mode | Board | Rule of its own |
 | --- | --- | --- |
-| **Beginner** | 1 row | Classic Shut The Box. Once nothing above a 6 is left you may roll a single die. |
-| **Medium** | 9 rows | Matching columns collapse together for a bonus. |
+| **Beginner** | 1 row | Classic Shut The Box, no surprises. Once nothing above a 6 is left you may choose to roll a single die. |
+| **Medium** | 9 rows | Matching columns collapse together for a bonus, plus special tiles and between-turn events. |
 | **Ninja** | 9 rows | The same, with 30 seconds a turn. Run out and the game ends. |
+
+### Surprises
+
+The nine-row modes seed a few **special tiles**. Neither changes how a game is scored — a tile is
+always worth its face value when it is shut:
+
+- **★ Wild** — counts as whatever you still need, so it can finish any roll on its own.
+- **◆ Locked** — only plays alone, matching the entire roll.
+
+Roughly one turn in six brings an **event**: a lucky third die, a reshuffle, or a tile turning wild.
+
+Pulling off a run, playing a wild or unlocking a locked tile is called out on the board
+("Triple — 3 tiles in one move"). When a roll can be matched more than one way, the board says how
+many ways there are, and <kbd>H</kbd> cycles through them.
 
 ### Controls
 
