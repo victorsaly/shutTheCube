@@ -25,6 +25,9 @@ are banked with the rest, but they do not count toward the current roll.
 
 ### Controls
 
+<kbd>Space</kbd> rolls, from anywhere on the page. The roll button also sits in the middle of the
+board rather than under it, so it is never a reach to the bottom of the screen.
+
 Fully playable from the keyboard: <kbd>Tab</kbd> to the board, arrow keys to move, <kbd>Enter</kbd>
 to play a tile, <kbd>U</kbd> to undo the last selection and <kbd>H</kbd> for a hint. On a phone,
 shake to roll.
@@ -110,3 +113,23 @@ Runtime dependencies went from 25 to 3.
 - **The dice are drawn.** They were the unicode dice glyphs, which render as thin outlines on some
   platforms and solid on others.
 - **It works offline** and installs as a PWA, precaching 34 files.
+
+### Colour and layout
+
+- **The board sits on a deep forest ground.** It used to be the brand's vivid green: 63% average
+  saturation behind tiles averaging 77% lightness, so the ground was more colourful than the
+  content, and the mint tile was ΔE 23.9 from it — close enough to visually merge. The dark ground
+  takes worst-case separation to ΔE 64.1 while still reading as the same game.
+- **The three tile states are distinct without relying on colour.** Playable is full colour, full
+  size, raised; unplayable is drained of chroma (156 → 40), flat and set back; shut is a dark hole.
+  On a dark ground a tile cannot both recede in brightness and keep a legible numeral — no
+  combination satisfies both — so recession is carried by chroma and shape instead. Numeral
+  contrast 7.42:1, tile edge against the ground 7.07:1.
+- **Tile size comes from a container query**, not a hand-tuned reserve for the header and footer.
+  The old constant guessed 30dvh where the real chrome is 283px, which pushed a 1280×720 window
+  73px into a scrollbar. Nine viewport sizes across two modes now fit with no overflow.
+- **A one-row board gets tall tiles.** Nine tiles always have to fit across the screen, so width
+  caps them small and the height went to waste; standing them up echoes the flip-down levers of
+  the physical game.
+- **The restart control says "Restart".** It was an X, which reads as "close" sitting next to a
+  home button that already goes back.

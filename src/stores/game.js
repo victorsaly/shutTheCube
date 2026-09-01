@@ -219,6 +219,7 @@ export const useGameStore = defineStore('game', () => {
           t.isInUse = false
           t.isTaken = true
           t.isCollateral = false
+          t.isAvailable = false
         }
       })
       recountSums()
@@ -283,6 +284,7 @@ export const useGameStore = defineStore('game', () => {
     const claimed = runFrom(rowIndex, position)
     claimed.forEach(({ tile: t }) => {
       t.isInUse = true
+      t.isAvailable = false
       t.isCollateral = t !== tile
       t.isExplosion = true
       t.action = 'rotateIn'

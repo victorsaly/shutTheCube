@@ -1,5 +1,5 @@
 <script setup>
-import { ref, toRef } from 'vue'
+import { toRef } from 'vue'
 import { useTweenedNumber } from '@/composables/useTweenedNumber'
 
 const props = defineProps({
@@ -9,14 +9,11 @@ const props = defineProps({
   compact: { type: Boolean, default: false }
 })
 
-const isFinished = ref(false)
-const displayed = useTweenedNumber(toRef(props, 'value'), 500, () => {
-  isFinished.value = true
-})
+const displayed = useTweenedNumber(toRef(props, 'value'), 500)
 </script>
 
 <template>
-  <div class="position" :class="{ explosion: isFinished, compact }">
+  <div class="position" :class="{ compact }">
     <div class="value">{{ displayed }}</div>
     <span>{{ title }}</span>
   </div>
@@ -47,19 +44,6 @@ span {
 .compact span {
   font-size: 11px;
 }
-.explosion {
-  background: url('../assets/explosion.png') no-repeat;
-  background-position: 0 0;
-  animation: explosion-animation 1s steps(28);
-}
-@keyframes explosion-animation {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: -2800px 0;
-  }
-}
 @media only screen and (min-device-width: 320px) and (max-device-width: 568px) and (-webkit-min-device-pixel-ratio: 2) {
   .value {
     padding-top: 27px;
@@ -69,12 +53,6 @@ span {
     width: 100px;
     height: auto;
     top: -10px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .explosion {
-    animation: none;
-    background: none;
   }
 }
 </style>

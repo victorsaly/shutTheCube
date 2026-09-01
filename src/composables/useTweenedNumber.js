@@ -24,7 +24,7 @@ export function useTweenedNumber(source, duration = 500, onArrive) {
     stop()
     if (reducedMotion || from === to) {
       displayed.value = to
-      onArrive?.()
+      onArrive?.(from, to)
       return
     }
     const started = performance.now()
@@ -35,7 +35,7 @@ export function useTweenedNumber(source, duration = 500, onArrive) {
         frame = requestAnimationFrame(step)
       } else {
         frame = null
-        onArrive?.()
+        onArrive?.(from, to)
       }
     }
     frame = requestAnimationFrame(step)

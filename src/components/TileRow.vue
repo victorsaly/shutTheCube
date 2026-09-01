@@ -28,6 +28,7 @@ const selectTile = (position) => {
 const stateOf = (t) => {
   if (t.isTaken) return 'Shut'
   if (t.isInUse) return t.isCollateral ? 'Selected as bonus' : 'Selected'
+  if (game.state !== '') return 'Waiting for the roll'
   return t.isAvailable ? 'Playable' : 'Not playable'
 }
 </script>
@@ -44,8 +45,9 @@ const stateOf = (t) => {
             t.cssClass,
             t.action,
             {
-              isAvailable: t.isAvailable,
-              isNotAvailable: !t.isAvailable && !t.isTaken && !t.isInUse,
+              isAvailable: t.isAvailable && !t.isTaken && !t.isInUse,
+              isNotAvailable:
+                game.state === '' && !t.isAvailable && !t.isTaken && !t.isInUse,
               isTaken: t.isTaken,
               isCollateral: t.isCollateral,
               isInUse: t.isInUse,
@@ -87,19 +89,19 @@ li {
 
 .box {
   width: var(--tile);
-  height: var(--tile);
+  height: var(--tile-h, var(--tile));
   font-family: inherit;
   font-size: var(--tile-font);
-  font-weight: 600;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   padding: 0;
   cursor: pointer;
   color: #22292f;
   border: 0;
-  border-bottom: max(2px, calc(var(--tile) * 0.09)) solid #3d4852;
+  border-bottom: max(2px, calc(var(--tile) * 0.09)) solid rgb(0 0 0 / 45%);
   border-radius: max(3px, calc(var(--tile) * 0.14));
   transition:
     transform 0.12s ease,
@@ -107,7 +109,7 @@ li {
     background 0.2s linear;
 }
 .box:focus-visible {
-  outline: 3px solid #1a3d2b;
+  outline: 3px solid var(--accent);
   outline-offset: 3px;
   z-index: 2;
 }
@@ -123,51 +125,61 @@ li {
   border-bottom-width: 2px;
 }
 
+/*
+ * Three states that must never be confused, each carried by more than colour:
+ *
+ *   playable    full colour, full size, raised edge
+ *   unplayable  colour drained, flat, set back
+ *   shut        a dark hole in the board
+ *
+ * On this dark ground a tile cannot both recede in brightness and keep a
+ * legible numeral — there is no combination that satisfies both — so the
+ * unplayable state recedes by losing chroma (156 -> 40) while staying light.
+ * Numeral 7.42:1, edge against the ground 7.07:1.
+ */
 .isTaken {
-  color: #f5f7f6 !important;
-  cursor: not-allowed;
-  background: #1f2a24 !important;
-  border-bottom-color: #16201a;
-  opacity: 0.55;
+  color: #7d9188 !important;
+  cursor: default;
+  background: #0a1f17 !important;
+  background-image: none !important;
+  border-bottom-color: #0a1f17;
+  box-shadow: inset 0 2px 5px rgb(0 0 0 / 55%);
+  transform: scale(0.9);
 }
 .isInUse {
   color: #22292f !important;
   cursor: not-allowed;
-  background: #fff382 !important;
-  box-shadow: inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #22292f;
+  background: var(--accent) !important;
+  background-image: none !important;
+  box-shadow:
+    inset 0 0 0 max(2px, calc(var(--tile) * 0.08)) #22292f,
+    0 0 0 2px rgb(255 227 107 / 45%);
 }
 .isCollateral {
-  color: #22292f !important;
-  background: #a2f5bf !important;
-  box-shadow: inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #1a8b4b;
+  color: #12351f !important;
+  background: var(--accent-bonus) !important;
+  background-image: none !important;
+  box-shadow: inset 0 0 0 max(2px, calc(var(--tile) * 0.08)) #12351f;
 }
-/*
- * The unavailable state used to be #444 on cadetblue at 50% opacity — 3.19:1,
- * below the 4.5:1 WCAG AA needs, and it was the state most tiles were in most
- * of the time. A white veil over the tile's own colour fades it while moving it
- * toward white, so the dark number can only get more readable whatever the hue
- * underneath. Worst case across the nine colours is 8.49:1.
- *
- * A `filter` would have been the obvious tool but it applies to the text too,
- * and darkening the red tile took it to 2.6:1 — worse than the bug being fixed.
- */
+.isAvailable {
+  color: var(--tile-ink);
+  box-shadow: 0 2px 0 rgb(0 0 0 / 30%);
+}
+.isAvailable:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.07);
+}
 .isNotAvailable {
-  color: #22292f !important;
+  color: var(--tile-ink) !important;
   cursor: not-allowed;
-  background-image: linear-gradient(rgb(255 255 255 / 55%), rgb(255 255 255 / 55%));
-  /*
-   * The veil alone reads as too similar to a playable tile at a glance, so the
-   * unplayable ones also sit back and lose their raised edge. Shape and size
-   * carry the signal, which keeps it legible for colour-blind players and
-   * leaves the contrast ratio untouched.
-   */
-  transform: scale(0.88);
+  background-image: linear-gradient(rgb(188 200 194 / 72%), rgb(188 200 194 / 72%));
+  transform: scale(0.86);
   border-bottom-color: transparent;
-  box-shadow: inset 0 0 0 1px rgb(34 41 47 / 12%);
+  box-shadow: inset 0 0 0 1px rgb(22 36 29 / 14%);
 }
 .isHinted {
   animation: hint-pulse 1s ease-in-out 3;
-  box-shadow: 0 0 0 max(2px, calc(var(--tile) * 0.07)) #22292f;
+  box-shadow: 0 0 0 max(2px, calc(var(--tile) * 0.08)) #22292f;
 }
 @keyframes hint-pulse {
   0%,
@@ -205,9 +217,9 @@ li {
   .box {
     transition: none;
   }
-  .isNotAvailable {
+  .isNotAvailable,
+  .isTaken {
     transform: none;
-    opacity: 0.85;
   }
   .explosion,
   .isHinted {

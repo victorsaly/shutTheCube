@@ -39,9 +39,13 @@ const remaining = computed(() => game.diceSum - tileSum.value)
 
 <style scoped>
 p {
-  color: #fff;
+  color: var(--ink);
   margin: 0;
+  font-size: 0.85rem;
   min-height: 1.2em;
+}
+p b {
+  color: var(--accent);
 }
 ul {
   list-style: none;
@@ -56,16 +60,16 @@ li {
   display: block;
 }
 .box {
-  width: clamp(26px, calc(var(--tile, 40px) * 0.66), 44px);
-  height: clamp(26px, calc(var(--tile, 40px) * 0.66), 44px);
+  width: clamp(24px, 6vmin, 40px);
+  height: clamp(24px, 6vmin, 40px);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #22292f;
-  font-weight: 600;
-  font-size: clamp(12px, calc(var(--tile, 40px) * 0.3), 20px);
-  border-bottom: 3px solid #22292f;
-  border-radius: 4px;
+  color: #16241d;
+  font-weight: 700;
+  font-size: clamp(12px, 3vmin, 19px);
+  border-bottom: 3px solid rgb(0 0 0 / 40%);
+  border-radius: 5px;
 }
 .animated {
   animation-duration: 0.3s;

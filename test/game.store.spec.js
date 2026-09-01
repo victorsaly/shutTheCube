@@ -390,6 +390,31 @@ describe('playing whole games', () => {
   })
 })
 
+describe('tile state coherence', () => {
+  it('never leaves a tile both shut and playable', () => {
+    stubDice([3, 4])
+    game.newGame('medium')
+    game.startGame()
+    for (let guard = 0; guard < 60 && !game.isFinished; guard++) {
+      if (game.state === 'isNext') game.nextTurn()
+      else if (!playATurn(game)) break
+      for (const t of game.tiles.flat()) {
+        expect(t.isTaken && t.isAvailable, `tile ${t.index}`).toBe(false)
+        expect(t.isInUse && t.isAvailable, `tile ${t.index}`).toBe(false)
+      }
+    }
+  })
+
+  it('clears availability the moment a tile is played', () => {
+    stubDice([3, 4])
+    game.newGame('medium')
+    game.startGame()
+    const claimed = game.playTile(0, positionOf(game, 0, 3))
+    expect(claimed.length).toBeGreaterThan(0)
+    expect(claimed.every(({ tile }) => tile.isAvailable === false)).toBe(true)
+  })
+})
+
 describe('restart', () => {
   it('clears the board back to the opening state, keeping the mode', () => {
     stubDice([3, 4])

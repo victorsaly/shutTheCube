@@ -52,7 +52,7 @@
 
 /* Custom utilities the original markup referenced but never defined. */
 @utility bg-gradient-brand {
-  background: linear-gradient(0deg, #1a8b4b, #51d88a, #38c172, #1b8649);
+  background: linear-gradient(170deg, var(--ground-1) 0%, var(--ground-2) 55%, var(--ground-3) 100%);
 }
 @utility bg-modal {
   background-color: rgb(34 41 47 / 45%);
@@ -66,21 +66,41 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #222;
   -webkit-user-select: none;
   user-select: none;
+}
+
+/*
+ * Theme.
+ *
+ * The board used to sit on the brand's vivid green: 63% average saturation
+ * behind tiles averaging 77% lightness, so the ground was more colourful than
+ * the content. The mint tile was ΔE 23.9 from it and visually merged. A deep
+ * forest ground keeps the identity while letting the tiles be the colour:
+ * worst-case separation goes to ΔE 64.1.
+ */
+:root {
+  --ground-1: #14402e;
+  --ground-2: #0d2a1f;
+  --ground-3: #091d16;
+  --ink: #eaf3ee;
+  --ink-dim: #9fb4a8;
+  --tile-ink: #16241d;
+  --accent: #ffe36b;
+  --accent-bonus: #7ff0ae;
 }
 
 body {
   margin: 0;
   min-height: 100dvh;
-  background: #51d88a;
-  background: linear-gradient(0deg, #1a8b4b, #51d88a, #38c172, #1b8649);
+  color: var(--ink);
+  background: var(--ground-2);
+  background: linear-gradient(170deg, var(--ground-1) 0%, var(--ground-2) 55%, var(--ground-3) 100%);
   background-attachment: fixed;
 }
 
 a {
-  color: #222;
+  color: var(--ink);
 }
 
 /*
@@ -95,16 +115,25 @@ a {
 .board-metrics {
   --gap: clamp(3px, 0.9vmin, 9px);
   --board-max: 44rem;
-  /* Room the header, dice row and action button need. */
-  --chrome: clamp(210px, 30dvh, 330px);
-  --avail-w: calc(min(100vw, var(--board-max)) - 1.5rem - 8 * var(--gap));
-  --avail-h: calc(100dvh - var(--chrome));
+  /*
+   * Sized from the container query box of .board-area, which is whatever space
+   * the flex column actually left over. This replaced a hand-tuned `--chrome`
+   * reserve for the header and footer: the real chrome is 283px, the constant
+   * guessed 30dvh, and on a 1280x720 window that was 67px short and pushed the
+   * page into a scrollbar. Measuring beats guessing.
+   */
   --tile: min(
-    calc(var(--avail-w) / 9),
-    calc((var(--avail-h) - (var(--rows) - 1) * var(--gap)) / var(--rows)),
+    calc((min(100cqw, var(--board-max)) - 8 * var(--gap)) / 9),
+    calc((100cqh - (var(--rows) - 1) * var(--gap)) / var(--rows)),
     5.5rem
   );
   --tile-font: clamp(0.75rem, calc(var(--tile) * 0.46), 2.75rem);
+  --tile-h: var(--tile);
+}
+
+.board-metrics.single-row {
+  --tile-h: min(calc(var(--tile) * 1.9), calc(100cqh * 0.62));
+  --tile-font: clamp(1rem, calc(var(--tile) * 0.62), 3.25rem);
 }
 
 /* Screen-reader-only text that still gets announced. */

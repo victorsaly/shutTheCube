@@ -31,7 +31,7 @@ const start = (key) => {
   <div class="shell" :class="{ isMobile: onMobile, shutTheBox: game.rows === 1 }">
     <div id="warning-message">
       <div class="warning">
-        <img src="./assets/Logo_STB.png" alt="Shut The Cube" />
+        <img src="./assets/Logo_STB_light.png" alt="Shut The Cube" />
         <p>This app is only playable in portrait.</p>
       </div>
     </div>
@@ -78,10 +78,17 @@ const start = (key) => {
 </template>
 
 <style scoped>
+/*
+ * An explicit height, not just a minimum: size containment on .board-area can
+ * only resolve its block axis if the flex chain above it is definite. With
+ * min-height alone `100cqh` resolves to 0 and the board collapses.
+ */
 .shell {
+  height: 100dvh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 #app {
   flex: 1;
@@ -100,7 +107,8 @@ const start = (key) => {
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  background: #51d88a;
+  background: var(--ground-2);
+  color: var(--ink);
 }
 .warning img {
   max-height: 30px;
@@ -108,15 +116,18 @@ const start = (key) => {
 
 .menu-wrap {
   flex: 1;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1.25rem;
+  overflow-y: auto;
 }
 .card {
-  background: #fff;
-  border-radius: 0.6rem;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 22%);
+  background: #f4f7f5;
+  color: #16241d;
+  border-radius: 0.7rem;
+  box-shadow: 0 18px 44px rgb(0 0 0 / 45%);
   padding: 1.5rem;
   width: 100%;
   max-width: 22rem;
