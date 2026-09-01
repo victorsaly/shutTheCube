@@ -11,6 +11,7 @@ import {
   shuffle,
   sumTilesWhere
 } from '@/services/gameServices'
+import { dailySeed, dayNumber, mulberry32, todayStamp } from '@/services/random'
 import { EVENT_LIST, modeFor, runName } from './modes'
 import { useMatchStore } from './match'
 import { useStatsStore } from './stats'
@@ -60,8 +61,45 @@ export const useGameStore = defineStore('game', () => {
   const event = ref(null)
   /** Which of the available combinations the hint is pointing at. */
   const hintIndex = ref(0)
+  /**
+   * The seed this board was dealt from, or null for an ordinary random game.
+   * A seeded game is reproducible: same seed, same tiles, same dice, so it can
+   * be shared as a challenge or handed out as the day's board.
+   */
+  const seed = ref(null)
+  /** The date a daily board belongs to, or null when this is not a daily. */
+  const dayStamp = ref(null)
+  /**
+   * Every tile played this game, in order — the origin tile of each move, not
+   * the run it dragged along. Unused by the game itself; it exists so a score
+   * can later be verified by replaying it against the seed rather than taken
+   * on trust from the browser that reports it.
+   */
+  const moves = ref([])
+
+  /**
+   * The play stream: dice, events, mid-game reshuffles.
+   *
+   * Held outside `ref` on purpose — it is a generator, not state to render,
+   * and making it reactive would have every roll invalidate the board.
+   */
+  let rng = Math.random
+
+  /**
+   * Restart the play stream from the top.
+   *
+   * A seeded game has to deal the same dice every time it is restarted, so
+   * this runs on every restart. The board and the play stream are derived from
+   * the same seed but kept separate, so that reshuffling the tiles cannot
+   * shift the dice that follow it.
+   */
+  const resetRng = () => {
+    rng = seed.value === null ? Math.random : mulberry32((seed.value ^ 0x9e3779b9) >>> 0)
+  }
 
   const mode = computed(() => modeFor(modeKey.value))
+  const isDaily = computed(() => dayStamp.value !== null)
+  const dayIndex = computed(() => (dayStamp.value ? dayNumber(dayStamp.value) : null))
   const rows = computed(() => tiles.value.length)
   const activeDice = computed(() => dice.value.filter((d) => d.isAvailable))
   const diceSum = computed(() => sum(activeDice.value.map((d) => d.number)))
@@ -216,8 +254,27 @@ export const useGameStore = defineStore('game', () => {
    * match's `layout` so Player 2 gets the same faces and the same special
    * tiles, with every play flag fresh.
    */
-  const newGame = (key, layout = null) => {
+  const newGame = (key, layout = null, options = {}) => {
     modeKey.value = modeFor(key).key
+
+    // Where this board comes from: today's daily, an explicit shared seed, or
+    // nothing at all, which is the ordinary random game.
+    const { daily = false, seed: given = null, stamp = null } = options
+    if (daily) {
+      dayStamp.value = stamp ?? todayStamp()
+      seed.value = dailySeed(modeKey.value, dayStamp.value)
+    } else if (given !== null && Number.isFinite(Number(given))) {
+      dayStamp.value = null
+      seed.value = Number(given) >>> 0
+    } else {
+      dayStamp.value = null
+      seed.value = null
+    }
+
+    // The board stream is separate from the play stream, so that a mid-game
+    // reshuffle cannot change which dice come next.
+    const boardRng = seed.value === null ? Math.random : mulberry32(seed.value)
+
     if (layout) {
       tiles.value = layout.map((row) =>
         row.map((t) => ({
@@ -232,8 +289,8 @@ export const useGameStore = defineStore('game', () => {
         }))
       )
     } else {
-      const board = createTiles(9, mode.value.rows)
-      if (mode.value.hasSurprises) seedSpecials(board, { wild: 2, locked: 2 })
+      const board = createTiles(9, mode.value.rows, boardRng)
+      if (mode.value.hasSurprises) seedSpecials(board, { wild: 2, locked: 2, rng: boardRng })
       tiles.value = board
     }
     restart()
@@ -241,6 +298,10 @@ export const useGameStore = defineStore('game', () => {
 
   const restart = () => {
     stopTimer()
+    // A seeded game deals the same dice every time it is played, so the play
+    // stream goes back to the top rather than carrying on where it left off.
+    resetRng()
+    moves.value = []
     eachTile((t) => {
       t.isAvailable = false
       t.isInUse = false
@@ -273,7 +334,7 @@ export const useGameStore = defineStore('game', () => {
     const count = useOne ? 1 : extraDie.value ? 3 : 2
     dice.value.forEach((d, i) => {
       d.isAvailable = i < count
-      d.number = d.isAvailable ? Math.floor(Math.random() * 6) + 1 : 0
+      d.number = d.isAvailable ? Math.floor(rng() * 6) + 1 : 0
     })
     diceInUse.value = true
     numberPlay.value += 1
@@ -285,7 +346,7 @@ export const useGameStore = defineStore('game', () => {
 
   /** First roll of a game: shuffle each row, then roll. */
   const startGame = () => {
-    tiles.value = tiles.value.map((row) => shuffle(row))
+    tiles.value = tiles.value.map((row) => shuffle(row, rng))
     numberPlay.value = 0
     state.value = ''
     rollDice()
@@ -300,7 +361,7 @@ export const useGameStore = defineStore('game', () => {
   const maybeEvent = () => {
     event.value = null
     extraDie.value = false
-    if (!mode.value.hasSurprises || Math.random() > 0.17) return
+    if (!mode.value.hasSurprises || rng() > 0.17) return
 
     const open = tiles.value.flat().filter((t) => !t.isTaken && t.kind === 'normal')
     const choices = EVENT_LIST.filter(
@@ -308,15 +369,15 @@ export const useGameStore = defineStore('game', () => {
     ).filter((e) => e.key !== 'thirdDie' || !mustRollSingleDie.value)
     if (choices.length === 0) return
 
-    const chosen = choices[Math.floor(Math.random() * choices.length)]
+    const chosen = choices[Math.floor(rng() * choices.length)]
     event.value = chosen
 
     if (chosen.key === 'thirdDie') {
       extraDie.value = true
     } else if (chosen.key === 'reshuffle') {
-      tiles.value = tiles.value.map((row) => shuffle(row))
+      tiles.value = tiles.value.map((row) => shuffle(row, rng))
     } else if (chosen.key === 'wildDrop') {
-      open[Math.floor(Math.random() * open.length)].kind = 'wild'
+      open[Math.floor(rng() * open.length)].kind = 'wild'
     }
     celebrate(chosen.title, chosen.detail, 'event')
   }
@@ -371,8 +432,16 @@ export const useGameStore = defineStore('game', () => {
       : `${note.value}. Final score ${sumTilesTaken.value}.`
     // A pass-and-play game belongs to the match, not to the solo record.
     const match = useMatchStore()
-    if (match.active) match.record(sumTilesTaken.value, won, numberPlay.value)
-    else useStatsStore().record(modeKey.value, sumTilesTaken.value, won)
+    if (match.active) {
+      match.record(sumTilesTaken.value, won, numberPlay.value)
+    } else {
+      const stats = useStatsStore()
+      stats.record(modeKey.value, sumTilesTaken.value, won)
+      // Only the first go at a given day's board counts; a replay is practice.
+      if (dayStamp.value) {
+        stats.recordDaily(modeKey.value, dayStamp.value, sumTilesTaken.value, won, numberPlay.value)
+      }
+    }
   }
 
   // ------------------------------------------------------------ turn logic
@@ -476,6 +545,9 @@ export const useGameStore = defineStore('game', () => {
       t.action = 'rotateIn'
     })
     history.value.push(claimed.map(({ rowIndex: r, tile: t }) => ({ rowIndex: r, id: t.id })))
+    // Kept for later server-side verification; short keys because this is
+    // destined for a URL and a request body, not for reading.
+    moves.value.push({ r: rowIndex, f: tile.index, k: tile.kind, w: worth })
     hintedIds.value = []
     previewIds.value = []
     hintIndex.value = 0
@@ -525,6 +597,9 @@ export const useGameStore = defineStore('game', () => {
   const undo = () => {
     const group = history.value.pop()
     if (!group) return
+    // An undone move never happened, so it must not appear in the record a
+    // score is later verified against.
+    moves.value.pop()
     group.forEach(({ rowIndex, id }) => {
       const tile = findTile(rowIndex, id)
       if (!tile) return
@@ -589,10 +664,11 @@ export const useGameStore = defineStore('game', () => {
     tiles, dice, state, note, numberPlay, diceInUse, isLoading, isVisible,
     sumTilesInUse, sumTilesTaken, gamePoints, gameBonus, modeKey, secondsLeft,
     hintedIds, history, singleDie, announcement, previewIds, celebration, event,
+    seed, dayStamp, moves,
     // getters
     mode, rows, activeDice, diceSum, isFinished, selectedTiles, canUndo,
     remainingToMatch, canRollSingleDie, mustRollSingleDie, openTotal, runSizes, bestRun,
-    waysToMatch,
+    waysToMatch, isDaily, dayIndex,
     // actions
     newGame, restart, startGame, nextTurn, refreshAvailability, playTile,
     settleTile, rejectTile, compactRow, undo, showHint, clearHint,

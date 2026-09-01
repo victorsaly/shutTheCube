@@ -1,10 +1,12 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useGameStore } from '@/stores/game'
 import { useMatchStore } from '@/stores/match'
 import { useStatsStore } from '@/stores/stats'
+import { useArcadeStore } from '@/stores/arcade'
 import { MODE_LIST } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
+import { dayNumber, secondsUntilTomorrow, todayStamp } from '@/services/random'
 import { useInstallPrompt } from '@/composables/useInstallPrompt'
 import AppIcon from '@/components/AppIcon.vue'
 import BrandMark from '@/components/BrandMark.vue'
@@ -12,13 +14,16 @@ import GameBoard from '@/components/GameBoard.vue'
 import GameHeader from '@/components/GameHeader.vue'
 import ModeMark from '@/components/ModeMark.vue'
 import StatsPanel from '@/components/StatsPanel.vue'
+import Leaderboard from '@/components/Leaderboard.vue'
 
 const game = useGameStore()
 const match = useMatchStore()
 const stats = useStatsStore()
+const arcade = useArcadeStore()
 const { canInstall, prompt } = useInstallPrompt()
 const onMobile = ref(false)
 const showStats = ref(false)
+const showBoard = ref(false)
 const version = __APP_VERSION__
 
 /* Short enough for a card; each card is the whole pitch for its mode. */
@@ -30,17 +35,36 @@ const SUBS = {
 
 /** 1 = solo, 2 = pass-and-play on this device. */
 const players = ref(1)
+/** Whether the mode cards deal today's shared board instead of a random one. */
+const daily = ref(false)
 
-const start = (key) => {
+const today = todayStamp()
+const dayLabel = dayNumber(today)
+const untilTomorrow = ref(secondsUntilTomorrow())
+let countdown = null
+
+/** How long until the next board, as `7h 12m`. */
+const countdownLabel = computed(() => {
+  const h = Math.floor(untilTomorrow.value / 3600)
+  const m = Math.floor((untilTomorrow.value % 3600) / 60)
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
+})
+
+const streak = computed(() => stats.dayStreak())
+
+const start = (key, options = {}) => {
   match.reset()
-  game.newGame(key)
+  // Pass and play needs both players on one board, which the daily already
+  // guarantees — but a match is a private contest, so it stays unseeded.
+  const seeded = players.value === 1 && daily.value
+  game.newGame(key, null, seeded ? { daily: true, stamp: today } : options)
   if (players.value === 2) match.begin(key, game.tiles)
   game.isVisible = true
 }
 
 /* Menu keyboard: 1-3 deals you straight into that mode. */
 const onMenuKeydown = (event) => {
-  if (game.isVisible || showStats.value) return
+  if (game.isVisible || showStats.value || showBoard.value) return
   if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return
   const n = parseInt(event.key, 10)
   if (n >= 1 && n <= MODE_LIST.length) start(MODE_LIST[n - 1].key)
@@ -49,12 +73,25 @@ const onMenuKeydown = (event) => {
 onMounted(() => {
   onMobile.value = isMobile()
   window.addEventListener('keydown', onMenuKeydown)
-  // A shared challenge link (?mode=ninja) deals the recipient straight in.
-  const dared = new URLSearchParams(window.location.search).get('mode')
-  if (dared && MODE_LIST.some((m) => m.key === dared)) start(dared)
+  // Optional throughout: a failure here leaves the game exactly as it was.
+  arcade.restore()
+  // The countdown only has to be roughly right, so it ticks once a minute
+  // rather than once a second.
+  countdown = setInterval(() => (untilTomorrow.value = secondsUntilTomorrow()), 60_000)
+
+  // A shared challenge link deals the recipient straight in. `s` carries the
+  // seed, which is the whole point: without it they would get a different
+  // board and there would be nothing to beat.
+  const params = new URLSearchParams(window.location.search)
+  const dared = params.get('mode')
+  const sharedSeed = params.get('s')
+  if (dared && MODE_LIST.some((m) => m.key === dared)) {
+    start(dared, sharedSeed !== null ? { seed: sharedSeed } : {})
+  }
 })
 onUnmounted(() => {
   window.removeEventListener('keydown', onMenuKeydown)
+  clearInterval(countdown)
 })
 </script>
 
@@ -80,6 +117,8 @@ onUnmounted(() => {
       <div v-if="!game.isVisible" class="menu-wrap">
         <StatsPanel v-if="showStats" @close="showStats = false" />
 
+        <Leaderboard v-else-if="showBoard" @close="showBoard = false" />
+
         <div v-else class="menu">
           <div class="lockup">
             <BrandMark :size="56" />
@@ -101,6 +140,25 @@ onUnmounted(() => {
             </button>
           </div>
 
+          <!-- The daily is a modifier on a mode, not a fourth mode: every mode
+               has its own board each day, and you pick which one to play. -->
+          <div v-if="players === 1" class="daily-row">
+            <button
+              type="button"
+              class="pill daily-pill"
+              :aria-pressed="daily"
+              @click="daily = !daily"
+            >
+              Daily <b class="num">#{{ dayLabel }}</b>
+              <small>
+                Everyone gets the same board · new in {{ countdownLabel }}
+              </small>
+            </button>
+            <p v-if="streak > 1" class="streak num" :title="`${streak} days in a row`">
+              🔥 {{ streak }}
+            </p>
+          </div>
+
           <ul class="cards">
             <li v-for="(mode, i) in MODE_LIST" :key="mode.key">
               <button
@@ -115,7 +173,13 @@ onUnmounted(() => {
                   <span class="card-sub">{{ SUBS[mode.key] }}</span>
                   <span class="card-foot micro">
                     <span class="go">Play <kbd>{{ i + 1 }}</kbd></span>
-                    <span v-if="stats.hasPlayed(mode.key)" class="card-best num">
+                    <span
+                      v-if="daily && players === 1 && stats.dailyResult(mode.key, today)"
+                      class="card-best num done"
+                    >
+                      today {{ stats.dailyResult(mode.key, today).score }}
+                    </span>
+                    <span v-else-if="stats.hasPlayed(mode.key)" class="card-best num">
                       best {{ stats.bestFor(mode.key) }}
                     </span>
                   </span>
@@ -134,6 +198,9 @@ onUnmounted(() => {
           <div class="menu-foot">
             <button type="button" class="record-link" @click="showStats = true">
               <AppIcon name="trophy" /> Your record
+            </button>
+            <button type="button" class="record-link" @click="showBoard = true">
+              <AppIcon name="chart" /> Leaderboard
             </button>
             <button v-if="canInstall" type="button" class="install" @click="prompt">
               Add to home screen
@@ -270,7 +337,37 @@ onUnmounted(() => {
   gap: 10px;
   flex-wrap: wrap;
   justify-content: center;
+  margin-bottom: 10px;
+}
+
+/*
+ * The daily sits between the player toggle and the modes because that is the
+ * order of the decision: who is playing, which board, then which mode.
+ */
+.daily-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   margin-bottom: clamp(14px, 2.5vh, 22px);
+}
+.daily-pill b {
+  color: var(--accent);
+  margin-left: 2px;
+}
+.daily-pill[aria-pressed='true'] b {
+  color: inherit;
+}
+.streak {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+/* A finished daily reads as done rather than as a record to beat. */
+.card-best.done {
+  color: var(--accent);
 }
 
 /*

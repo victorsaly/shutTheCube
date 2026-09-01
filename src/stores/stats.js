@@ -1,7 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { streakOf, todayStamp } from '@/services/random'
 
 const STORAGE_KEY = 'shutTheCube.stats'
+const DAILY_KEY = 'shutTheCube.daily'
+
+/** How many days of history to keep. Enough for any streak worth showing. */
+const DAY_MEMORY = 90
 
 const blank = () => ({
   played: 0,
@@ -10,12 +15,14 @@ const blank = () => ({
   last: 0,
   totalPoints: 0,
   streak: 0,
-  bestStreak: 0
+  bestStreak: 0,
+  /** Distinct dates this mode was played, oldest first. */
+  days: []
 })
 
-const read = () => {
+const read = (key) => {
   try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}')
+    const stored = JSON.parse(localStorage.getItem(key) ?? '{}')
     return typeof stored === 'object' && stored !== null ? stored : {}
   } catch {
     // Private browsing, disabled storage, or corrupt data: start fresh.
@@ -23,9 +30,19 @@ const read = () => {
   }
 }
 
+const write = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // Not being able to persist a score is not worth interrupting play.
+  }
+}
+
 /** Per-mode records, kept in the browser. No account, no backend. */
 export const useStatsStore = defineStore('stats', () => {
-  const byMode = ref(read())
+  const byMode = ref(read(STORAGE_KEY))
+  /** Finished dailies, as `{ [date]: { [mode]: { score, won, rolls } } }`. */
+  const dailies = ref(read(DAILY_KEY))
 
   const forMode = (key) => ({ ...blank(), ...(byMode.value[key] ?? {}) })
 
@@ -43,9 +60,29 @@ export const useStatsStore = defineStore('stats', () => {
 
   const hasPlayed = (key) => forMode(key).played > 0
 
-  const record = (key, score, won) => {
+  /** Consecutive days this one mode was played. */
+  const streakForMode = (key) => streakOf(forMode(key).days)
+
+  /**
+   * Consecutive days *anything* was played.
+   *
+   * The streak worth protecting is the habit, not the mode — playing Ninja
+   * yesterday and Beginner today is still two days in a row.
+   */
+  const dayStreak = () => {
+    const days = new Set()
+    for (const stats of Object.values(byMode.value)) {
+      for (const day of stats?.days ?? []) days.add(day)
+    }
+    return streakOf([...days])
+  }
+
+  const record = (key, score, won, { stamp = todayStamp() } = {}) => {
     const previous = forMode(key)
     const streak = won ? previous.streak + 1 : 0
+    const days = previous.days.includes(stamp)
+      ? previous.days
+      : [...previous.days, stamp].slice(-DAY_MEMORY)
     byMode.value = {
       ...byMode.value,
       [key]: {
@@ -55,25 +92,58 @@ export const useStatsStore = defineStore('stats', () => {
         last: score,
         totalPoints: previous.totalPoints + score,
         streak,
-        bestStreak: Math.max(previous.bestStreak, streak)
+        bestStreak: Math.max(previous.bestStreak, streak),
+        days
       }
     }
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(byMode.value))
-    } catch {
-      // Not being able to persist a score is not worth interrupting play.
-    }
+    write(STORAGE_KEY, byMode.value)
     return score > previous.best
+  }
+
+  /** What you scored on a given day's board, or null if you have not played it. */
+  const dailyResult = (key, stamp = todayStamp()) => dailies.value[stamp]?.[key] ?? null
+
+  /**
+   * Bank a daily result. Only the first attempt counts — replaying the same
+   * board is practice, and overwriting it would make the day's score mean
+   * nothing.
+   */
+  const recordDaily = (key, stamp, score, won, rolls) => {
+    if (dailyResult(key, stamp)) return false
+    const kept = Object.fromEntries(
+      Object.entries({ ...dailies.value, [stamp]: { ...(dailies.value[stamp] ?? {}), [key]: { score, won, rolls } } })
+        .sort(([a], [b]) => (a < b ? -1 : 1))
+        .slice(-DAY_MEMORY)
+    )
+    dailies.value = kept
+    write(DAILY_KEY, dailies.value)
+    return true
   }
 
   const reset = () => {
     byMode.value = {}
+    dailies.value = {}
     try {
       localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(DAILY_KEY)
     } catch {
       // Nothing to do if storage is unavailable.
     }
   }
 
-  return { byMode, forMode, bestFor, averageFor, winRateFor, hasPlayed, record, reset }
+  return {
+    byMode,
+    dailies,
+    forMode,
+    bestFor,
+    averageFor,
+    winRateFor,
+    hasPlayed,
+    streakForMode,
+    dayStreak,
+    record,
+    dailyResult,
+    recordDaily,
+    reset
+  }
 })

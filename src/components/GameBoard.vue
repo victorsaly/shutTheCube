@@ -131,7 +131,12 @@ const shareResult = computed(() =>
         score: game.sumTilesTaken,
         max: game.rows * 45,
         rolls: game.numberPlay,
-        won: game.state === 'isWin'
+        won: game.state === 'isWin',
+        // Carried so the card can name the day and the link can hand over the
+        // very same board rather than merely the same mode.
+        seed: game.seed,
+        day: game.dayIndex,
+        streak: stats.dayStreak()
       }
 )
 const timerLow = computed(() => game.mode.turnSeconds > 0 && game.secondsLeft <= 10)

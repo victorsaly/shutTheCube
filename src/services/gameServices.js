@@ -1,4 +1,4 @@
-import { filter, flatMapDeep, flatten, groupBy, intersection, isEqual, shuffle as _shuffle, sortBy, sum as _sum, uniq, uniqWith } from 'lodash-es'
+import { filter, flatMapDeep, flatten, groupBy, intersection, isEqual, sortBy, sum as _sum, uniq, uniqWith } from 'lodash-es'
 
 /** Tailwind colour assigned to each tile face, 1-9. */
 const TILE_COLOURS = {
@@ -37,15 +37,30 @@ export const createGuid = () =>
         return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
       })
 
-export const shuffle = (values) => (Array.isArray(values) ? _shuffle(values) : values)
+/**
+ * Fisher-Yates over a caller-supplied source of randomness.
+ *
+ * Hand-rolled rather than lodash's `shuffle` because that draws from
+ * `Math.random` with no way in: a seeded board has to be able to supply its
+ * own stream. With no `rng` passed the behaviour is unchanged.
+ */
+export const shuffle = (values, rng = Math.random) => {
+  if (!Array.isArray(values)) return values
+  const out = [...values]
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}
 
 /**
  * Build `rows` rows of `numberTiles` tiles, each row independently shuffled.
  * One row is "Shut The Box"; nine rows is "Shut The Cube".
  */
-export const createTiles = (numberTiles, rows) => {
+export const createTiles = (numberTiles, rows, rng = Math.random) => {
   const faces = Array.from({ length: numberTiles }, (_, i) => i + 1)
-  return Array.from({ length: rows }, () => shuffle(faces).map((index) => newTile(index)))
+  return Array.from({ length: rows }, () => shuffle(faces, rng).map((index) => newTile(index)))
 }
 
 /** Slide a played tile (and anything already taken) to the end of its row. */
@@ -173,8 +188,11 @@ export const combinationsSummingTo = (counts, target) => {
  * They change how a turn can be played, never how it is scored: a tile is
  * still worth its own face value when it is shut.
  */
-export const seedSpecials = (tiles, { wild = 0, locked = 0 } = {}) => {
-  const pool = _shuffle(tiles.flatMap((row, r) => row.map((_, c) => [r, c])))
+export const seedSpecials = (tiles, { wild = 0, locked = 0, rng = Math.random } = {}) => {
+  const pool = shuffle(
+    tiles.flatMap((row, r) => row.map((_, c) => [r, c])),
+    rng
+  )
   let at = 0
   for (let i = 0; i < wild && at < pool.length; i++, at++) {
     const [r, c] = pool[at]

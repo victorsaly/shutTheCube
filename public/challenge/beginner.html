@@ -27,7 +27,13 @@
     <meta name="twitter:description" content="One row, the classic pub game. Think you can beat it?" />
     <meta name="twitter:image" content="https://shutthecube.com/static/social/beginner.png" />
     <meta http-equiv="refresh" content="0; url=../?mode=beginner" />
-    <script>location.replace('../?mode=beginner')</script>
+    <script>
+      /* Carry the challenge's own query string across, so a shared seed
+         (?s=) deals the recipient the very same board rather than merely
+         the same mode. The meta refresh above is the no-JavaScript
+         fallback and can only manage the mode. */
+      location.replace('../?mode=beginner' + location.search.replace(/^\?/, '&'))
+    </script>
   </head>
   <body style="margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0d2a1f; color: #eaf3ee; font-family: system-ui, sans-serif">
     <p>Dealing you in&hellip; <a href="../?mode=beginner" style="color: #7ff0ae">Play the Beginner challenge</a></p>

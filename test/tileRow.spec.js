@@ -125,6 +125,11 @@ describe('accessibility', () => {
 
   it('names each tile and describes its state', async () => {
     game.tiles[0][0].isTaken = true
+    // A pinned Math.random shuffles every row the same way, which lines the
+    // columns up and puts every tile in a nine-long run — and a tile in a run
+    // is labelled with its length instead. Rotating the row underneath breaks
+    // the alignment, so row 0 has tiles that stand on their own.
+    game.tiles[1].push(game.tiles[1].shift())
     const row = mountRow(0)
     await row.vm.$nextTick()
     const labels = row.findAll('button').map((b) => b.attributes('aria-label'))
