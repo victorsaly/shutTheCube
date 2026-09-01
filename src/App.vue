@@ -1,223 +1,235 @@
-<template>
- <div 
- :class="[{isMobile : isMobile && tilesLength > 1}, {shutTheBox : tilesLength == 1},  {'container' : !isMobile}]"
- class="w-full h-screen bg-gradient-brand  mx-auto relative ">  
-  <div id="warning-message">
+<script setup>
+import { onMounted, ref } from 'vue'
+import { useGameStore } from '@/stores/game'
+import { useStatsStore } from '@/stores/stats'
+import { MODE_LIST } from '@/stores/modes'
+import { isMobile } from '@/services/gameServices'
+import { useInstallPrompt } from '@/composables/useInstallPrompt'
+import AppIcon from '@/components/AppIcon.vue'
+import GameBoard from '@/components/GameBoard.vue'
+import GameHeader from '@/components/GameHeader.vue'
+import StatsPanel from '@/components/StatsPanel.vue'
 
-     <div class="w-full h-screen  absolute flex items-center justify-center bg-modal bg-green-light" 
-     >
-      <!-- @click.self="modal.visible = false" -->
-        <div class=" text-center">
-           <!-- overflow-y-scroll -->
-           <div class="mb-4">
-                 <img src="./assets/Logo_STB.png" style="max-height:30px;"> 
-            </div>
-            <div class="mb-8">
-                <p> This App is only viewable in vertical mode.</p>
-            </div>
-          
-        </div>
-    </div>
-  </div>
-  <div id="app">
-  <!-- <transition name="fade" :duration="{ enter: 1000, leave: 1000 }" mode="in-out"> -->
-  <div :class="{header:tilesLength > 2 }">
-   <app-header  v-if="gameIsVisible"></app-header>
-  </div>
-   <template v-if="!gameIsVisible">
-      <div class="h-screen w-full absolute flex items-center justify-center bg-modal" 
-      style="height: calc(100% - 200px);">
-      <!-- @click.self="modal.visible = false" -->
-        <div class="bg-white rounded shadow p-8 m-4 max-w-xs max-h-full text-center">
-           <!-- overflow-y-scroll -->
-            <div class="mb-4">
-                 <img src="./assets/Logo_STB.png" style="max-height:30px;"> 
-                 <span style="font-size:9px;position:absolute;">v{{version}}
-                 </span>
-            </div>
-            <div class="mb-8">
-                <p>Select the game you want to play.</p>
-            </div>
-            <div class="flex justify-center">
-                <button class="flex-no-shrink text-white py-2 px-4 rounded bg-teal hover:bg-teal-dark"
-                @click="setGame(1)"
-                >Shut The Box</button>
-                <button class="flex-no-shrink text-white ml-2 py-2 px-4 rounded bg-teal hover:bg-teal-dark"
-                @click="setGame(9)"
-                >Shut The Cube</button>
-            </div>
-        </div>
-      </div>
-    </template>
-  <!-- </transition> -->
-  <transition name="fade" mode="out-in">
-   
-    <template v-if="gameIsVisible">
-           <router-view/>
-    </template>
- </transition>
+const game = useGameStore()
+const stats = useStatsStore()
+const { canInstall, prompt } = useInstallPrompt()
+const onMobile = ref(false)
+const showStats = ref(false)
+const version = __APP_VERSION__
 
-      </div>
- </div>
-</template>
+onMounted(() => {
+  onMobile.value = isMobile()
+})
 
-<script>
-import Header from "./components/Header";
-import $ from "./services/gameServices";
-import {version} from "../package.json"
-export default {
-  name: "app",
-  data: function() {
-    return {
-      isMobile: false,
-      version:version
-    };
-  },
-  computed: {
-    gameIsVisible() {
-      return this.$store.getters.gameIsVisible;
-    },
-    tilesLength() {
-      return this.$store.getters.tiles == null
-        ? 0
-        : this.$store.getters.tiles.length;
-    }
-  },
-  methods: {
-    setGame(size) {
-      this.$store.dispatch("initTiles", size);
-      this.$store.dispatch("restartGame");
-      this.$store.commit("SET_GAME_IS_VISIBLE", true);
-    }
-  },
-  components: {
-    appHeader: Header
-  },
-  created() {
-    this.$store.dispatch("initGame");
-    this.isMobile = $.isMobile();
-  },
-  mounted() {
-    window.addToHomescreen({
-      maxDisplayCount: 3,
-      displayPace: 0,
-      skipFirstVisit:false
-    });
-  },
-  destroyed() {
-    //this.song.stop()
-  }
-};
+const start = (key) => {
+  game.newGame(key)
+  game.isVisible = true
+}
 </script>
 
-<style>
-@import url("https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css");
-@import url("https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.css");
-#app,
-body {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #222;
-  -moz-user-focus: ignore;
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -o-user-select: none;
-  user-select: none;
-  /* margin-top: 20px; */
+<template>
+  <div class="shell" :class="{ isMobile: onMobile, shutTheBox: game.rows === 1 }">
+    <div id="warning-message">
+      <div class="warning">
+        <img src="./assets/Logo_STB_light.png" alt="Shut The Cube" />
+        <p>This app is only playable in portrait.</p>
+      </div>
+    </div>
+
+    <div id="app">
+      <h1 v-if="!game.isVisible" class="visually-hidden">Shut The Cube: Play Shut the Box Online</h1>
+      <GameHeader v-if="game.isVisible" />
+
+      <div v-if="!game.isVisible" class="menu-wrap">
+        <div class="card">
+          <div class="card-head">
+            <img src="./assets/Logo_STB.png" alt="Shut The Cube" />
+            <span class="version">v{{ version }}</span>
+          </div>
+
+          <StatsPanel v-if="showStats" @close="showStats = false" />
+
+          <template v-else>
+            <p class="lede">Pick a game.</p>
+            <ul class="modes">
+              <li v-for="mode in MODE_LIST" :key="mode.key">
+                <button type="button" :class="['choice', mode.key]" @click="start(mode.key)">
+                  <span class="choice-name">{{ mode.label }}</span>
+                  <span class="choice-blurb">{{ mode.blurb }}</span>
+                  <span v-if="stats.hasPlayed(mode.key)" class="choice-best">
+                    best {{ stats.bestFor(mode.key) }}
+                  </span>
+                </button>
+              </li>
+            </ul>
+
+            <button type="button" class="secondary" @click="showStats = true">
+              <AppIcon name="trophy" /> Your record
+            </button>
+            <button v-if="canInstall" type="button" class="install" @click="prompt">
+              Add to home screen
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <GameBoard v-if="game.isVisible" />
+    </div>
+  </div>
+</template>
+
+<style scoped>
+/*
+ * An explicit height, not just a minimum: size containment on .board-area can
+ * only resolve its block axis if the flex chain above it is definite. With
+ * min-height alone `100cqh` resolves to 0 and the board collapses.
+ */
+.shell {
+  height: 100dvh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-body {
-  background: #51d88a;
-  background: linear-gradient(0deg, #1a8b4b, #51d88a, #38c172, #1b8649);
-  /* background-size: 100% 100%; */
-  /* background: linear-gradient(-45deg, #EE7752, #E73C7E, #23A6D5, #23D5AB);
-	background-size: 400% 400%;
-	-webkit-animation: Gradient 15s ease infinite;
-	-moz-animation: Gradient 15s ease infinite;
-	animation: Gradient 15s ease infinite; */
-}
-.container{
-  max-width: 570px;
-}
-@-webkit-keyframes Gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+#app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+  max-width: 46rem;
+  margin: 0 auto;
 }
 
-@-moz-keyframes Gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+.warning {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: var(--ground-2);
+  color: var(--ink);
+}
+.warning img {
+  max-height: 30px;
 }
 
-@keyframes Gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+.menu-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+.card {
+  background: #f4f7f5;
+  color: #16241d;
+  border-radius: 0.7rem;
+  box-shadow: 0 18px 44px rgb(0 0 0 / 45%);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 22rem;
+  max-height: 100%;
+  overflow-y: auto;
+}
+.card-head {
+  margin-bottom: 1rem;
+}
+.card-head img {
+  max-height: 30px;
+}
+.version {
+  font-size: 9px;
+  position: absolute;
+  color: #8795a1;
+}
+.lede {
+  margin: 0 0 1rem;
+  color: #606f7b;
+  font-size: 0.9rem;
 }
 
-a {
-  color: #222;
+.modes {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
 }
-.fade-enter-active,
-.fade-leave-active {
-  transition-property: opacity;
-  transition-duration: 0.25s;
+.choice {
+  width: 100%;
+  display: block;
+  text-align: left;
+  color: #fff;
+  border: 0;
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+  position: relative;
 }
-.fade-leave-active {
-  /* transition-property: opacity; */
-  transition-duration: 0;
-  transition-delay: 0;
+.choice.beginner {
+  background: #38a89d;
 }
-.fade-enter-active {
-  transition-delay: 0.25s;
+.choice.medium {
+  background: #2779bd;
+}
+.choice.ninja {
+  background: #c3251f;
+}
+.choice:hover {
+  filter: brightness(1.08);
+}
+.choice-name {
+  display: block;
+  font-weight: 700;
+}
+.choice-blurb {
+  display: block;
+  font-size: 0.72rem;
+  opacity: 0.9;
+  margin-top: 1px;
+}
+.choice-best {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.75rem;
+  font-size: 0.68rem;
+  background: rgb(255 255 255 / 22%);
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
 }
 
-.fade-enter,
-.fade-leave-active {
-  opacity: 0;
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #dae1e7;
+  color: #22292f;
+  border: 0;
+  border-radius: 0.4rem;
+  padding: 0.45rem 0.8rem;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
 }
-@media only screen and (min-device-width: 300px) and (max-device-width: 568px) and (-webkit-min-device-pixel-ratio: 2) {
-  .header {
-    height: 70px;
-  }
+.install {
+  display: block;
+  margin: 1rem auto 0;
+  background: none;
+  border: 0;
+  color: #606f7b;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  cursor: pointer;
 }
-
-#warning-message {
-  display: none;
-}
-@media only screen and (orientation: landscape) and (max-width: 1024px) {
-  .isMobile #app {
-    display: none;
-  }
-  .isMobile #warning-message {
-    display: block;
-  }
-}
-@media only screen and (orientation: portrait) {
-  .isMobile #warning-message {
-    display: none;
-  }
+.choice:focus-visible,
+.secondary:focus-visible,
+.install:focus-visible {
+  outline: 3px solid #22292f;
+  outline-offset: 2px;
 }
 </style>

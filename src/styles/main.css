@@ -1,0 +1,252 @@
+@import "tailwindcss";
+
+/*
+ * The game was written against Tailwind 0.x, whose colour scale ("light" /
+ * "lighter" suffixes) was removed in Tailwind 1.0. Those names are re-declared
+ * here as theme tokens so the original design is reproduced exactly, and so the
+ * palette is now pinned in this repo rather than fetched from a CDN.
+ * Values taken verbatim from tailwindcss@0.7.4.
+ */
+@theme {
+  --color-black: #22292f;
+  --color-white: #fff;
+
+  --color-grey-darker: #606f7b;
+  --color-grey-dark: #8795a1;
+  --color-grey: #b8c2cc;
+  --color-grey-light: #dae1e7;
+
+  --color-red-light: #ef5753;
+  --color-red-lighter: #f9acaa;
+
+  --color-yellow-light: #fff382;
+  --color-yellow-lighter: #fff9c2;
+
+  --color-green-light: #51d88a;
+  --color-green-lighter: #a2f5bf;
+
+  --color-teal: #4dc0b5;
+  --color-teal-dark: #38a89d;
+
+  --color-blue: #3490dc;
+  --color-blue-dark: #2779bd;
+  --color-blue-light: #6cb2eb;
+
+  --color-indigo-lighter: #b2b7ff;
+
+  --color-purple-light: #a779e9;
+  --color-purple-lighter: #d6bbfc;
+}
+
+/* Utilities that existed in Tailwind 0.x and were removed in later majors. */
+@utility list-reset {
+  list-style: none;
+  padding: 0;
+}
+@utility no-outline {
+  outline: 0;
+}
+@utility flex-no-shrink {
+  flex-shrink: 0;
+}
+
+/* Custom utilities the original markup referenced but never defined. */
+@utility bg-gradient-brand {
+  background: linear-gradient(170deg, var(--ground-1) 0%, var(--ground-2) 55%, var(--ground-3) 100%);
+}
+@utility bg-modal {
+  background-color: rgb(34 41 47 / 45%);
+}
+
+/* ---------- global app styles (ported from the old App.vue) ---------- */
+
+#app,
+body {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/*
+ * Theme.
+ *
+ * The board used to sit on the brand's vivid green: 63% average saturation
+ * behind tiles averaging 77% lightness, so the ground was more colourful than
+ * the content. The mint tile was ΔE 23.9 from it and visually merged. A deep
+ * forest ground keeps the identity while letting the tiles be the colour:
+ * worst-case separation goes to ΔE 64.1.
+ */
+:root {
+  --ground-1: #14402e;
+  --ground-2: #0d2a1f;
+  --ground-3: #091d16;
+  --ink: #eaf3ee;
+  --ink-dim: #9fb4a8;
+  --tile-ink: #16241d;
+  --accent: #ffe36b;
+  --accent-bonus: #7ff0ae;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  color: var(--ink);
+  background: var(--ground-2);
+  background: linear-gradient(170deg, var(--ground-1) 0%, var(--ground-2) 55%, var(--ground-3) 100%);
+  background-attachment: fixed;
+}
+
+a {
+  color: var(--ink);
+}
+
+/*
+ * Board sizing.
+ *
+ * The 2018 layout hard-coded 35px and 45px tiles behind `@media
+ * (device-width: …)` queries, which are deprecated and never respond to the
+ * actual window — the board stayed the same size from a phone to a 27" display
+ * and used 40% of the width. Tiles are now derived from whichever of the two
+ * axes runs out first, so the board fills whatever room it is given.
+ */
+.board-metrics {
+  --gap: clamp(3px, 0.9vmin, 9px);
+  --board-max: 44rem;
+  /*
+   * Sized from the container query box of .board-area, which is whatever space
+   * the flex column actually left over. This replaced a hand-tuned `--chrome`
+   * reserve for the header and footer: the real chrome is 283px, the constant
+   * guessed 30dvh, and on a 1280x720 window that was 67px short and pushed the
+   * page into a scrollbar. Measuring beats guessing.
+   */
+  --tile: min(
+    calc((min(100cqw, var(--board-max)) - 8 * var(--gap)) / 9),
+    calc((100cqh - (var(--rows) - 1) * var(--gap)) / var(--rows)),
+    5.5rem
+  );
+  --tile-font: clamp(0.75rem, calc(var(--tile) * 0.46), 2.75rem);
+  --tile-h: var(--tile);
+}
+
+.board-metrics.single-row {
+  --tile-h: min(calc(var(--tile) * 1.9), calc(100cqh * 0.62));
+  --tile-font: clamp(1rem, calc(var(--tile) * 0.62), 3.25rem);
+}
+
+/* Screen-reader-only text that still gets announced. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Vue 3 renamed the transition classes: *-enter became *-enter-from. */
+.fade-enter-active,
+.fade-leave-active {
+  transition-property: opacity;
+  transition-duration: 0.25s;
+}
+.fade-leave-active {
+  transition-duration: 0s;
+  transition-delay: 0s;
+}
+.fade-enter-active {
+  transition-delay: 0.25s;
+}
+.fade-enter-from,
+.fade-leave-active {
+  opacity: 0;
+}
+
+/* The board only lays out sensibly in portrait on a phone. */
+#warning-message {
+  display: none;
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .isMobile #app {
+    display: none;
+  }
+  .isMobile #warning-message {
+    display: block;
+  }
+}
+
+/*
+ * The two animate.css animations the game used, inlined. Previously pulled from
+ * a CDN, which is the same fragility that broke the Tailwind import.
+ */
+.animated {
+  animation-duration: 0.5s;
+  animation-fill-mode: both;
+}
+@keyframes rotateIn {
+  from {
+    transform-origin: center;
+    transform: rotate3d(0, 0, 1, -200deg);
+    opacity: 0;
+  }
+  to {
+    transform-origin: center;
+    transform: none;
+    opacity: 1;
+  }
+}
+.rotateIn {
+  animation-name: rotateIn;
+}
+@keyframes shake {
+  from,
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translate3d(-10px, 0, 0);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translate3d(10px, 0, 0);
+  }
+}
+.shake {
+  animation-name: shake;
+}
+@keyframes flip {
+  from {
+    transform: perspective(400px) rotate3d(0, 1, 0, -360deg);
+    animation-timing-function: ease-out;
+  }
+  40% {
+    transform: perspective(400px) translate3d(0, 0, 150px) rotate3d(0, 1, 0, -190deg);
+    animation-timing-function: ease-out;
+  }
+  50% {
+    transform: perspective(400px) translate3d(0, 0, 150px) rotate3d(0, 1, 0, -170deg);
+    animation-timing-function: ease-in;
+  }
+  80% {
+    transform: perspective(400px) scale3d(0.95, 0.95, 0.95);
+    animation-timing-function: ease-in;
+  }
+  to {
+    transform: perspective(400px);
+    animation-timing-function: ease-in;
+  }
+}
+.flip {
+  backface-visibility: visible;
+  animation-name: flip;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated {
+    animation: none !important;
+  }
+}
