@@ -326,6 +326,21 @@ export const useGameStore = defineStore('game', () => {
 
   const endGame = (won, reason) => {
     stopTimer()
+    // A turn that never completed does not count, so anything still selected
+    // is released rather than left sitting on the final board looking played.
+    eachTile((t) => {
+      if (!t.isInUse) return
+      t.isInUse = false
+      t.isCollateral = false
+      t.isAvailable = false
+      t.wildValue = null
+      t.action = ''
+      t.isExplosion = false
+    })
+    sumTilesInUse.value = 0
+    gamePoints.value = 0
+    gameBonus.value = 0
+    previewIds.value = []
     state.value = won ? 'isWin' : 'isOver'
     note.value = won ? 'Shut The Box' : (reason ?? 'Game Over')
     diceInUse.value = false

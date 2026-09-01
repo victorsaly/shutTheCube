@@ -69,6 +69,10 @@ const start = (key) => {
             <button v-if="canInstall" type="button" class="install" @click="prompt">
               Add to home screen
             </button>
+            <nav class="resource-links" aria-label="Game information">
+              <a href="how-to-play.html">How to play</a>
+              <a href="about.html">About</a>
+            </nav>
           </template>
         </div>
       </div>
@@ -226,9 +230,20 @@ const start = (key) => {
   text-decoration: underline;
   cursor: pointer;
 }
+.resource-links {
+  display: flex;
+  justify-content: center;
+  gap: 0.9rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+}
+.resource-links a {
+  color: #52675c;
+}
 .choice:focus-visible,
 .secondary:focus-visible,
-.install:focus-visible {
+.install:focus-visible,
+.resource-links a:focus-visible {
   outline: 3px solid #22292f;
   outline-offset: 2px;
 }

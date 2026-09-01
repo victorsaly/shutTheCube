@@ -407,6 +407,57 @@ describe('ending a game', () => {
   })
 })
 
+describe('a game that ends mid-turn', () => {
+  it('releases tiles that were selected but never completed the roll', () => {
+    stubDice([3, 4]) // every roll is 7
+    game.newGame('beginner')
+    game.startGame()
+
+    // Take the 3, leaving 4 to find, then remove the only way to find it.
+    game.playTile(0, positionOf(game, 0, 3))
+    expect(game.sumTilesInUse).toBe(3)
+    game.tiles[0].forEach((t) => {
+      if (!t.isInUse && t.index === 4) t.isTaken = true
+    })
+    game.refreshAvailability(true)
+
+    expect(game.state).toBe('isOver')
+    expect(game.tiles.flat().every((t) => !t.isInUse)).toBe(true)
+    expect(game.sumTilesInUse).toBe(0)
+    expect(game.gamePoints).toBe(0)
+  })
+
+  it('releases the selection when the Ninja clock runs out', () => {
+    vi.useFakeTimers()
+    stubDice([3, 4])
+    game.newGame('ninja')
+    plainBoard(game)
+    game.startGame()
+    game.playTile(0, positionOf(game, 0, 3))
+    expect(game.tiles.flat().some((t) => t.isInUse)).toBe(true)
+
+    vi.advanceTimersByTime(30_000)
+    expect(game.state).toBe('isOver')
+    expect(game.tiles.flat().every((t) => !t.isInUse)).toBe(true)
+    vi.useRealTimers()
+  })
+
+  it('does not credit an unfinished selection to the score', () => {
+    stubDice([3, 4])
+    game.newGame('beginner')
+    game.startGame()
+    game.playTile(0, positionOf(game, 0, 3))
+    game.tiles[0].forEach((t) => {
+      if (!t.isInUse && t.index === 4) t.isTaken = true
+    })
+    const bankedBefore = game.tiles.flat().filter((t) => t.isTaken).reduce((a, t) => a + t.index, 0)
+    game.refreshAvailability(true)
+    expect(game.state).toBe('isOver')
+    // The 3 was selected but never banked, so it must not appear in the score.
+    expect(game.sumTilesTaken).toBe(bankedBefore)
+  })
+})
+
 describe('playing whole games', () => {
   it.each(['beginner', 'medium', 'ninja'])('reaches a terminal state in %s', (key) => {
     vi.useFakeTimers()

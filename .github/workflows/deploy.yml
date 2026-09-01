@@ -26,8 +26,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # The suite runs whole games against randomised boards, so a flake here
+      # is a real defect rather than noise. It must not be retried away.
       - run: npm test
       - run: npm run build
+      # dist/ carries CNAME, robots.txt and sitemap.xml from public/, so the
+      # custom domain is served by the deploy itself.
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
