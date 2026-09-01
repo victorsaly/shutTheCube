@@ -42,6 +42,14 @@ const isPersonalBest = computed(
   () => game.isFinished && game.sumTilesTaken > 0 && game.sumTilesTaken >= stats.bestFor(game.modeKey)
 )
 const inPlay = computed(() => game.state === '')
+/* The tray never sits empty: between turns it says what it is for. */
+const trayHint = computed(() =>
+  game.state === 'isStart'
+    ? 'Rolls, moves and calls show up here.'
+    : game.state === 'isNext'
+      ? 'Roll again — then pick tiles that match.'
+      : ''
+)
 const shareResult = computed(() => ({
   modeLabel: game.mode.label,
   modeKey: game.modeKey,
@@ -296,7 +304,14 @@ const onAction = async () => {
           >
             <DiceFace v-for="die in game.activeDice" :key="die.id" :value="die.number" />
           </button>
-          <p v-if="game.mode.turnSeconds > 0 && inPlay" class="timer num" :class="{ low: timerLow }">
+          <!-- Rendered whenever the mode is timed, and only *shown* during a
+               turn: the board sizes itself from the space the footer leaves,
+               so a timer that mounted and unmounted made every tile resize. -->
+          <p
+            v-if="game.mode.turnSeconds > 0"
+            class="timer num"
+            :class="{ low: timerLow && inPlay, waiting: !inPlay }"
+          >
             <span class="visually-hidden">Time left </span>{{ game.secondsLeft }}s
           </p>
         </div>
@@ -315,30 +330,41 @@ const onAction = async () => {
         </button>
       </div>
 
-      <p v-if="game.mustRollSingleDie" class="single-note">
-        One die — only {{ game.openTotal }} left on the board
-      </p>
-      <label
-        v-else-if="game.canRollSingleDie && game.state === 'isNext'"
-        class="single-die"
-      >
-        <input type="checkbox" :checked="game.singleDie" @change="game.toggleSingleDie()" />
-        Roll one die
-      </label>
+      <!-- The call tray: everything the game says lands here, and the panel
+           is visible even before it speaks so the space reads as reserved on
+           purpose rather than left over. -->
+      <div class="tray">
+        <ul v-if="legend.length" class="legend">
+          <li v-for="item in legend" :key="item.key">
+            <span class="legend-mark" aria-hidden="true">{{ item.mark }}</span>
+            <b>{{ item.name }}</b>
+            {{ item.hint }}
+          </li>
+        </ul>
 
-      <ul v-if="legend.length" class="legend">
-        <li v-for="item in legend" :key="item.key">
-          <span class="legend-mark" aria-hidden="true">{{ item.mark }}</span>
-          {{ item.label }}
-        </li>
-      </ul>
-
-      <div class="caption">
-        <SelectedTiles v-if="inPlay" />
-        <p v-if="inPlay && game.waysToMatch.length > 1" class="ways">
-          {{ game.waysToMatch.length }} ways to make {{ game.remainingToMatch }} —
-          <kbd>H</kbd> cycles them
+        <!-- Once on, this stays for the rest of the game — one layout change,
+             not a per-turn one, so it may sit outside the reserved caption. -->
+        <p v-if="game.mustRollSingleDie" class="single-note">
+          One die — only {{ game.openTotal }} left on the board
         </p>
+
+        <div class="caption">
+          <template v-if="inPlay">
+            <SelectedTiles />
+            <p v-if="game.waysToMatch.length > 1" class="ways">
+              {{ game.waysToMatch.length }} ways to make {{ game.remainingToMatch }} —
+              <kbd>H</kbd> cycles them
+            </p>
+          </template>
+          <label
+            v-else-if="game.canRollSingleDie && game.state === 'isNext'"
+            class="single-die"
+          >
+            <input type="checkbox" :checked="game.singleDie" @change="game.toggleSingleDie()" />
+            Roll one die
+          </label>
+          <p v-else-if="trayHint" class="tray-idle">{{ trayHint }}</p>
+        </div>
       </div>
     </div>
 
@@ -581,26 +607,39 @@ const onAction = async () => {
 }
 
 /* Called-out moments: a run claimed, a wild played, an event fired. */
+/*
+ * This lands on top of the board, so it can be over a pale tile as easily as
+ * over the ground. Shadowed text alone could not hold both, so it sits on the
+ * same dark plate as the tray below and is legible wherever it falls.
+ */
 .celebration {
   position: absolute;
-  inset: auto 0 12%;
+  left: 50%;
+  bottom: 12%;
+  translate: -50% 0;
   z-index: 6;
   display: grid;
   justify-items: center;
   gap: 0.1rem;
+  max-width: min(22rem, calc(100% - 2rem));
+  padding: 0.5rem 1.15rem 0.6rem;
+  background: rgb(9 29 22 / 92%);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
+  text-align: center;
   pointer-events: none;
 }
 .celebration strong {
-  font-size: clamp(1.5rem, 7vmin, 2.4rem);
+  font-size: clamp(1.4rem, 6.5vmin, 2.2rem);
   font-weight: 700;
   letter-spacing: 0.01em;
+  line-height: 1.1;
   color: var(--sel);
-  text-shadow: 0 3px 18px rgb(0 0 0 / 70%);
 }
 .celebration span {
   font-size: 0.8rem;
-  color: var(--bone);
-  text-shadow: 0 2px 8px rgb(0 0 0 / 80%);
+  color: var(--muted);
 }
 .pop-enter-active {
   animation: pop-in 0.35s cubic-bezier(0.2, 1.5, 0.4, 1);
@@ -623,6 +662,19 @@ const onAction = async () => {
   }
 }
 
+.tray {
+  width: min(calc(100% - 1.5rem), 36rem);
+  margin: 0.35rem auto 0;
+  padding: 0.55rem 0.9rem 0.5rem;
+  background: rgb(9 29 22 / 55%);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.tray-idle {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
 .legend {
   list-style: none;
   margin: 0 0 0.35rem;
@@ -638,6 +690,10 @@ const onAction = async () => {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
+}
+.legend b {
+  color: var(--bone);
+  font-weight: 600;
 }
 .legend-mark {
   font-size: 0.85rem;
@@ -707,6 +763,9 @@ const onAction = async () => {
   color: var(--bone);
   font-size: 0.85rem;
 }
+.timer.waiting {
+  visibility: hidden;
+}
 .timer.low {
   color: var(--bad);
   font-weight: 700;
@@ -761,7 +820,7 @@ const onAction = async () => {
 }
 
 .single-note {
-  margin: 0 0 0.3rem;
+  margin: 0;
   color: var(--bonus);
   font-size: 0.78rem;
 }
@@ -771,16 +830,16 @@ const onAction = async () => {
   gap: 0.4rem;
   color: var(--bone);
   font-size: 0.82rem;
-  margin-bottom: 0.3rem;
   cursor: pointer;
 }
 
-/* Reserved so the board does not shift as the prompt text changes. */
+/* Reserved to fit its tallest tenant (selected tiles + prompt), so the
+   board above never resizes as the tray speaks. */
 .caption {
-  min-height: 4.2rem;
+  min-height: 4.4rem;
   display: grid;
   place-items: center;
-  padding: 0 0.75rem;
+  padding: 0 0.5rem;
 }
 
 .action-button:focus-visible,

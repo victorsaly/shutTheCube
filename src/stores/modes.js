@@ -54,9 +54,24 @@ export const runName = (size) => RUN_NAMES[size] ?? (size > 6 ? `${size} in a ro
  * Special tiles, seeded into the nine-row boards.
  * Neither changes how a game is scored: a tile is still worth its face value.
  */
+/*
+ * `name` is what the tile is called, `hint` is the whole rule in one plain
+ * sentence. Both the legend and the tile's own tooltip read from here, so a
+ * player never meets two different explanations of the same mark.
+ */
 export const SPECIALS = {
-  wild: { key: 'wild', mark: '★', label: 'Wild — counts as whatever you still need' },
-  locked: { key: 'locked', mark: '◆', label: 'Locked — only plays alone, matching the whole roll' }
+  wild: {
+    key: 'wild',
+    mark: '★',
+    name: 'Wild',
+    hint: 'Counts as any number you still need.'
+  },
+  locked: {
+    key: 'locked',
+    mark: '◆',
+    name: 'Locked',
+    hint: 'Plays on its own, and only when it equals the whole roll.'
+  }
 }
 
 /** Things that can happen between turns. */

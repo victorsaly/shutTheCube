@@ -34,7 +34,7 @@ const stateOf = (t) => {
   if (t.isTaken) return 'Shut'
   if (t.isInUse) return t.isCollateral ? 'Selected as bonus' : 'Selected'
   if (game.state !== '') return 'Waiting for the roll'
-  const mark = special(t) ? `${special(t).label}. ` : ''
+  const mark = special(t) ? `${special(t).name}. ${special(t).hint} ` : ''
   if (!t.isAvailable) return `${mark}Not playable`
   const run = runSize(t)
   return run > 1 ? `${mark}Playable, takes ${run} tiles together` : `${mark}Playable`
@@ -86,6 +86,16 @@ const stateOf = (t) => {
             {{ runSize(t) }}
           </span>
         </button>
+        <!-- The mark's meaning on hover, so the rule is not a trip to the legend. -->
+        <span
+          v-if="special(t) && !t.isTaken"
+          class="tip"
+          :class="{ below: rowIndex === 0 && game.rows > 1 }"
+          aria-hidden="true"
+        >
+          <b>{{ special(t).mark }} {{ special(t).name }}</b>
+          {{ special(t).hint }}
+        </span>
       </div>
     </li>
   </TransitionGroup>
@@ -108,6 +118,69 @@ li {
 }
 .cell {
   position: relative;
+}
+/* Lift the whole cell so its tooltip clears the tiles to its right. */
+.cell:hover,
+.cell:has(.box:focus-visible) {
+  z-index: 5;
+}
+
+/*
+ * The legend under the board names the marks; this gives the rule at the tile
+ * itself. Hover only — a tap on a phone plays the tile, so touch keeps the
+ * legend, and the same words reach screen readers through the tile's label.
+ */
+.tip {
+  position: absolute;
+  bottom: calc(100% + 0.4rem);
+  left: 50%;
+  translate: -50% 0;
+  z-index: 1;
+  width: max-content;
+  max-width: min(13rem, 60vw);
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.4rem;
+  background: var(--ground-3);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.35;
+  text-align: left;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 45%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s linear;
+  pointer-events: none;
+}
+.tip b {
+  display: block;
+  color: var(--bone);
+}
+/* The top row has nothing above it but the header, so its tip hangs down. */
+.tip.below {
+  bottom: auto;
+  top: calc(100% + 0.4rem);
+}
+/* The end columns would overflow the board, so they hang from their own edge. */
+li:first-child .tip {
+  left: 0;
+  translate: 0;
+}
+li:last-child .tip {
+  left: auto;
+  right: 0;
+  translate: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cell:hover .tip {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+.cell:has(.box:focus-visible) .tip {
+  opacity: 1;
+  visibility: visible;
 }
 
 .box {
@@ -234,10 +307,24 @@ li {
 .isLocked::before {
   content: '';
   position: absolute;
+  /*
+   * The border box, not the padding box: the face paints under the raised
+   * edge, and paints through it outright when the flat state clears its
+   * colour, so anything short of this leaves the ring sitting high.
+   */
   inset: 0 0 calc(-1 * var(--edge)) 0;
   border: max(2px, calc(var(--tile) * 0.07)) solid var(--mark-ring);
   border-radius: var(--corner);
   pointer-events: none;
+}
+/*
+ * Shut and selected are states, and a state outranks a kind: they take the
+ * whole tile back so their own ring reads. The corner glyph still says which
+ * kind of tile it was.
+ */
+.isTaken::before,
+.isInUse::before {
+  display: none;
 }
 
 /* A tile that would take a whole column with it. */
