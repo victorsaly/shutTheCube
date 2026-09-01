@@ -42,11 +42,19 @@ body {
   -webkit-font-smoothing: antialiased;
   color: var(--soft);
   line-height: 1.7;
+  background: var(--ground-2);
+}
+/* Painted once on a fixed layer — `background-attachment: fixed` repaints
+   the gradients on every scroll frame on mobile. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background:
     radial-gradient(55vmax 55vmax at -10% -10%, rgb(81 216 138 / 10%), transparent 65%),
     radial-gradient(44vmax 44vmax at 105% 30%, rgb(127 240 174 / 6%), transparent 65%),
     linear-gradient(170deg, var(--ground-1) 0%, var(--ground-2) 55%, var(--ground-3) 100%);
-  background-attachment: fixed;
 }
 main {
   max-width: 48rem;

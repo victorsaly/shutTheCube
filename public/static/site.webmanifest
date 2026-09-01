@@ -3,14 +3,25 @@
   "short_name": "ShutTheCube",
   "icons": [
     {
-      "src": "android-chrome-192x192.png?v=M4yPzROyvm",
+      "src": "android-chrome-192x192.png?v=2",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "android-chrome-256x256.png?v=M4yPzROyvm",
+      "src": "android-chrome-256x256.png?v=2",
       "sizes": "256x256",
       "type": "image/png"
+    },
+    {
+      "src": "android-chrome-512x512.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "maskable-512x512.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "theme_color": "#0d2a1f",

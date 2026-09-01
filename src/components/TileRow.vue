@@ -131,6 +131,8 @@ li {
  * legend, and the same words reach screen readers through the tile's label.
  */
 .tip {
+  /* No box at all on a thumb, rather than a hidden one hanging off-screen. */
+  display: none;
   position: absolute;
   bottom: calc(100% + 0.4rem);
   left: 50%;
@@ -173,14 +175,14 @@ li:last-child .tip {
   translate: 0;
 }
 @media (hover: hover) and (pointer: fine) {
-  .cell:hover .tip {
+  .tip {
+    display: block;
+  }
+  .cell:hover .tip,
+  .cell:has(.box:focus-visible) .tip {
     opacity: 1;
     visibility: visible;
   }
-}
-.cell:has(.box:focus-visible) .tip {
-  opacity: 1;
-  visibility: visible;
 }
 
 .box {

@@ -35,7 +35,9 @@ const toggleMute = () => {
       <p class="name display"><BrandMark :size="20" /> Shut The Cube</p>
       <p class="mode micro">
         {{ game.mode.label }}
-        <span v-if="stats.bestFor(game.modeKey)">· best {{ stats.bestFor(game.modeKey) }}</span>
+        <span v-if="stats.bestFor(game.modeKey)" class="best">
+          · best {{ stats.bestFor(game.modeKey) }}
+        </span>
       </p>
     </div>
 
@@ -63,7 +65,7 @@ const toggleMute = () => {
 .bar {
   flex: none;
   display: grid;
-  grid-template-columns: 5.2rem 1fr auto 1fr 5.2rem;
+  grid-template-columns: 5.2rem 1fr minmax(0, auto) 1fr 5.2rem;
   align-items: center;
   gap: 0.4rem;
   padding: max(0.4rem, env(safe-area-inset-top)) 0.6rem 0.2rem;
@@ -88,6 +90,14 @@ const toggleMute = () => {
   --readout: var(--sel);
 }
 
+/*
+ * The centre column may shrink and the label may clip, because the alternative
+ * is a nowrap label holding the column open and pushing the readouts under the
+ * buttons — which is what a narrow phone used to do once a best existed.
+ */
+.brand {
+  min-width: 0;
+}
 .brand .name {
   margin: 0;
   display: inline-flex;
@@ -103,6 +113,8 @@ const toggleMute = () => {
   margin: 2px 0 0;
   font-size: 10px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chip {
@@ -126,12 +138,21 @@ const toggleMute = () => {
   color: var(--muted);
 }
 
+/*
+ * Five things do not fit across a 320px bar. The record is the one that goes:
+ * it is on the menu card and again on the game-over card, while the live
+ * readouts have nowhere else to be.
+ */
 @media (max-width: 380px) {
-  .brand .name {
+  .brand .name,
+  .mode .best {
     display: none;
   }
   .bar {
-    grid-template-columns: 5.2rem 1fr auto 1fr 5.2rem;
+    grid-template-columns: 4.9rem 1fr minmax(0, auto) 1fr 4.9rem;
+    gap: 0.3rem;
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
   }
 }
 </style>

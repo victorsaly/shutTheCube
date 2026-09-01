@@ -82,8 +82,15 @@ body {
   min-height: 100dvh;
   color: var(--bone);
   background: var(--ground-2);
+}
+/* The gradient lives on a fixed layer: `background-attachment: fixed`
+   repaints the whole gradient on every scroll frame on mobile. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background: linear-gradient(170deg, var(--ground-1) 0%, var(--ground-2) 55%, var(--ground-3) 100%);
-  background-attachment: fixed;
 }
 
 a {

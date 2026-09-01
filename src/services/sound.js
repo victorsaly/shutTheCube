@@ -112,6 +112,19 @@ const rattleTick = (when, vol) => {
   src.start(t)
 }
 
+/**
+ * Haptics ride alongside the audio: a nudge you can feel on phones, a no-op
+ * everywhere else. Deliberately independent of the mute switch — muting the
+ * marimba should not numb the tiles.
+ */
+export const haptic = (pattern) => {
+  try {
+    navigator.vibrate?.(pattern)
+  } catch {
+    // Not every browser offers it; never let it break a move.
+  }
+}
+
 const safely = (fn) => {
   try {
     fn()
@@ -172,6 +185,11 @@ export const sound = {
       })
       hit(freqOf(9) * 2, { when: t + 0.5, vol: 0.14, decay: 0.9 })
     })
+  },
+
+  /** Ninja's last seconds: a dry tick, quiet enough not to panic anyone. */
+  tick() {
+    safely(() => hit(660, { vol: 0.07, decay: 0.06 }))
   },
 
   /** No move left: two low notes, closing the lid. */

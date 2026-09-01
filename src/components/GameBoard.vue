@@ -4,7 +4,7 @@ import { useGameStore } from '@/stores/game'
 import { useStatsStore } from '@/stores/stats'
 import { SPECIALS } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
-import { sound } from '@/services/sound'
+import { haptic, sound } from '@/services/sound'
 import { useShake } from '@/composables/useShake'
 import AppIcon from './AppIcon.vue'
 import Confetti from './Confetti.vue'
@@ -61,7 +61,10 @@ const shareResult = computed(() => ({
 const timerLow = computed(() => game.mode.turnSeconds > 0 && game.secondsLeft <= 10)
 
 /* Each tile answers with its own note; the board is the instrument. */
-const playClick = (face) => sound.tap(face)
+const playClick = (face) => {
+  sound.tap(face)
+  haptic(8)
+}
 
 const advance = () => {
   if (game.isLoading) return
@@ -69,10 +72,12 @@ const advance = () => {
   switch (game.state) {
     case 'isStart':
       sound.roll()
+      haptic(15)
       game.startGame()
       break
     case 'isNext':
       sound.roll()
+      haptic(15)
       game.nextTurn()
       break
     case 'isOver':
@@ -87,14 +92,27 @@ const advance = () => {
 watch(
   () => game.state,
   (state) => {
-    if (state === 'isWin') sound.win()
-    else if (state === 'isOver') sound.over()
+    if (state === 'isWin') {
+      sound.win()
+      haptic([30, 60, 30, 60, 120])
+    } else if (state === 'isOver') {
+      sound.over()
+      haptic(80)
+    }
   }
 )
 watch(
   () => game.celebration,
   (c) => {
     if (c) sound.run(3)
+  }
+)
+
+/* Ninja's countdown becomes audible for its last five seconds. */
+watch(
+  () => game.secondsLeft,
+  (left) => {
+    if (game.mode.turnSeconds > 0 && inPlay.value && left > 0 && left <= 5) sound.tick()
   }
 )
 
