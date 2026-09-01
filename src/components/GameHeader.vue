@@ -24,7 +24,7 @@ const stats = useStatsStore()
     </div>
 
     <div class="brand">
-      <img src="../assets/Logo_STB_light.png" alt="Shut The Cube" />
+      <img src="../assets/Logo_STB_light.png" alt="Shut The Cube" width="124" height="24" />
       <p class="mode">
         {{ game.mode.label }}
         <span v-if="stats.bestFor(game.modeKey)">· best {{ stats.bestFor(game.modeKey) }}</span>

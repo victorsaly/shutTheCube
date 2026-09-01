@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useGameStore } from '@/stores/game'
 import { useStatsStore } from '@/stores/stats'
+import { SPECIALS } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
 import { useShake } from '@/composables/useShake'
 import AppIcon from './AppIcon.vue'
@@ -22,6 +23,18 @@ const BUTTON = {
   isWin: { message: 'PLAY AGAIN', colour: 'action-green', icon: 'check' }
 }
 const button = computed(() => BUTTON[game.state] ?? null)
+
+/**
+ * Only the special tiles actually on this board, so the legend explains what is
+ * in front of the player and nothing else. Their meanings previously lived only
+ * in each tile's accessible name, which sighted players never see.
+ */
+const legend = computed(() => {
+  const present = new Set(
+    game.tiles.flat().filter((t) => !t.isTaken && t.kind !== 'normal').map((t) => t.kind)
+  )
+  return [...present].map((kind) => SPECIALS[kind]).filter(Boolean)
+})
 const isPersonalBest = computed(
   () => game.isFinished && game.sumTilesTaken > 0 && game.sumTilesTaken >= stats.bestFor(game.modeKey)
 )
@@ -285,6 +298,13 @@ const onAction = async () => {
         Roll one die
       </label>
 
+      <ul v-if="legend.length" class="legend">
+        <li v-for="item in legend" :key="item.key">
+          <span class="legend-mark" aria-hidden="true">{{ item.mark }}</span>
+          {{ item.label }}
+        </li>
+      </ul>
+
       <div class="caption">
         <SelectedTiles v-if="inPlay" />
         <p v-if="inPlay && game.waysToMatch.length > 1" class="ways">
@@ -519,10 +539,31 @@ const onAction = async () => {
   }
 }
 
+.legend {
+  list-style: none;
+  margin: 0 0 0.35rem;
+  padding: 0 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.9rem;
+  justify-content: center;
+  font-size: 0.78rem;
+  color: #c2d4c9;
+}
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.legend-mark {
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
 .ways {
   margin: 0.25rem 0 0;
-  font-size: 0.72rem;
-  color: var(--ink-dim);
+  font-size: 0.78rem;
+  color: #c2d4c9;
 }
 .ways kbd {
   font: inherit;

@@ -83,6 +83,54 @@ describe('celebrations', () => {
   })
 })
 
+describe('the special-tile legend', () => {
+  it('explains only the specials actually on the board', async () => {
+    game.newGame('medium')
+    game.tiles.forEach((row) => row.forEach((t) => (t.kind = 'normal')))
+    game.tiles[0][0].kind = 'wild'
+    game.startGame()
+    const board = mountBoard()
+    await board.vm.$nextTick()
+
+    const items = board.findAll('.legend li').map((li) => li.text())
+    expect(items).toHaveLength(1)
+    expect(items[0]).toContain('Wild')
+    expect(items[0]).toContain('★')
+  })
+
+  it('lists both kinds when both are present', async () => {
+    game.newGame('medium')
+    game.tiles.forEach((row) => row.forEach((t) => (t.kind = 'normal')))
+    game.tiles[0][0].kind = 'wild'
+    game.tiles[1][0].kind = 'locked'
+    game.startGame()
+    const board = mountBoard()
+    await board.vm.$nextTick()
+    expect(board.findAll('.legend li')).toHaveLength(2)
+  })
+
+  it('shows nothing in a mode without special tiles', async () => {
+    game.newGame('beginner')
+    game.startGame()
+    const board = mountBoard()
+    await board.vm.$nextTick()
+    expect(board.find('.legend').exists()).toBe(false)
+  })
+
+  it('drops a kind once every one of them is shut', async () => {
+    game.newGame('medium')
+    game.tiles.forEach((row) => row.forEach((t) => (t.kind = 'normal')))
+    game.tiles[0][0].kind = 'wild'
+    game.startGame()
+    // startGame shuffles each row, so find the wild rather than assume where
+    // it landed.
+    game.tiles.flat().find((t) => t.kind === 'wild').isTaken = true
+    const board = mountBoard()
+    await board.vm.$nextTick()
+    expect(board.find('.legend').exists()).toBe(false)
+  })
+})
+
 describe('the dice row', () => {
   it('shows only the dice actually in play', async () => {
     game.startGame()

@@ -31,7 +31,7 @@ const start = (key) => {
   <div class="shell" :class="{ isMobile: onMobile, shutTheBox: game.rows === 1 }">
     <div id="warning-message">
       <div class="warning">
-        <img src="./assets/Logo_STB_light.png" alt="Shut The Cube" />
+        <img src="./assets/Logo_STB_light.png" alt="Shut The Cube" width="155" height="30" />
         <p>This app is only playable in portrait.</p>
       </div>
     </div>
@@ -43,7 +43,7 @@ const start = (key) => {
       <div v-if="!game.isVisible" class="menu-wrap">
         <div class="card">
           <div class="card-head">
-            <img src="./assets/Logo_STB.png" alt="Shut The Cube" />
+            <img src="./assets/Logo_STB.png" alt="Shut The Cube" width="155" height="30" />
             <span class="version">v{{ version }}</span>
           </div>
 
@@ -147,9 +147,9 @@ const start = (key) => {
   max-height: 30px;
 }
 .version {
-  font-size: 9px;
+  font-size: 12px;
   position: absolute;
-  color: #8795a1;
+  color: #5d6b74;
 }
 .lede {
   margin: 0 0 1rem;
@@ -177,7 +177,7 @@ const start = (key) => {
   position: relative;
 }
 .choice.beginner {
-  background: #38a89d;
+  background: #2b8179;
 }
 .choice.medium {
   background: #2779bd;
@@ -194,18 +194,19 @@ const start = (key) => {
 }
 .choice-blurb {
   display: block;
-  font-size: 0.72rem;
-  opacity: 0.9;
-  margin-top: 1px;
+  font-size: 0.78rem;
+  margin-top: 2px;
+  color: #fff;
 }
 .choice-best {
   position: absolute;
   top: 0.6rem;
   right: 0.75rem;
-  font-size: 0.68rem;
-  background: rgb(255 255 255 / 22%);
+  font-size: 0.75rem;
+  color: #16241d;
+  background: #fff;
   border-radius: 999px;
-  padding: 0.1rem 0.4rem;
+  padding: 0.12rem 0.45rem;
 }
 
 .secondary {
@@ -226,8 +227,8 @@ const start = (key) => {
   margin: 1rem auto 0;
   background: none;
   border: 0;
-  color: #606f7b;
-  font-size: 0.75rem;
+  color: #4d5a62;
+  font-size: 0.8rem;
   text-decoration: underline;
   cursor: pointer;
 }
