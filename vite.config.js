@@ -23,7 +23,15 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,ico,mp3,webmanifest}'],
         cleanupOutdatedCaches: true,
-        navigateFallback: 'index.html'
+        /*
+         * No navigateFallback on purpose. The game has no client-side router,
+         * so there are no routes to fall back for — but the fallback applies to
+         * every navigation, so any URL missing from a visitor's cached
+         * precache manifest silently rendered the game instead. A newly added
+         * page did exactly that: privacy.html served the board to anyone whose
+         * service worker predated it, and an unknown URL never 404'd at all.
+         */
+        navigateFallback: null
       }
     })
   ],
