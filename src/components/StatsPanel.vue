@@ -5,13 +5,15 @@ import { useStatsStore } from '@/stores/stats'
 import AppIcon from './AppIcon.vue'
 
 const stats = useStatsStore()
+/* Rendered inside ScoresPanel, the frame and title belong to the shell. */
+defineProps({ embedded: { type: Boolean, default: false } })
 const emit = defineEmits(['close'])
 const anyPlayed = computed(() => MODE_LIST.some((m) => stats.hasPlayed(m.key)))
 </script>
 
 <template>
-  <div class="panel panel-glass">
-    <h2 class="display"><AppIcon name="chart" /> Your record</h2>
+  <div class="panel" :class="{ 'panel-glass': !embedded, bare: embedded }">
+    <h2 v-if="!embedded" class="display"><AppIcon name="chart" /> Your record</h2>
 
     <p v-if="!anyPlayed" class="empty">No games yet. Play one and your record shows up here.</p>
 
@@ -50,7 +52,7 @@ const anyPlayed = computed(() => MODE_LIST.some((m) => stats.hasPlayed(m.key)))
     </p>
 
     <div class="actions">
-      <button type="button" class="link" @click="emit('close')">Back</button>
+      <button v-if="!embedded" type="button" class="link" @click="emit('close')">Back</button>
       <button
         v-if="anyPlayed"
         type="button"

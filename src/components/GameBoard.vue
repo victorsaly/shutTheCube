@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useGameStore } from '@/stores/game'
 import { useMatchStore } from '@/stores/match'
 import { useStatsStore } from '@/stores/stats'
+import { useArcadeStore } from '@/stores/arcade'
 import { SPECIALS } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
 import { haptic, sound } from '@/services/sound'
@@ -15,9 +16,13 @@ import SelectedTiles from './SelectedTiles.vue'
 import TileRow from './TileRow.vue'
 import TweenedNumber from './TweenedNumber.vue'
 
+/* The board asks the shell to show the leaderboard; it does not own the menu. */
+const emit = defineEmits(['scores'])
+
 const game = useGameStore()
 const match = useMatchStore()
 const stats = useStatsStore()
+const arcade = useArcadeStore()
 const toast = ref('')
 const actionEl = ref(null)
 
@@ -105,6 +110,37 @@ watch(
     }
   }
 )
+
+/*
+ * Post a finished daily to the leaderboard.
+ *
+ * Only a seeded solo game is ranked: an unseeded board cannot be rebuilt, so
+ * its score cannot be checked, and an unverifiable entry on a public board is
+ * worth less than no entry. Signed out, or offline, this does nothing at all —
+ * the score is already safe in local storage either way.
+ */
+const rankable = computed(() => !match.active && game.isFinished && game.isDaily)
+
+const submission = () => ({
+  mode: game.modeKey,
+  period: game.dayStamp,
+  seed: game.seed,
+  score: game.sumTilesTaken,
+  rolls: game.numberPlay,
+  won: game.state === 'isWin',
+  moves: game.moves
+})
+
+watch(
+  () => game.isFinished,
+  (finished) => {
+    if (!finished || !rankable.value) return
+    arcade.postScore(submission())
+  }
+)
+
+/* Signing in navigates away, so the finished game travels with it. */
+const postAndSignIn = () => arcade.startSignIn(submission())
 
 /* The tray never sits empty: between turns it says what it is for. */
 const trayHint = computed(() =>
@@ -386,6 +422,23 @@ const onAction = async () => {
             <p v-else-if="game.state === 'isWin'" class="pb subtle">
               Every tile shut in {{ game.numberPlay }} rolls
             </p>
+            <!-- Where today's game landed against everyone else's, or the
+                 offer to put it there. Only ever for a ranked daily. -->
+            <p v-if="arcade.lastRank" class="rank-line micro">
+              <b class="num">#{{ arcade.lastRank }}</b> on today’s {{ game.mode.label }} board
+              &middot;
+              <button type="button" class="rank-link" @click="emit('scores')">See the board</button>
+            </p>
+            <button
+              v-else-if="rankable && !arcade.signedIn"
+              type="button"
+              class="post-cta"
+              @click="postAndSignIn"
+            >
+              Put this score on the daily board
+              <small>Sign in with Google · your name only, no email</small>
+            </button>
+
             <button type="button" class="again display" @click="onAction">
               {{ button.message }} <kbd>Space</kbd>
             </button>
@@ -781,6 +834,55 @@ const onAction = async () => {
   font-weight: 500;
   padding: 0;
 }
+.rank-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--muted);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.rank-link:hover {
+  color: var(--bone);
+}
+
+/* The offer to post is the one action on a finished daily that is not "again",
+   so it reads as an invitation rather than a second primary button. */
+.post-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--bone);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.post-cta small {
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.post-cta:hover {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.rank-line {
+  margin: 0 0 4px;
+  color: var(--muted);
+}
+.rank-line b {
+  color: var(--accent);
+  font-size: 1.05em;
+}
+
 .again {
   margin-top: 1rem;
   display: inline-flex;

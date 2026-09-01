@@ -12,6 +12,31 @@ import {
   writeToken
 } from '@/services/arcade'
 
+const PENDING_KEY = 'shutTheCube.pendingScore'
+
+/**
+ * Signing in navigates away to Google and comes back to a fresh page, which
+ * throws away the finished game along with everything else. So a score offered
+ * for posting is parked in storage first and posted once we are back.
+ */
+const parkScore = (result) => {
+  try {
+    localStorage.setItem(PENDING_KEY, JSON.stringify(result))
+  } catch {
+    // Without storage the score simply is not posted; the game is unaffected.
+  }
+}
+
+const takeParkedScore = () => {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY)
+    localStorage.removeItem(PENDING_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
 /**
  * Who you are on the leaderboard, and what the leaderboard says.
  *
@@ -55,6 +80,9 @@ export const useArcadeStore = defineStore('arcade', () => {
       if (claimed) {
         token.value = readToken()
         player.value = { name: claimed.name }
+        // The score they signed in to post, if that is why they signed in.
+        const parked = takeParkedScore()
+        if (parked) await postScore(parked)
         return
       }
     }
@@ -64,7 +92,15 @@ export const useArcadeStore = defineStore('arcade', () => {
     else token.value = null
   }
 
-  const startSignIn = () => signIn()
+  /**
+   * Begin signing in, optionally carrying a just-finished game with it, so
+   * that "post this score" is one decision rather than sign in, come back,
+   * and find the game gone.
+   */
+  const startSignIn = (pending = null) => {
+    if (pending) parkScore(pending)
+    signIn()
+  }
 
   const signOut = () => {
     writeToken(null)

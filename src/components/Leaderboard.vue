@@ -5,6 +5,7 @@ import { MODE_LIST } from '@/stores/modes'
 import { dayNumber, todayStamp } from '@/services/random'
 import AppIcon from '@/components/AppIcon.vue'
 
+defineProps({ embedded: { type: Boolean, default: false } })
 defineEmits(['close'])
 
 const arcade = useArcadeStore()
@@ -50,13 +51,20 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
 </script>
 
 <template>
-  <section class="board panel-glass" aria-labelledby="board-title">
+  <section class="board" :class="{ 'panel-glass': !embedded, bare: embedded }" aria-labelledby="board-title">
     <header class="board-head">
       <div>
         <p class="eyebrow micro">Daily <b class="num">#{{ day }}</b></p>
-        <h2 id="board-title" class="display">Leaderboard</h2>
+        <h2 v-if="!embedded" id="board-title" class="display">Leaderboard</h2>
+        <span v-else id="board-title" class="visually-hidden">Daily leaderboard</span>
       </div>
-      <button type="button" class="close" aria-label="Close leaderboard" @click="$emit('close')">
+      <button
+        v-if="!embedded"
+        type="button"
+        class="close"
+        aria-label="Close leaderboard"
+        @click="$emit('close')"
+      >
         <AppIcon name="close" />
       </button>
     </header>
@@ -154,6 +162,11 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
 </template>
 
 <style scoped>
+.board.bare {
+  width: auto;
+  padding: 0;
+  gap: 12px;
+}
 .board {
   width: min(100%, 30rem);
   display: flex;
@@ -219,6 +232,8 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
 .state {
   margin: 6px 0;
+  text-transform: none;
+  letter-spacing: 0;
   color: var(--muted);
   text-align: center;
   line-height: 1.5;
@@ -259,6 +274,8 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
   font-size: 1.05rem;
 }
 .who {
+  /* The menu centres its children; a ranked list has to read as a column. */
+  text-align: left;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -367,6 +384,11 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
   margin: 0;
   color: var(--muted);
   line-height: 1.5;
+  /* `.micro` sets uppercase with tracking, which is unreadable over three
+     lines of actual prose. */
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.78rem;
 }
 .err {
   margin: 0;

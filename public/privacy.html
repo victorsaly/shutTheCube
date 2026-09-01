@@ -40,24 +40,41 @@
           </svg>
           <span>Shut The Cube</span>
         </a>
-        <p class="eyebrow">Last updated September 1, 2026</p>
+        <p class="eyebrow">Last updated September 2, 2026</p>
         <h1>Privacy Policy</h1>
       </header>
       <article>
-        <h2>What Shut The Cube stores</h2>
-        <p>Shut The Cube stores game progress, high scores, averages, win rates, and display preferences in your browser's local storage. This information stays on your device and is used only to make the game work between visits.</p>
+        <h2>The short version</h2>
+        <p>You can play the entire game without an account, and nothing you do leaves your device. Signing in is optional and does exactly one thing: it puts a name next to your score on the daily leaderboard. If you sign in, we store your Google account identifier and a display name &mdash; not your email address &mdash; and you can delete both, along with every score, from inside the game at any time.</p>
 
-        <h2>What Shut The Cube does not collect</h2>
-        <p>Shut The Cube does not require an account and does not collect names, email addresses, payment details, or other personal information. It does not use advertising, analytics, or third-party tracking cookies.</p>
+        <h2>Playing without signing in</h2>
+        <p>Shut The Cube stores game progress, high scores, averages, win rates, streaks, and display preferences in your browser's local storage. This information stays on your device and is used only to make the game work between visits. No account is needed and nothing is sent anywhere.</p>
 
-        <h2>How to remove local game data</h2>
-        <p>You can remove locally stored game information at any time through your browser's site-data or local-storage settings. Removing that data resets your game records and preferences.</p>
+        <h2>If you sign in to the leaderboard</h2>
+        <p>Signing in uses Google. We ask Google only for the <code>openid</code> and <code>profile</code> scopes, which means we receive an opaque account identifier and your basic profile name. <strong>We do not request or receive your email address.</strong></p>
+        <p>What we store on our own server is:</p>
+        <ul>
+          <li>the opaque identifier Google gives us for your account, so we recognise you next time;</li>
+          <li>a display name, which starts as your Google first name and which you can change to anything you like;</li>
+          <li>the scores you post &mdash; the score, whether you shut the box, how many rolls it took, which daily board it was, and the list of moves you played.</li>
+        </ul>
+        <p>The move list is kept so that a submitted score can be checked against the board it claims to come from. It is what stops the leaderboard filling up with invented scores.</p>
+        <p>We do not store your email address, your Google profile picture, or any Google access or refresh token. We do not ask Google for permission to read anything else in your account, and we could not do so if we wanted to.</p>
+        <p>Your display name and score are shown publicly on the leaderboard to anyone who opens it. Please do not use a name you would rather strangers did not see.</p>
+
+        <h2>Deleting everything</h2>
+        <p>Open the leaderboard in the game and choose <strong>Delete my data</strong>. This immediately and permanently removes your account record and every score you have posted. There is no waiting period and no copy kept. You can also sign out at any time, which leaves your scores in place; use delete if you want them gone.</p>
+        <p>Locally stored game records are separate and are removed through your browser's site-data or local-storage settings.</p>
+
+        <h2>Legal basis and where data is held</h2>
+        <p>Where UK and EU data protection law applies, the basis for storing your name and scores is your consent, given by choosing to sign in, and withdrawn by deleting your data or signing out. The leaderboard runs on Cloudflare Workers and Cloudflare D1, and data is held on Cloudflare's network. The controller is Victor Saly; you can reach me at <a href="mailto:info@victorsaly.com">info@victorsaly.com</a> with any question or request about your data.</p>
 
         <h2>Third-party services</h2>
-        <p>The game is hosted through GitHub Pages. GitHub may process limited technical information, such as IP address and request logs, to deliver the site under its own policies.</p>
+        <p>The game is hosted through GitHub Pages, and the leaderboard through Cloudflare. Both may process limited technical information, such as IP address and request logs, to deliver the service under their own policies. Signing in sends you to Google, whose own privacy policy covers that step. The game itself loads no third-party scripts at runtime, including Google's &mdash; sign-in works by sending your browser to Google and back, not by embedding their code in the page.</p>
+        <p>There is no advertising, no third-party tracking, and no analytics cookie.</p>
 
         <h2>Changes to this policy</h2>
-        <p>If the game begins using analytics, advertising, accounts, or other services that process personal information, this policy will be updated before those changes take effect.</p>
+        <p>If the game begins using analytics, advertising, or other services that process personal information, this policy will be updated before those changes take effect.</p>
       </article>
       <footer><a href="./">Shut The Cube</a> · <a href="how-to-play.html">How to play</a> · <a href="about.html">About</a></footer>
     </main>

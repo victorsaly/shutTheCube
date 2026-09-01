@@ -13,8 +13,7 @@ import BrandMark from '@/components/BrandMark.vue'
 import GameBoard from '@/components/GameBoard.vue'
 import GameHeader from '@/components/GameHeader.vue'
 import ModeMark from '@/components/ModeMark.vue'
-import StatsPanel from '@/components/StatsPanel.vue'
-import Leaderboard from '@/components/Leaderboard.vue'
+import ScoresPanel from '@/components/ScoresPanel.vue'
 
 const game = useGameStore()
 const match = useMatchStore()
@@ -22,8 +21,8 @@ const stats = useStatsStore()
 const arcade = useArcadeStore()
 const { canInstall, prompt } = useInstallPrompt()
 const onMobile = ref(false)
-const showStats = ref(false)
-const showBoard = ref(false)
+/** null when closed, otherwise which side of the scores panel to open on. */
+const scores = ref(null)
 const version = __APP_VERSION__
 
 /* Short enough for a card; each card is the whole pitch for its mode. */
@@ -64,7 +63,7 @@ const start = (key, options = {}) => {
 
 /* Menu keyboard: 1-3 deals you straight into that mode. */
 const onMenuKeydown = (event) => {
-  if (game.isVisible || showStats.value || showBoard.value) return
+  if (game.isVisible || scores.value) return
   if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return
   const n = parseInt(event.key, 10)
   if (n >= 1 && n <= MODE_LIST.length) start(MODE_LIST[n - 1].key)
@@ -115,9 +114,7 @@ onUnmounted(() => {
       <GameHeader v-if="game.isVisible" />
 
       <div v-if="!game.isVisible" class="menu-wrap">
-        <StatsPanel v-if="showStats" @close="showStats = false" />
-
-        <Leaderboard v-else-if="showBoard" @close="showBoard = false" />
+        <ScoresPanel v-if="scores" :start="scores" @close="scores = null" />
 
         <div v-else class="menu">
           <div class="lockup">
@@ -196,11 +193,8 @@ onUnmounted(() => {
           </div>
 
           <div class="menu-foot">
-            <button type="button" class="record-link" @click="showStats = true">
-              <AppIcon name="trophy" /> Your record
-            </button>
-            <button type="button" class="record-link" @click="showBoard = true">
-              <AppIcon name="chart" /> Leaderboard
+            <button type="button" class="record-link" @click="scores = 'you'">
+              <AppIcon name="trophy" /> Scores &amp; leaderboard
             </button>
             <button v-if="canInstall" type="button" class="install" @click="prompt">
               Add to home screen
@@ -215,7 +209,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <GameBoard v-if="game.isVisible" />
+      <GameBoard v-if="game.isVisible" @scores="game.isVisible = false; scores = 'board'" />
     </div>
   </div>
 </template>
