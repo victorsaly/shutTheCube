@@ -392,14 +392,18 @@ const onAction = async () => {
   display: grid;
   justify-items: center;
   gap: 0.15rem;
-  padding: 1rem 2.4rem;
+  padding: 1.15rem 2.4rem 1rem;
   border: 0;
-  border-radius: 999px;
+  border-bottom: 6px solid rgb(0 0 0 / 35%);
+  border-radius: 22px;
   cursor: pointer;
   font: inherit;
   color: #10291d;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
-  transition: transform 0.09s, box-shadow 0.09s;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
+  transition: transform 0.09s, filter 0.09s, box-shadow 0.09s;
+  animation:
+    action-in 0.34s cubic-bezier(0.2, 1.3, 0.4, 1),
+    action-breathe 2.6s ease-in-out 0.4s infinite;
 }
 .action-accent {
   background: var(--accent);
@@ -407,11 +411,36 @@ const onAction = async () => {
 .action-bad {
   background: var(--bad);
 }
+/* It is a tile, so it behaves like one: rises to the hover, presses to the click. */
 .action-button:hover {
-  transform: scale(1.04);
+  transform: translateY(-2px);
+  filter: brightness(1.06);
   box-shadow:
-    0 8px 24px rgb(0 0 0 / 45%),
-    0 0 36px color-mix(in srgb, var(--accent) 35%, transparent);
+    0 12px 30px rgb(0 0 0 / 45%),
+    0 0 40px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+@keyframes action-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes action-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 10px 28px rgb(0 0 0 / 45%),
+      0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 10px 28px rgb(0 0 0 / 45%),
+      0 0 34px color-mix(in srgb, var(--accent) 30%, transparent);
+  }
 }
 .action-icon {
   font-size: 1.5rem;
@@ -431,6 +460,7 @@ const onAction = async () => {
 }
 .action-button:active {
   transform: translateY(2px);
+  border-bottom-width: 2px;
 }
 
 .result {
@@ -525,10 +555,11 @@ const onAction = async () => {
   color: #10291d;
   background: var(--accent);
   border: 0;
-  border-radius: 999px;
-  padding: 0.7rem 1.4rem;
+  border-bottom: 4px solid rgb(0 0 0 / 35%);
+  border-radius: 14px;
+  padding: 0.7rem 1.4rem 0.6rem;
   cursor: pointer;
-  transition: transform 0.09s, box-shadow 0.09s;
+  transition: transform 0.09s, filter 0.09s, box-shadow 0.09s;
 }
 .isOver .again {
   background: var(--bad);
@@ -540,10 +571,13 @@ const onAction = async () => {
   border-color: currentcolor;
 }
 .again:hover {
-  transform: scale(1.04);
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 .again:active {
   transform: translateY(1px);
+  border-bottom-width: 2px;
 }
 
 /* Called-out moments: a run claimed, a wild played, an event fired. */
@@ -658,6 +692,10 @@ const onAction = async () => {
 }
 .dice-button:not(:disabled):hover {
   background: rgb(255 255 255 / 10%);
+  transform: translateY(-2px);
+}
+.dice-button {
+  transition: transform 0.12s, background 0.12s;
 }
 /* The dice are the turn's key information, so they never dim — only the
    affordance to click them goes away once the roll has happened. */
@@ -672,6 +710,16 @@ const onAction = async () => {
 .timer.low {
   color: var(--bad);
   font-weight: 700;
+  animation: timer-tick 1s ease-in-out infinite;
+}
+@keyframes timer-tick {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
 }
 
 .turn-tools {
@@ -770,8 +818,15 @@ const onAction = async () => {
     transition: none;
   }
   .result,
-  .pb {
+  .pb,
+  .action-button,
+  .timer.low {
     animation: none;
+  }
+  .action-button:hover,
+  .again:hover,
+  .dice-button:not(:disabled):hover {
+    transform: none;
   }
 }
 </style>
