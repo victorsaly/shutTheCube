@@ -37,6 +37,7 @@ const start = (key) => {
     </div>
 
     <div id="app">
+      <h1 v-if="!game.isVisible" class="visually-hidden">Shut The Cube: Play Shut the Box Online</h1>
       <GameHeader v-if="game.isVisible" />
 
       <div v-if="!game.isVisible" class="menu-wrap">

@@ -3,7 +3,7 @@
 A dice-and-tiles game based on the classic [Shut The Box](https://en.wikipedia.org/wiki/Shut_the_Box),
 with a nine-layer "cube" variant where a matching column of tiles collapses together for a bonus.
 
-**Play it:** https://victorsaly.github.io/shutTheCube/
+**Play it:** https://shutthecube.com/
 
 ## How to play
 
@@ -61,8 +61,26 @@ and will not deploy if they fail.
 **One-time setup:** in the repository's *Settings → Pages*, set **Source** to **GitHub Actions**.
 The site previously deployed from the `docs/` folder, which this rewrite removed.
 
+### Custom domain
+
+The deployed artifact contains `CNAME` with `shutthecube.com`, which tells GitHub Pages to serve
+the site from that domain. In the domain registrar's DNS settings, point the apex domain to GitHub
+Pages with these four `A` records:
+
+```
+185.199.108.153
+185.199.109.153
+185.199.110.153
+185.199.111.153
+```
+
+Add a `CNAME` record for `www` pointing to `victorsaly.github.io`. Then, in GitHub repository
+*Settings → Pages*, set the custom domain to `shutthecube.com`, wait for DNS verification, and
+enable **Enforce HTTPS**. Configure the registrar to redirect `www.shutthecube.com` to the apex
+domain so the canonical URL remains consistent.
+
 The build uses a relative base path, so the same output works from the project page at
-`/shutTheCube/` or from a custom domain at the root without a config change.
+`/shutTheCube/` or from the custom domain at the root without a config change.
 
 ## Structure
 

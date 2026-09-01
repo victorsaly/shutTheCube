@@ -2,14 +2,16 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { sum } from 'lodash-es'
 import {
+  combinationsSummingTo,
   createTiles,
+  faceCounts,
   getTilesIndexCombinations,
   moveTile,
+  seedSpecials,
   shuffle,
-  subsetsSummingTo,
   sumTilesWhere
 } from '@/services/gameServices'
-import { modeFor } from './modes'
+import { EVENT_LIST, modeFor, runName } from './modes'
 import { useStatsStore } from './stats'
 
 /** Face value of a complete row, 1+2+…+9. */
@@ -17,7 +19,8 @@ const ROW_TOTAL = 45
 
 const newDice = () => [
   { id: 1, number: 0, isAvailable: true },
-  { id: 2, number: 0, isAvailable: true }
+  { id: 2, number: 0, isAvailable: true },
+  { id: 3, number: 0, isAvailable: false }
 ]
 
 /**
@@ -46,8 +49,16 @@ export const useGameStore = defineStore('game', () => {
   const history = ref([])
   /** Whether the player has opted to roll a single die this turn. */
   const singleDie = ref(false)
+  /** A third die, granted by the lucky-third-die event, for this turn only. */
+  const extraDie = ref(false)
   /** Announcement text for screen readers. */
   const announcement = ref('')
+  /** A transient moment worth calling out: a big run, a cleared row, a win. */
+  const celebration = ref(null)
+  /** What happened between turns, if anything. */
+  const event = ref(null)
+  /** Which of the available combinations the hint is pointing at. */
+  const hintIndex = ref(0)
 
   const mode = computed(() => modeFor(modeKey.value))
   const rows = computed(() => tiles.value.length)
@@ -58,6 +69,19 @@ export const useGameStore = defineStore('game', () => {
     tiles.value.flat().filter((t) => t.isInUse && !t.isCollateral)
   )
   const canUndo = computed(() => history.value.length > 0 && !isFinished.value)
+
+  /**
+   * Every distinct combination of open tiles that finishes the roll. The count
+   * is shown to the player, and the hint steps through them, so a turn reads as
+   * a choice rather than a single right answer.
+   */
+  const waysToMatch = computed(() => {
+    if (state.value !== '' || remainingToMatch.value <= 0) return []
+    const open = tiles.value.map((row) =>
+      row.filter((t) => t.isAvailable && !t.isTaken && !t.isInUse && t.kind === 'normal')
+    )
+    return combinationsSummingTo(faceCounts(open), remainingToMatch.value)
+  })
 
   /**
    * How many tiles each playable tile would claim, for every tile whose run is
@@ -98,9 +122,22 @@ export const useGameStore = defineStore('game', () => {
   }
   const remainingToMatch = computed(() => diceSum.value - sumTilesInUse.value)
 
-  /** The classic rule: one die is allowed once nothing above a 6 is left. */
+  /** Face value of everything still open. */
+  const openTotal = computed(() =>
+    sumTilesWhere(tiles.value, (t) => !t.isTaken)
+  )
+
+  /**
+   * Once the whole board is worth 6 or less, two dice can roll higher than
+   * anything left and end the game on nothing but bad luck, so the second die
+   * is dropped automatically rather than offered.
+   */
+  const mustRollSingleDie = computed(() => openTotal.value > 0 && openTotal.value <= 6)
+
+  /** The classic rule: one die may be chosen once nothing above a 6 is left. */
   const canRollSingleDie = computed(
     () =>
+      !mustRollSingleDie.value &&
       mode.value.allowsSingleDie &&
       tiles.value.flat().some((t) => !t.isTaken) &&
       tiles.value.flat().every((t) => t.isTaken || t.index <= 6)
@@ -115,12 +152,14 @@ export const useGameStore = defineStore('game', () => {
   const runFrom = (rowIndex, position) => {
     const face = tiles.value[rowIndex]?.[position]?.index
     if (face === undefined) return []
-    const claimed = [{ rowIndex, tile: tiles.value[rowIndex][position] }]
-    if (!mode.value.allowsRuns) return claimed
+    const origin = tiles.value[rowIndex][position]
+    const claimed = [{ rowIndex, tile: origin }]
+    // A special tile is a move of its own; it never drags a column along.
+    if (!mode.value.allowsRuns || origin.kind !== 'normal') return claimed
 
     const matches = (i) => {
       const t = tiles.value[i]?.[position]
-      return t && t.index === face && !t.isTaken && !t.isInUse
+      return t && t.index === face && t.kind === 'normal' && !t.isTaken && !t.isInUse
     }
     for (let i = rowIndex - 1; i >= 0 && matches(i); i--) {
       claimed.unshift({ rowIndex: i, tile: tiles.value[i][position] })
@@ -132,8 +171,17 @@ export const useGameStore = defineStore('game', () => {
   }
   const findTile = (rowIndex, tileId) => tiles.value[rowIndex]?.find((t) => t.id === tileId)
 
+  /** What a tile is worth toward the current roll. Scoring always uses index. */
+  const valueOf = (t) => (t.kind === 'wild' && t.wildValue != null ? t.wildValue : t.index)
+
+  const inUseTotal = () =>
+    tiles.value
+      .flat()
+      .filter((t) => t.isInUse && !t.isCollateral)
+      .reduce((sum, t) => sum + valueOf(t), 0)
+
   const recountSums = () => {
-    sumTilesInUse.value = sumTilesWhere(tiles.value, (t) => t.isInUse && !t.isCollateral)
+    sumTilesInUse.value = inUseTotal()
     sumTilesTaken.value = sumTilesWhere(tiles.value, (t) => t.isTaken)
   }
 
@@ -165,7 +213,9 @@ export const useGameStore = defineStore('game', () => {
   /** Start a new game in the given mode. */
   const newGame = (key) => {
     modeKey.value = modeFor(key).key
-    tiles.value = createTiles(9, mode.value.rows)
+    const board = createTiles(9, mode.value.rows)
+    if (mode.value.hasSurprises) seedSpecials(board, { wild: 2, locked: 2 })
+    tiles.value = board
     restart()
   }
 
@@ -177,6 +227,7 @@ export const useGameStore = defineStore('game', () => {
       t.isTaken = false
       t.isCollateral = false
       t.isExplosion = false
+      t.wildValue = null
       t.action = ''
     })
     dice.value = newDice()
@@ -198,9 +249,10 @@ export const useGameStore = defineStore('game', () => {
   }
 
   const rollDice = () => {
-    const useOne = singleDie.value && canRollSingleDie.value
+    const useOne = mustRollSingleDie.value || (singleDie.value && canRollSingleDie.value)
+    const count = useOne ? 1 : extraDie.value ? 3 : 2
     dice.value.forEach((d, i) => {
-      d.isAvailable = !useOne || i === 0
+      d.isAvailable = i < count
       d.number = d.isAvailable ? Math.floor(Math.random() * 6) + 1 : 0
     })
     diceInUse.value = true
@@ -221,6 +273,34 @@ export const useGameStore = defineStore('game', () => {
     if (!isFinished.value) startTimer()
   }
 
+  /**
+   * Roughly one turn in six brings something with it. Only the nine-row modes
+   * get these; Beginner stays the classic game.
+   */
+  const maybeEvent = () => {
+    event.value = null
+    extraDie.value = false
+    if (!mode.value.hasSurprises || Math.random() > 0.17) return
+
+    const open = tiles.value.flat().filter((t) => !t.isTaken && t.kind === 'normal')
+    const choices = EVENT_LIST.filter(
+      (e) => e.key !== 'wildDrop' || open.length > 0
+    ).filter((e) => e.key !== 'thirdDie' || !mustRollSingleDie.value)
+    if (choices.length === 0) return
+
+    const chosen = choices[Math.floor(Math.random() * choices.length)]
+    event.value = chosen
+
+    if (chosen.key === 'thirdDie') {
+      extraDie.value = true
+    } else if (chosen.key === 'reshuffle') {
+      tiles.value = tiles.value.map((row) => shuffle(row))
+    } else if (chosen.key === 'wildDrop') {
+      open[Math.floor(Math.random() * open.length)].kind = 'wild'
+    }
+    celebrate(chosen.title, chosen.detail, 'event')
+  }
+
   /** Subsequent rolls: everything not yet taken comes back into play. */
   const nextTurn = () => {
     eachTile((t) => {
@@ -230,9 +310,18 @@ export const useGameStore = defineStore('game', () => {
       }
     })
     state.value = ''
+    maybeEvent()
     rollDice()
     refreshAvailability(true)
     if (!isFinished.value) startTimer()
+  }
+
+  let celebrationTimer = null
+  const celebrate = (title, detail, tone = 'good') => {
+    if (!title) return
+    celebration.value = { id: Date.now() + Math.random(), title, detail, tone }
+    clearTimeout(celebrationTimer)
+    celebrationTimer = setTimeout(() => (celebration.value = null), 1600)
   }
 
   const endGame = (won, reason) => {
@@ -263,14 +352,29 @@ export const useGameStore = defineStore('game', () => {
     })
 
     const remaining = diceSum.value - sumTilesInUse.value
-    const playableFaces = getTilesIndexCombinations(tiles.value, remaining)
+    // Special tiles do not follow the ordinary subset-sum, so they are held out
+    // of the search and given their own rule afterwards.
+    const ordinary = tiles.value.map((row) => row.filter((t) => t.kind === 'normal'))
+    const playableFaces = getTilesIndexCombinations(ordinary, remaining)
     note.value = ''
 
+    let specialPlayable = false
     eachTile((t) => {
-      if (!t.isTaken && !t.isInUse) t.isAvailable = playableFaces.includes(t.index)
+      if (t.isTaken || t.isInUse) return
+      if (t.kind === 'wild') {
+        // Takes whatever is still needed, up to a single tile's worth.
+        t.isAvailable = remaining >= 1
+      } else if (t.kind === 'locked') {
+        // Only ever plays on its own, matching the entire roll.
+        t.isAvailable = sumTilesInUse.value === 0 && t.index === diceSum.value
+      } else {
+        t.isAvailable = playableFaces.includes(t.index)
+        return
+      }
+      if (t.isAvailable) specialPlayable = true
     })
 
-    gamePoints.value = sumTilesWhere(tiles.value, (t) => t.isInUse && !t.isCollateral)
+    gamePoints.value = inUseTotal()
     gameBonus.value = sumTilesWhere(tiles.value, (t) => t.isInUse && t.isCollateral)
 
     if (!advanceTurn) return
@@ -287,6 +391,8 @@ export const useGameStore = defineStore('game', () => {
       })
       recountSums()
       history.value = []
+      gamePoints.value = 0
+      gameBonus.value = 0
       if (sumTilesTaken.value === rows.value * ROW_TOTAL) {
         endGame(true)
       } else {
@@ -296,7 +402,7 @@ export const useGameStore = defineStore('game', () => {
         diceInUse.value = false
         announcement.value = `Turn complete. Total ${sumTilesTaken.value}. Roll again.`
       }
-    } else if (playableFaces.length === 0) {
+    } else if (playableFaces.length === 0 && !specialPlayable) {
       recountSums()
       endGame(sumTilesTaken.value === rows.value * ROW_TOTAL)
     }
@@ -310,17 +416,19 @@ export const useGameStore = defineStore('game', () => {
     const tile = tiles.value[rowIndex]?.[position]
     if (!tile) return []
 
+    const worth = tile.kind === 'wild' ? Math.min(remainingToMatch.value, 9) : tile.index
     const legal =
       tile.isAvailable &&
       !tile.isTaken &&
       !tile.isInUse &&
-      sumTilesInUse.value + tile.index <= diceSum.value
+      sumTilesInUse.value + worth <= diceSum.value
 
     if (!legal) {
       rejectTile(rowIndex, tile.id)
       return []
     }
 
+    if (tile.kind === 'wild') tile.wildValue = worth
     const claimed = runFrom(rowIndex, position)
     claimed.forEach(({ tile: t }) => {
       t.isInUse = true
@@ -332,7 +440,16 @@ export const useGameStore = defineStore('game', () => {
     history.value.push(claimed.map(({ rowIndex: r, tile: t }) => ({ rowIndex: r, id: t.id })))
     hintedIds.value = []
     previewIds.value = []
-    sumTilesInUse.value = sumTilesWhere(tiles.value, (t) => t.isInUse && !t.isCollateral)
+    hintIndex.value = 0
+
+    if (claimed.length > 1) {
+      celebrate(runName(claimed.length), `${claimed.length} tiles in one move`)
+    } else if (tile.kind === 'wild') {
+      celebrate('Wild!', `Counted as ${worth}`)
+    } else if (tile.kind === 'locked') {
+      celebrate('Unlocked!', `Matched the whole roll with one tile`)
+    }
+    sumTilesInUse.value = inUseTotal()
     announcement.value =
       remainingToMatch.value > 0
         ? `Selected ${tile.index}. ${remainingToMatch.value} left to match.`
@@ -376,9 +493,10 @@ export const useGameStore = defineStore('game', () => {
       tile.isInUse = false
       tile.isCollateral = false
       tile.isExplosion = false
+      tile.wildValue = null
       tile.action = ''
     })
-    sumTilesInUse.value = sumTilesWhere(tiles.value, (t) => t.isInUse && !t.isCollateral)
+    sumTilesInUse.value = inUseTotal()
     refreshAvailability(false)
     announcement.value = `Undone. ${remainingToMatch.value} left to match.`
   }
@@ -387,17 +505,20 @@ export const useGameStore = defineStore('game', () => {
    * Highlight one combination of tiles that finishes the current roll.
    * Prefers the fewest tiles, so the hint is the simplest way out.
    */
+  /**
+   * Point at one combination that finishes the roll. Repeated calls step
+   * through the alternatives rather than always showing the same one.
+   */
   const showHint = () => {
     const open = tiles.value
       .flatMap((row, rowIndex) => row.map((t) => ({ ...t, rowIndex })))
       .filter((t) => t.isAvailable && !t.isTaken && !t.isInUse)
 
-    const combos = subsetsSummingTo(
-      open.map((t) => t.index),
-      remainingToMatch.value
-    )
-      .filter((c) => c.length > 0)
-      .sort((a, b) => a.length - b.length)
+    const ways = waysToMatch.value
+    const combos = ways.length
+      ? [...ways.slice(hintIndex.value % ways.length), ...ways.slice(0, hintIndex.value % ways.length)]
+      : []
+    hintIndex.value += 1
 
     for (const combo of combos) {
       const pool = [...open]
@@ -429,13 +550,14 @@ export const useGameStore = defineStore('game', () => {
     // state
     tiles, dice, state, note, numberPlay, diceInUse, isLoading, isVisible,
     sumTilesInUse, sumTilesTaken, gamePoints, gameBonus, modeKey, secondsLeft,
-    hintedIds, history, singleDie, announcement, previewIds,
+    hintedIds, history, singleDie, announcement, previewIds, celebration, event,
     // getters
     mode, rows, activeDice, diceSum, isFinished, selectedTiles, canUndo,
-    remainingToMatch, canRollSingleDie, runSizes, bestRun,
+    remainingToMatch, canRollSingleDie, mustRollSingleDie, openTotal, runSizes, bestRun,
+    waysToMatch,
     // actions
     newGame, restart, startGame, nextTurn, refreshAvailability, playTile,
     settleTile, rejectTile, compactRow, undo, showHint, clearHint,
-    toggleSingleDie, stopTimer, runFrom, previewRun, clearPreview
+    toggleSingleDie, stopTimer, runFrom, previewRun, clearPreview, celebrate
   }
 })

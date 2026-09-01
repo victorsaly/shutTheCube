@@ -180,21 +180,50 @@ const onAction = async () => {
       -->
       <Transition name="fade">
         <div v-if="button && !game.isLoading" class="action-layer">
+          <!-- Shutting the box is the whole point of the game, so the result
+               leads and the button that starts the next one follows it. -->
+          <div v-if="game.isFinished" class="result" :class="game.state">
+            <p class="result-eyebrow">
+              {{ game.state === 'isWin' ? 'You did it' : game.note }}
+            </p>
+            <h2 class="result-title">
+              {{ game.state === 'isWin' ? 'BOX SHUT!' : 'Game over' }}
+            </h2>
+            <p class="result-score">
+              <strong>{{ game.sumTilesTaken }}</strong>
+              <span>of {{ game.rows * 45 }} points</span>
+            </p>
+            <p v-if="isPersonalBest" class="pb">
+              <AppIcon name="trophy" /> New personal best
+            </p>
+            <p v-else-if="game.state === 'isWin'" class="pb subtle">
+              Every tile shut in {{ game.numberPlay }} rolls
+            </p>
+            <button type="button" class="again" @click="onAction">
+              {{ button.message }} <kbd>Space</kbd>
+            </button>
+          </div>
+
           <button
+            v-else
             ref="actionEl"
             type="button"
             class="action-button"
-            :class="[button.colour, { shake: game.state === 'isOver' }]"
+            :class="button.colour"
             @click="onAction"
           >
             <AppIcon :name="button.icon" class="action-icon" />
             <span class="action-label">{{ button.message }}</span>
             <span class="action-hint">or press <kbd>Space</kbd></span>
           </button>
-          <p v-if="game.isFinished" class="final">
-            {{ game.note }} · {{ game.sumTilesTaken }} points
-            <span v-if="isPersonalBest" class="pb">New best!</span>
-          </p>
+        </div>
+      </Transition>
+
+      <!-- Runs, wilds and between-turn events announce themselves here. -->
+      <Transition name="pop">
+        <div v-if="game.celebration" :key="game.celebration.id" class="celebration">
+          <strong>{{ game.celebration.title }}</strong>
+          <span>{{ game.celebration.detail }}</span>
         </div>
       </Transition>
     </div>
@@ -224,12 +253,7 @@ const onAction = async () => {
             :aria-label="inPlay ? 'Dice' : 'Roll the dice'"
             @click="onAction"
           >
-            <DiceFace
-              v-for="die in game.dice"
-              :key="die.id"
-              :value="die.number"
-              :inactive="!die.isAvailable"
-            />
+            <DiceFace v-for="die in game.activeDice" :key="die.id" :value="die.number" />
           </button>
           <p v-if="game.mode.turnSeconds > 0 && inPlay" class="timer" :class="{ low: timerLow }">
             <span class="visually-hidden">Time left </span>{{ game.secondsLeft }}s
@@ -250,13 +274,23 @@ const onAction = async () => {
         </button>
       </div>
 
-      <label v-if="game.canRollSingleDie && game.state === 'isNext'" class="single-die">
+      <p v-if="game.mustRollSingleDie" class="single-note">
+        One die — only {{ game.openTotal }} left on the board
+      </p>
+      <label
+        v-else-if="game.canRollSingleDie && game.state === 'isNext'"
+        class="single-die"
+      >
         <input type="checkbox" :checked="game.singleDie" @change="game.toggleSingleDie()" />
         Roll one die
       </label>
 
       <div class="caption">
         <SelectedTiles v-if="inPlay" />
+        <p v-if="inPlay && game.waysToMatch.length > 1" class="ways">
+          {{ game.waysToMatch.length }} ways to make {{ game.remainingToMatch }} —
+          <kbd>H</kbd> cycles them
+        </p>
       </div>
     </div>
 
@@ -346,20 +380,155 @@ const onAction = async () => {
   transform: translateY(2px);
   border-bottom-width: 2px;
 }
-.final {
+.result {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 1.5rem 1.75rem 1.25rem;
+  border-radius: 1rem;
+  background: rgb(20 64 46 / 92%);
+  border: 1px solid rgb(127 240 174 / 25%);
+  box-shadow: 0 20px 50px rgb(0 0 0 / 55%);
+  max-width: 22rem;
+}
+.result-eyebrow {
   margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-dim);
+}
+.result-title {
+  margin: 0;
+  font-size: clamp(1.9rem, 8vmin, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
   color: var(--ink);
-  font-size: 0.9rem;
+}
+.isWin .result-title {
+  color: var(--accent-bonus);
+  text-shadow: 0 0 26px rgb(127 240 174 / 45%);
+}
+.isOver .result-title {
+  color: #ff8f6b;
+}
+.result-score {
+  margin: 0.35rem 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  color: var(--ink);
+}
+.result-score strong {
+  font-size: 2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+.result-score span {
+  font-size: 0.8rem;
+  color: var(--ink-dim);
 }
 .pb {
-  display: inline-block;
-  margin-left: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.4rem 0 0;
   background: var(--accent);
   color: #22292f;
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   border-radius: 999px;
-  padding: 0.1rem 0.5rem;
+  padding: 0.2rem 0.7rem;
+}
+.pb.subtle {
+  background: none;
+  color: var(--ink-dim);
+  font-weight: 500;
+  padding: 0;
+}
+.again {
+  margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #10291d;
+  background: var(--accent-bonus);
+  border: 0;
+  border-bottom: 4px solid rgb(0 0 0 / 35%);
+  border-radius: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+}
+.again kbd {
+  font: inherit;
+  font-size: 0.7rem;
+  opacity: 0.7;
+  border: 1px solid currentcolor;
+  border-radius: 3px;
+  padding: 0 0.25rem;
+}
+.again:active {
+  transform: translateY(1px);
+}
+
+/* Called-out moments: a run claimed, a wild played, an event fired. */
+.celebration {
+  position: absolute;
+  inset: auto 0 12%;
+  z-index: 6;
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  pointer-events: none;
+}
+.celebration strong {
+  font-size: clamp(1.5rem, 7vmin, 2.4rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  text-shadow: 0 3px 18px rgb(0 0 0 / 70%);
+}
+.celebration span {
+  font-size: 0.8rem;
+  color: var(--ink);
+  text-shadow: 0 2px 8px rgb(0 0 0 / 80%);
+}
+.pop-enter-active {
+  animation: pop-in 0.35s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.pop-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+.pop-leave-to {
+  opacity: 0;
+  transform: translateY(-12px);
+}
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ways {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+}
+.ways kbd {
+  font: inherit;
+  border: 1px solid currentcolor;
+  border-radius: 3px;
+  padding: 0 0.2rem;
 }
 
 .footer {
@@ -459,6 +628,11 @@ const onAction = async () => {
   padding: 0 0.22rem;
 }
 
+.single-note {
+  margin: 0 0 0.3rem;
+  color: var(--accent-bonus);
+  font-size: 0.78rem;
+}
 .single-die {
   display: inline-flex;
   align-items: center;
@@ -498,6 +672,11 @@ const onAction = async () => {
 @media (prefers-reduced-motion: reduce) {
   .action-button,
   .turn-tools {
+    transition: none;
+  }
+  .pop-enter-active,
+  .pop-leave-active {
+    animation: none;
     transition: none;
   }
 }

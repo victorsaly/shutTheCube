@@ -20,7 +20,9 @@ export const MODES = {
      */
     allowsSingleDie: true,
     /** Whether a played tile also claims matching faces in adjacent rows. */
-    allowsRuns: false
+    allowsRuns: false,
+    /** Special tiles and between-turn events. Beginner stays pure classic. */
+    hasSurprises: false
   },
   medium: {
     key: 'medium',
@@ -29,7 +31,8 @@ export const MODES = {
     rows: 9,
     turnSeconds: 0,
     allowsSingleDie: false,
-    allowsRuns: true
+    allowsRuns: true,
+    hasSurprises: true
   },
   ninja: {
     key: 'ninja',
@@ -38,9 +41,31 @@ export const MODES = {
     rows: 9,
     turnSeconds: 30,
     allowsSingleDie: false,
-    allowsRuns: true
+    allowsRuns: true,
+    hasSurprises: true
   }
 }
+
+/** Named for the size of a run, so the board can call one out. */
+export const RUN_NAMES = { 2: 'Double', 3: 'Triple', 4: 'Quad', 5: 'Five!', 6: 'Six!!' }
+export const runName = (size) => RUN_NAMES[size] ?? (size > 6 ? `${size} in a row!!!` : '')
+
+/**
+ * Special tiles, seeded into the nine-row boards.
+ * Neither changes how a game is scored: a tile is still worth its face value.
+ */
+export const SPECIALS = {
+  wild: { key: 'wild', mark: '★', label: 'Wild — counts as whatever you still need' },
+  locked: { key: 'locked', mark: '◆', label: 'Locked — only plays alone, matching the whole roll' }
+}
+
+/** Things that can happen between turns. */
+export const EVENTS = {
+  thirdDie: { key: 'thirdDie', title: 'Lucky third die', detail: 'One extra die this turn.' },
+  reshuffle: { key: 'reshuffle', title: 'Reshuffle', detail: 'The rows have been shuffled.' },
+  wildDrop: { key: 'wildDrop', title: 'Wild drop', detail: 'A tile turned wild.' }
+}
+export const EVENT_LIST = Object.values(EVENTS)
 
 export const MODE_LIST = Object.values(MODES)
 

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { filter, flatMap, flatMapDeep, groupBy, isEqual, sortBy, sum, uniq, uniqWith } from 'lodash-es'
 import {
+  combinationsSummingTo,
   createTiles,
+  faceCounts,
   getTilesIndexCombinations,
   moveTile,
   subsetsSummingTo,
@@ -140,19 +142,66 @@ describe('subsetsSummingTo', () => {
   })
 })
 
+/**
+ * Ground truth: a face is playable when some selection of the open tiles that
+ * includes it adds up to the target. Exhaustive, so only for small boards.
+ */
+const brutePlayableFaces = (tiles, target) => {
+  const open = tiles.flat().filter((t) => !t.isInUse && !t.isTaken)
+  const found = new Set()
+  const walk = (i, remaining, used) => {
+    if (remaining === 0) {
+      used.forEach((f) => found.add(f))
+      return
+    }
+    if (i >= open.length || remaining < 0) return
+    walk(i + 1, remaining - open[i].index, [...used, open[i].index])
+    walk(i + 1, remaining, used)
+  }
+  walk(0, target, [])
+  return [...found].sort((a, b) => a - b)
+}
+
 describe('getTilesIndexCombinations', () => {
-  it('matches the pre-rewrite implementation across randomised boards', () => {
+  it('reports exactly the faces that can complete the roll', () => {
     const random = makeRandom(20260831)
-    for (let run = 0; run < 60; run++) {
-      const rows = [1, 2, 3, 9][run % 4]
+    for (let run = 0; run < 30; run++) {
+      const rows = [1, 2, 3][run % 3]
       const tiles = randomiseTileState(createTiles(9, rows), random)
       for (let target = 2; target <= 12; target++) {
         expect(
-          sortBy(getTilesIndexCombinations(tiles, target)),
+          getTilesIndexCombinations(tiles, target),
           `rows=${rows} target=${target} run=${run}`
-        ).toEqual(sortBy(legacyGetTilesIndexCombinations(tiles, target)))
+        ).toEqual(brutePlayableFaces(tiles, target))
       }
     }
+  })
+
+  it('never offers fewer moves than the pre-rewrite search', () => {
+    // The old two-pass search looked at distinct faces, then at repeats of a
+    // single face, and nothing else — so it missed moves needing repeats of
+    // two different faces and greyed out tiles that were legal to play.
+    const random = makeRandom(4242)
+    let strictlyMore = 0
+    for (let run = 0; run < 40; run++) {
+      const rows = [1, 2, 3, 9][run % 4]
+      const tiles = randomiseTileState(createTiles(9, rows), random)
+      for (let target = 2; target <= 12; target++) {
+        const now = getTilesIndexCombinations(tiles, target)
+        const before = sortBy(legacyGetTilesIndexCombinations(tiles, target))
+        expect(before.every((f) => now.includes(f)), `target=${target} run=${run}`).toBe(true)
+        if (now.length > before.length) strictlyMore++
+      }
+    }
+    expect(strictlyMore, 'the old search should be missing moves somewhere').toBeGreaterThan(0)
+  })
+
+  it('finds a move needing repeats of two different faces', () => {
+    // 2 + 2 + 1 makes 5; the old search could not see it.
+    const tiles = createTiles(9, 3)
+    tiles.forEach((row) => row.forEach((t) => (t.isTaken = ![1, 2].includes(t.index))))
+    tiles[0].forEach((t) => (t.isTaken = t.index !== 1))
+    expect(getTilesIndexCombinations(tiles, 5)).toContain(2)
   })
 
   it('only ever offers faces that are still in play', () => {
@@ -177,8 +226,40 @@ describe('getTilesIndexCombinations', () => {
   it('completes quickly on a full nine-row board', () => {
     const tiles = createTiles(9, 9)
     const started = performance.now()
-    for (let target = 2; target <= 12; target++) getTilesIndexCombinations(tiles, target)
-    expect(performance.now() - started).toBeLessThan(500)
+    for (let target = 2; target <= 18; target++) getTilesIndexCombinations(tiles, target)
+    expect(performance.now() - started).toBeLessThan(50)
+  })
+})
+
+describe('combinationsSummingTo', () => {
+  it('lists each distinct combination once', () => {
+    const counts = new Map([[1, 2], [2, 2], [3, 1]])
+    const combos = combinationsSummingTo(counts, 4).map((c) => c.join('+'))
+    expect(combos.sort()).toEqual(['1+1+2', '1+3', '2+2'].sort())
+  })
+
+  it('respects how many copies of a face are actually on the board', () => {
+    expect(combinationsSummingTo(new Map([[2, 1]]), 4)).toEqual([])
+    expect(combinationsSummingTo(new Map([[2, 2]]), 4)).toEqual([[2, 2]])
+  })
+
+  it('puts the shortest combination first, so a hint leads with it', () => {
+    const combos = combinationsSummingTo(new Map([[1, 9], [2, 9], [7, 9]]), 7)
+    expect(combos[0]).toEqual([7])
+  })
+
+  it('returns nothing for a target of zero or less', () => {
+    expect(combinationsSummingTo(new Map([[1, 9]]), 0)).toEqual([])
+    expect(combinationsSummingTo(new Map([[1, 9]]), -3)).toEqual([])
+  })
+
+  it('stays cheap on a full board, where enumerating tiles did not', () => {
+    // Per-tile enumeration produced 627,756 subsets for a roll of 12 here.
+    const counts = faceCounts(createTiles(9, 9))
+    const started = performance.now()
+    const combos = combinationsSummingTo(counts, 12)
+    expect(performance.now() - started).toBeLessThan(20)
+    expect(combos.length).toBeLessThan(200)
   })
 })
 

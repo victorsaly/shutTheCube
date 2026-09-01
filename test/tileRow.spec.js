@@ -12,6 +12,24 @@ const mountRow = (rowIndex, extra = {}) =>
 
 const positionOf = (rowIndex, face) => game.tiles[rowIndex].findIndex((t) => t.index === face)
 
+/**
+ * Put `face` at position 0 in rows [from, to), and something else at position 0
+ * of the next row, so the run has a definite length rather than whatever the
+ * shuffle happened to leave underneath it.
+ */
+const alignAt = (from, to, face) => {
+  game.tiles.slice(from, to).forEach((row) => {
+    const at = row.findIndex((t) => t.index === face)
+    row.splice(0, 0, row.splice(at, 1)[0])
+  })
+  const below = game.tiles[to]
+  if (below) {
+    const other = below.findIndex((t) => t.index !== face)
+    below.splice(0, 0, below.splice(other, 1)[0])
+  }
+}
+
+
 let game
 let pinia
 
@@ -22,6 +40,8 @@ beforeEach(() => {
   vi.spyOn(Math, 'random').mockReturnValue(0.5) // both dice show 4, so a roll of 8
   game = useGameStore()
   game.newGame('medium')
+  // These cover the ordinary tile rules; specials have their own tests.
+  game.tiles.forEach((row) => row.forEach((x) => (x.kind = 'normal')))
   game.startGame()
 })
 
@@ -123,11 +143,7 @@ describe('accessibility', () => {
 
 describe('run indicator', () => {
   it('badges a tile that would take a whole column with it', async () => {
-    // Line a 4 up at position 0 in the first three rows.
-    game.tiles.slice(0, 3).forEach((row) => {
-      const at = row.findIndex((t) => t.index === 4)
-      row.splice(0, 0, row.splice(at, 1)[0])
-    })
+    alignAt(0, 3, 4)
     game.refreshAvailability(false)
     const row = mountRow(0)
     await row.vm.$nextTick()
@@ -147,10 +163,7 @@ describe('run indicator', () => {
   })
 
   it('says how many tiles a run takes, for screen readers', async () => {
-    game.tiles.slice(0, 2).forEach((row) => {
-      const at = row.findIndex((t) => t.index === 4)
-      row.splice(0, 0, row.splice(at, 1)[0])
-    })
+    alignAt(0, 2, 4)
     game.refreshAvailability(false)
     const row = mountRow(0)
     await row.vm.$nextTick()
@@ -158,10 +171,7 @@ describe('run indicator', () => {
   })
 
   it('previews the run on hover, and only when there is one', async () => {
-    game.tiles.slice(0, 3).forEach((row) => {
-      const at = row.findIndex((t) => t.index === 4)
-      row.splice(0, 0, row.splice(at, 1)[0])
-    })
+    alignAt(0, 3, 4)
     game.refreshAvailability(false)
     const row = mountRow(0)
 
@@ -194,10 +204,7 @@ describe('rendering', () => {
   })
 
   it('gives every tile of a claimed combination the same colour', async () => {
-    game.tiles.slice(0, 3).forEach((row) => {
-      const at = row.findIndex((t) => t.index === 4)
-      row.splice(0, 0, row.splice(at, 1)[0])
-    })
+    alignAt(0, 3, 4)
     game.refreshAvailability(false)
     const row = mountRow(1)
     await row.findAll('button')[0].trigger('click')

@@ -16,6 +16,10 @@ const TILE_COLOURS = {
 const newTile = (index) => ({
   index,
   id: createGuid(),
+  /** 'normal' | 'wild' | 'locked' — see stores/modes.js. */
+  kind: 'normal',
+  /** What a wild tile counted for on the turn it was played. */
+  wildValue: null,
   isAvailable: false,
   isInUse: false,
   isTaken: false,
@@ -56,12 +60,9 @@ export const isMobile = () =>
 /**
  * Every subset of `values` that adds up to exactly `target`, duplicates included.
  *
- * This replaces `js-combinatorics@0.5.3`'s `power(...).lazyFilter(...)`, which
- * materialised all 2^n subsets before filtering. Because every tile face is a
- * positive integer, the search can prune any branch that has already overshot
- * the target, which produces the same set of subsets far more cheaply.
- * Subsets come back in a different order than the old power-set enumeration;
- * only membership is ever used downstream.
+ * Exponential in the number of values, so it is not used on a whole board —
+ * `combinationsSummingTo` counts combinations instead. Kept for small inputs
+ * and for checking the faster routines against an exhaustive search.
  */
 export const subsetsSummingTo = (values, target) => {
   const results = []
@@ -81,45 +82,109 @@ export const subsetsSummingTo = (values, target) => {
   return results
 }
 
-const playableFaces = (tiles) =>
-  flatMapDeep(tiles, (row) => flatMapDeep(row, (t) => (!t.isInUse && !t.isTaken ? t.index : [])))
+/** How many still-playable copies of each face are on the board. */
+export const faceCounts = (tiles) => {
+  const counts = new Map()
+  for (const row of tiles) {
+    for (const tile of row) {
+      if (tile.isInUse || tile.isTaken) continue
+      counts.set(tile.index, (counts.get(tile.index) ?? 0) + 1)
+    }
+  }
+  return counts
+}
 
 /**
- * The distinct tile faces that can still legally be played toward `sum`.
+ * Which totals are reachable from a multiset of faces, as a bounded knapsack.
+ * Targets are at most three dice, so this is a handful of tiny passes.
+ */
+const reachable = (counts, target) => {
+  const dp = new Uint8Array(target + 1)
+  dp[0] = 1
+  for (const [face, count] of counts) {
+    if (face > target) continue
+    for (let copy = 0; copy < count; copy++) {
+      for (let total = target; total >= face; total--) {
+        if (dp[total - face]) dp[total] = 1
+      }
+    }
+  }
+  return dp
+}
+
+/**
+ * The distinct tile faces that can still be played toward `sum`.
  *
- * Two passes, because a face can appear once per row: first the combinations
- * available from the distinct faces, then combinations that need the *same*
- * face from several rows at once (e.g. three 2s to make 6), for any face group
- * the first pass did not already cover.
+ * A face qualifies when the rest of the board can cover what is left after it.
+ *
+ * This replaced a two-pass search that looked at distinct faces, then at
+ * repeats of a single face, and nothing else — so a move needing repeats of
+ * *two* faces (2 + 2 + 3 for 7) was reported unplayable even though it was
+ * legal. Tiles the player could have used were greyed out.
  */
 export const getTilesIndexCombinations = (tiles, sum) => {
-  const distinctFaces = uniq(playableFaces(tiles))
-  const combinations = uniqWith(subsetsSummingTo(distinctFaces, sum), isEqual)
-
-  // Faces low enough to be usable, one entry per row that still holds them.
-  const repeatableFaces = sortBy(
-    filter(
-      flatMapDeep(tiles, (row) =>
-        flatMapDeep(row, (t) => (!t.isInUse && !t.isTaken && t.index <= sum ? t.index : []))
-      )
-    )
-  )
-
-  const alreadyCovered = flatten(combinations)
-  const repeatable = []
-  for (const group of Object.values(groupBy(repeatableFaces, Math.floor))) {
-    const usable = []
-    let running = 0
-    for (const face of group) {
-      running += face
-      if (running <= sum) usable.push(face)
-    }
-    if (intersection(alreadyCovered, usable).length === 0) repeatable.push(usable)
+  if (sum <= 0) return []
+  const counts = faceCounts(tiles)
+  const playable = []
+  for (const [face, count] of counts) {
+    if (face > sum) continue
+    const rest = new Map(counts)
+    if (count === 1) rest.delete(face)
+    else rest.set(face, count - 1)
+    if (reachable(rest, sum - face)[sum - face]) playable.push(face)
   }
+  return playable.sort((a, b) => a - b)
+}
 
-  const repeatCombinations = uniqWith(subsetsSummingTo(flatten(repeatable), sum), isEqual)
+/**
+ * Every distinct combination of faces that adds up to `target`, each listed
+ * once however many tiles carry that face.
+ *
+ * Enumerating per tile instead produced 627,756 subsets for a roll of 12 on a
+ * full nine-row board — 112ms of work behind a computed that reruns on every
+ * render. Counting combinations rather than tiles keeps it in the dozens.
+ */
+export const combinationsSummingTo = (counts, target) => {
+  if (target <= 0) return []
+  const faces = [...counts.keys()].filter((f) => f <= target).sort((a, b) => a - b)
+  const results = []
+  const chosen = []
+  const walk = (index, remaining) => {
+    if (remaining === 0) {
+      results.push([...chosen])
+      return
+    }
+    if (index >= faces.length) return
+    const face = faces[index]
+    const most = Math.min(counts.get(face), Math.floor(remaining / face))
+    for (let take = most; take >= 0; take--) {
+      for (let i = 0; i < take; i++) chosen.push(face)
+      walk(index + 1, remaining - face * take)
+      for (let i = 0; i < take; i++) chosen.pop()
+    }
+  }
+  walk(0, target)
+  return results.sort((a, b) => a.length - b.length || a[0] - b[0])
+}
 
-  return uniq(flatten([...combinations, ...repeatCombinations]))
+/**
+ * Sprinkle special tiles across a board.
+ *
+ * They change how a turn can be played, never how it is scored: a tile is
+ * still worth its own face value when it is shut.
+ */
+export const seedSpecials = (tiles, { wild = 0, locked = 0 } = {}) => {
+  const pool = _shuffle(tiles.flatMap((row, r) => row.map((_, c) => [r, c])))
+  let at = 0
+  for (let i = 0; i < wild && at < pool.length; i++, at++) {
+    const [r, c] = pool[at]
+    tiles[r][c].kind = 'wild'
+  }
+  for (let i = 0; i < locked && at < pool.length; i++, at++) {
+    const [r, c] = pool[at]
+    tiles[r][c].kind = 'locked'
+  }
+  return tiles
 }
 
 /** Total face value of the tiles matching `predicate`, across every row. */
@@ -127,11 +192,14 @@ export const sumTilesWhere = (tiles, predicate) =>
   _sum(tiles.map((row) => _sum(filter(row, predicate).map((t) => t.index))))
 
 export default {
+  combinationsSummingTo,
   createGuid,
   createTiles,
+  faceCounts,
   getTilesIndexCombinations,
   isMobile,
   moveTile,
+  seedSpecials,
   shuffle,
   subsetsSummingTo,
   sumTilesWhere

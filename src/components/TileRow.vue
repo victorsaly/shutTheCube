@@ -1,5 +1,6 @@
 <script setup>
 import { useGameStore } from '@/stores/game'
+import { SPECIALS } from '@/stores/modes'
 
 const props = defineProps({
   tiles: { type: Array, required: true },
@@ -26,14 +27,16 @@ const selectTile = (position) => {
 }
 
 const runSize = (t) => game.runSizes[t.id] ?? 0
+const special = (t) => SPECIALS[t.kind] ?? null
 
 const stateOf = (t) => {
   if (t.isTaken) return 'Shut'
   if (t.isInUse) return t.isCollateral ? 'Selected as bonus' : 'Selected'
   if (game.state !== '') return 'Waiting for the roll'
-  if (!t.isAvailable) return 'Not playable'
+  const mark = special(t) ? `${special(t).label}. ` : ''
+  if (!t.isAvailable) return `${mark}Not playable`
   const run = runSize(t)
-  return run > 1 ? `Playable, takes ${run} tiles together` : 'Playable'
+  return run > 1 ? `${mark}Playable, takes ${run} tiles together` : `${mark}Playable`
 }
 </script>
 
@@ -57,7 +60,9 @@ const stateOf = (t) => {
               isInUse: t.isInUse,
               isHinted: game.hintedIds.includes(t.id),
               isPreview: game.previewIds.includes(t.id),
-              hasRun: runSize(t) > 1
+              hasRun: runSize(t) > 1,
+              isWild: t.kind === 'wild',
+              isLocked: t.kind === 'locked'
             }
           ]"
           :data-cell="`${rowIndex}-${position}`"
@@ -72,6 +77,9 @@ const stateOf = (t) => {
           @blur="game.clearPreview()"
         >
           <span class="number">{{ t.index }}</span>
+          <span v-if="special(t)" class="special-mark" aria-hidden="true">
+            {{ special(t).mark }}
+          </span>
           <!-- How many tiles this one click would take, when it is more than one. -->
           <span v-if="runSize(t) > 1" class="run-badge" aria-hidden="true">
             {{ runSize(t) }}
@@ -203,6 +211,27 @@ li {
   border-bottom-color: transparent;
   box-shadow: inset 0 0 0 1px rgb(22 36 29 / 14%);
 }
+/* Special tiles wear their mark; the colour stays the face's own. */
+.special-mark {
+  position: absolute;
+  bottom: 2%;
+  left: 6%;
+  font-size: max(8px, calc(var(--tile) * 0.28));
+  line-height: 1;
+  opacity: 0.8;
+  pointer-events: none;
+}
+.isWild {
+  box-shadow:
+    0 2px 0 rgb(0 0 0 / 30%),
+    inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #b06bd8;
+}
+.isLocked {
+  box-shadow:
+    0 2px 0 rgb(0 0 0 / 30%),
+    inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #2779bd;
+}
+
 /* A tile that would take a whole column with it. */
 .run-badge {
   position: absolute;
@@ -279,7 +308,28 @@ li {
     transform: none;
   }
   .explosion,
-  /* A tile that would take a whole column with it. */
+  /* Special tiles wear their mark; the colour stays the face's own. */
+.special-mark {
+  position: absolute;
+  bottom: 2%;
+  left: 6%;
+  font-size: max(8px, calc(var(--tile) * 0.28));
+  line-height: 1;
+  opacity: 0.8;
+  pointer-events: none;
+}
+.isWild {
+  box-shadow:
+    0 2px 0 rgb(0 0 0 / 30%),
+    inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #b06bd8;
+}
+.isLocked {
+  box-shadow:
+    0 2px 0 rgb(0 0 0 / 30%),
+    inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #2779bd;
+}
+
+/* A tile that would take a whole column with it. */
 .run-badge {
   position: absolute;
   top: -4%;
@@ -313,7 +363,28 @@ li {
 .isHinted {
     animation: none;
   }
-  /* A tile that would take a whole column with it. */
+  /* Special tiles wear their mark; the colour stays the face's own. */
+.special-mark {
+  position: absolute;
+  bottom: 2%;
+  left: 6%;
+  font-size: max(8px, calc(var(--tile) * 0.28));
+  line-height: 1;
+  opacity: 0.8;
+  pointer-events: none;
+}
+.isWild {
+  box-shadow:
+    0 2px 0 rgb(0 0 0 / 30%),
+    inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #b06bd8;
+}
+.isLocked {
+  box-shadow:
+    0 2px 0 rgb(0 0 0 / 30%),
+    inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #2779bd;
+}
+
+/* A tile that would take a whole column with it. */
 .run-badge {
   position: absolute;
   top: -4%;

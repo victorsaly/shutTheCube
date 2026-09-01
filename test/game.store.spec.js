@@ -15,17 +15,34 @@ const stubDice = (rolls) => {
 }
 
 const positionOf = (game, rowIndex, face) =>
-  game.tiles[rowIndex].findIndex((t) => t.index === face)
+  game.tiles[rowIndex].findIndex((t) => t.index === face && t.kind === 'normal')
 
-/** Play one legal move if there is one. */
+/**
+ * The nine-row modes seed special tiles at random positions, which would make
+ * every test of the ordinary rules non-deterministic. Tests opt in to specials
+ * explicitly; everything else runs on a plain board.
+ */
+const plainBoard = (game) => {
+  game.tiles.forEach((row) => row.forEach((t) => (t.kind = 'normal')))
+  return game
+}
+
+/**
+ * Play one legal move if there is one.
+ *
+ * Special tiles are held out of the ordinary combination search: they are
+ * matched by face there, and picking a locked tile whose face happens to fit
+ * gets it rejected, leaving the walk stuck on the same state forever.
+ */
 const playATurn = (game) => {
   const open = game.tiles
     .flatMap((row, rowIndex) => row.map((t, position) => ({ ...t, rowIndex, position })))
     .filter((t) => t.isAvailable && !t.isTaken && !t.isInUse)
+  const ordinary = open.filter((t) => t.kind === 'normal')
 
-  for (const combo of subsetsSummingTo(open.map((t) => t.index), game.remainingToMatch)) {
+  for (const combo of subsetsSummingTo(ordinary.map((t) => t.index), game.remainingToMatch)) {
     if (combo.length === 0) continue
-    const pool = [...open]
+    const pool = [...ordinary]
     const picked = []
     for (const face of combo) {
       const at = pool.findIndex((t) => t.index === face)
@@ -39,6 +56,17 @@ const playATurn = (game) => {
     })
     game.refreshAvailability(true)
     return true
+  }
+
+  // No ordinary combination: fall back to any special tile on offer, which is
+  // exactly what a player would do.
+  const special = open.find((t) => t.kind !== 'normal')
+  if (special) {
+    const position = game.tiles[special.rowIndex].findIndex((x) => x.id === special.id)
+    if (position >= 0 && game.playTile(special.rowIndex, position).length > 0) {
+      game.refreshAvailability(true)
+      return true
+    }
   }
   return false
 }
@@ -111,6 +139,7 @@ describe('rolling', () => {
 
   it('never offers a single die in a mode that does not allow it', () => {
     game.newGame('medium')
+    plainBoard(game)
     game.startGame()
     game.tiles.forEach((row) => row.forEach((t) => (t.isTaken = t.index > 6)))
     expect(game.canRollSingleDie).toBe(false)
@@ -170,6 +199,7 @@ describe('taking a turn', () => {
 
   it('claims a matching run in adjacent rows as bonus', () => {
     game.newGame('medium')
+    plainBoard(game)
     game.startGame()
     // Line a 7 up at position 0 in the first three rows only.
     game.tiles.slice(0, 3).forEach((row) => {
@@ -220,6 +250,7 @@ describe('undo', () => {
 
   it('takes back a whole run in one step', () => {
     game.newGame('medium')
+    plainBoard(game)
     game.startGame()
     game.tiles.forEach((row) => {
       const at = row.findIndex((t) => t.index === 7)
@@ -293,6 +324,7 @@ describe('the Ninja turn timer', () => {
 
   it('counts down once the dice are rolled', () => {
     game.newGame('ninja')
+    plainBoard(game)
     game.startGame()
     expect(game.secondsLeft).toBe(30)
     vi.advanceTimersByTime(3000)
@@ -301,6 +333,7 @@ describe('the Ninja turn timer', () => {
 
   it('ends the game when it runs out', () => {
     game.newGame('ninja')
+    plainBoard(game)
     game.startGame()
     vi.advanceTimersByTime(30_000)
     expect(game.state).toBe('isOver')
@@ -309,6 +342,7 @@ describe('the Ninja turn timer', () => {
 
   it('does not run in the untimed modes', () => {
     game.newGame('medium')
+    plainBoard(game)
     game.startGame()
     vi.advanceTimersByTime(60_000)
     expect(game.state).toBe('')
@@ -316,6 +350,7 @@ describe('the Ninja turn timer', () => {
 
   it('stops once the turn is banked', () => {
     game.newGame('ninja')
+    plainBoard(game)
     game.startGame()
     game.playTile(0, positionOf(game, 0, 3))
     game.playTile(0, positionOf(game, 0, 4))
@@ -355,6 +390,7 @@ describe('ending a game', () => {
     stubDice([1, 1]) // every roll is 2
     const stats = useStatsStore()
     game.newGame('ninja')
+    plainBoard(game)
     game.startGame()
     // Nothing that could ever make 2 is left, so the next check ends the game.
     game.tiles.forEach((row) =>
@@ -390,10 +426,211 @@ describe('playing whole games', () => {
   })
 })
 
+describe('special tiles', () => {
+  beforeEach(() => stubDice([3, 4])) // every roll is 7
+
+  it('only appear in the modes that opt in', () => {
+    game.newGame('beginner')
+    expect(game.tiles.flat().every((t) => t.kind === 'normal')).toBe(true)
+    game.newGame('medium')
+    expect(game.tiles.flat().some((t) => t.kind !== 'normal')).toBe(true)
+  })
+
+  it('a wild counts as whatever is still needed', () => {
+    game.newGame('medium')
+    game.startGame()
+    const wild = game.tiles.flat().find((t) => t.kind === 'wild')
+    const row = game.tiles.findIndex((r) => r.includes(wild))
+    game.playTile(row, game.tiles[row].indexOf(wild))
+    expect(wild.isInUse).toBe(true)
+    expect(game.sumTilesInUse).toBe(7) // the whole roll, whatever its face
+    expect(wild.wildValue).toBe(7)
+  })
+
+  it('a wild still scores its own face value', () => {
+    game.newGame('medium')
+    game.startGame()
+    const wild = game.tiles.flat().find((t) => t.kind === 'wild')
+    const row = game.tiles.findIndex((r) => r.includes(wild))
+    game.playTile(row, game.tiles[row].indexOf(wild))
+    game.refreshAvailability(true)
+    expect(game.sumTilesTaken).toBe(wild.index)
+  })
+
+  it('a locked tile only plays alone, matching the whole roll', () => {
+    game.newGame('medium')
+    game.startGame()
+    const locked = game.tiles.flat().find((t) => t.kind === 'locked')
+    locked.index = 7 // exactly the roll
+    game.refreshAvailability(false)
+    expect(locked.isAvailable).toBe(true)
+
+    // Once something else is selected it is no longer on its own.
+    const other = game.tiles.flat().find((t) => t.kind === 'normal' && t.index === 3)
+    const r = game.tiles.findIndex((row) => row.includes(other))
+    game.playTile(r, game.tiles[r].indexOf(other))
+    game.refreshAvailability(false)
+    expect(locked.isAvailable).toBe(false)
+  })
+
+  it('never drags a column along with it', () => {
+    game.newGame('medium')
+    game.startGame()
+    const wild = game.tiles.flat().find((t) => t.kind === 'wild')
+    const row = game.tiles.findIndex((r) => r.includes(wild))
+    expect(game.playTile(row, game.tiles[row].indexOf(wild))).toHaveLength(1)
+  })
+
+  it('undo puts a wild back to having no value', () => {
+    game.newGame('medium')
+    game.startGame()
+    const wild = game.tiles.flat().find((t) => t.kind === 'wild')
+    const row = game.tiles.findIndex((r) => r.includes(wild))
+    game.playTile(row, game.tiles[row].indexOf(wild))
+    game.undo()
+    expect(wild.wildValue).toBe(null)
+    expect(game.sumTilesInUse).toBe(0)
+  })
+})
+
+describe('ways to match', () => {
+  it('lists each distinct combination once', () => {
+    stubDice([2, 2]) // a roll of 4
+    game.newGame('beginner')
+    plainBoard(game)
+    game.startGame()
+    const ways = game.waysToMatch.map((w) => w.join('+'))
+    expect(ways).toContain('4')
+    expect(ways).toContain('1+3')
+    expect(new Set(ways).size).toBe(ways.length)
+  })
+
+  it('shortens as tiles are selected', () => {
+    stubDice([2, 2])
+    game.newGame('beginner')
+    plainBoard(game)
+    game.startGame()
+    const before = game.waysToMatch.length
+    game.playTile(0, positionOf(game, 0, 1))
+    expect(game.waysToMatch.every((w) => w.reduce((a, b) => a + b, 0) === 3)).toBe(true)
+    expect(game.waysToMatch.length).toBeLessThan(before)
+  })
+
+  it('the hint steps through the alternatives', () => {
+    stubDice([2, 2])
+    game.newGame('beginner')
+    plainBoard(game)
+    game.startGame()
+    const first = game.showHint().join()
+    const second = game.showHint().join()
+    expect(game.waysToMatch.length).toBeGreaterThan(1)
+    expect(second).not.toBe(first)
+  })
+})
+
+describe('celebrations', () => {
+  it('names a claimed run', () => {
+    stubDice([3, 4])
+    game.newGame('medium')
+    plainBoard(game)
+    game.startGame()
+    game.tiles.slice(0, 3).forEach((row) => {
+      const at = row.findIndex((t) => t.index === 7)
+      row.splice(0, 0, row.splice(at, 1)[0])
+    })
+    const other = game.tiles[3].findIndex((t) => t.index !== 7)
+    game.tiles[3].splice(0, 0, game.tiles[3].splice(other, 1)[0])
+    game.refreshAvailability(false)
+
+    game.playTile(1, 0)
+    expect(game.celebration.title).toBe('Triple')
+  })
+
+  it('says nothing for an ordinary single tile', () => {
+    stubDice([3, 4])
+    game.newGame('beginner')
+    game.startGame()
+    game.playTile(0, positionOf(game, 0, 3))
+    expect(game.celebration).toBe(null)
+  })
+})
+
+describe('between-turn events', () => {
+  it('never fire in Beginner', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.01) // would always fire
+    game.newGame('beginner')
+    game.startGame()
+    game.nextTurn()
+    expect(game.event).toBe(null)
+  })
+
+  it('stay away most turns', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.9) // above the threshold
+    game.newGame('medium')
+    game.startGame()
+    game.nextTurn()
+    expect(game.event).toBe(null)
+  })
+
+  it('a lucky third die adds one die for that turn only', () => {
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.01)
+    game.newGame('medium')
+    game.startGame()
+    game.nextTurn()
+
+    expect(game.event.key).toBe('thirdDie')
+    expect(game.activeDice).toHaveLength(3)
+
+    // The next turn is ordinary again.
+    random.mockReturnValue(0.9)
+    game.refreshAvailability(false)
+    game.nextTurn()
+    expect(game.activeDice).toHaveLength(2)
+  })
+
+  it('announce themselves', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.01)
+    game.newGame('medium')
+    game.startGame()
+    game.nextTurn()
+    expect(game.celebration.title).toBe(game.event.title)
+  })
+})
+
+describe('the single-die endgame', () => {
+  it('drops the second die once six or less is left', () => {
+    game.newGame('beginner')
+    game.tiles[0].forEach((t) => (t.isTaken = t.index > 3)) // 1+2+3 = 6
+    expect(game.openTotal).toBe(6)
+    expect(game.mustRollSingleDie).toBe(true)
+    game.startGame()
+    expect(game.activeDice).toHaveLength(1)
+    expect(game.diceSum).toBeLessThanOrEqual(6)
+  })
+
+  it('keeps two dice while more than six is open', () => {
+    game.newGame('beginner')
+    game.tiles[0].forEach((t) => (t.isTaken = t.index > 4)) // 1+2+3+4 = 10
+    expect(game.mustRollSingleDie).toBe(false)
+    game.startGame()
+    expect(game.activeDice).toHaveLength(2)
+  })
+
+  it('applies in every mode, not just the classic one', () => {
+    game.newGame('ninja')
+    game.tiles.forEach((row, i) =>
+      row.forEach((t) => (t.isTaken = !(i === 0 && t.index <= 3)))
+    )
+    expect(game.openTotal).toBe(6)
+    expect(game.mustRollSingleDie).toBe(true)
+  })
+})
+
 describe('tile state coherence', () => {
   it('never leaves a tile both shut and playable', () => {
     stubDice([3, 4])
     game.newGame('medium')
+    plainBoard(game)
     game.startGame()
     for (let guard = 0; guard < 60 && !game.isFinished; guard++) {
       if (game.state === 'isNext') game.nextTurn()
@@ -408,6 +645,7 @@ describe('tile state coherence', () => {
   it('clears availability the moment a tile is played', () => {
     stubDice([3, 4])
     game.newGame('medium')
+    plainBoard(game)
     game.startGame()
     const claimed = game.playTile(0, positionOf(game, 0, 3))
     expect(claimed.length).toBeGreaterThan(0)
@@ -419,6 +657,7 @@ describe('restart', () => {
   it('clears the board back to the opening state, keeping the mode', () => {
     stubDice([3, 4])
     game.newGame('ninja')
+    plainBoard(game)
     game.startGame()
     game.playTile(0, 0)
 

@@ -27,7 +27,12 @@ export function useShake(onShake, { threshold = 12, timeout = 1000 } = {}) {
     last = { x: current.x, y: current.y, z: current.z }
   }
 
-  const needsPermission = () => typeof DeviceMotionEvent?.requestPermission === 'function'
+  // `DeviceMotionEvent?.x` still throws on an undeclared global, so the guard
+  // has to be a typeof check: without it this crashes anywhere the API is
+  // missing rather than quietly doing nothing.
+  const needsPermission = () =>
+    typeof DeviceMotionEvent !== 'undefined' &&
+    typeof DeviceMotionEvent.requestPermission === 'function'
 
   /** Must be called from a user gesture on iOS, or the prompt is refused. */
   const requestPermission = async () => {
@@ -43,6 +48,7 @@ export function useShake(onShake, { threshold = 12, timeout = 1000 } = {}) {
   const stop = () => window.removeEventListener('devicemotion', handle, false)
 
   onMounted(() => {
+    if (typeof window === 'undefined') return
     if (!needsPermission()) start()
   })
   onUnmounted(stop)
