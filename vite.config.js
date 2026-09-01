@@ -21,7 +21,7 @@ export default defineConfig({
       manifest: false,
       injectRegister: null,
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,ico,mp3,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,ico,mp3,woff2,webmanifest}'],
         cleanupOutdatedCaches: true,
         /*
          * No navigateFallback on purpose. The game has no client-side router,

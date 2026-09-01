@@ -1,68 +1,75 @@
 @import "tailwindcss";
 
 /*
- * The game was written against Tailwind 0.x, whose colour scale ("light" /
- * "lighter" suffixes) was removed in Tailwind 1.0. Those names are re-declared
- * here as theme tokens so the original design is reproduced exactly, and so the
- * palette is now pinned in this repo rather than fetched from a CDN.
- * Values taken verbatim from tailwindcss@0.7.4.
+ * The nine tile faces, as Tailwind theme tokens (gameServices.js assigns one
+ * class per face — the names date from Tailwind 0.x). The values are the
+ * game's own: pastels tuned against the deep forest ground, worst-case
+ * separation ΔE 64.1. They are identity; leave them alone.
  */
 @theme {
-  --color-black: #22292f;
-  --color-white: #fff;
-
-  --color-grey-darker: #606f7b;
-  --color-grey-dark: #8795a1;
-  --color-grey: #b8c2cc;
-  --color-grey-light: #dae1e7;
-
-  --color-red-light: #ef5753;
-  --color-red-lighter: #f9acaa;
-
-  --color-yellow-light: #fff382;
-  --color-yellow-lighter: #fff9c2;
-
-  --color-green-light: #51d88a;
-  --color-green-lighter: #a2f5bf;
-
-  --color-teal: #4dc0b5;
-  --color-teal-dark: #38a89d;
-
-  --color-blue: #3490dc;
-  --color-blue-dark: #2779bd;
-  --color-blue-light: #6cb2eb;
-
-  --color-indigo-lighter: #b2b7ff;
-
-  --color-purple-light: #a779e9;
-  --color-purple-lighter: #d6bbfc;
+  --color-green-lighter: #a2f5bf; /* face 1 */
+  --color-purple-lighter: #d6bbfc; /* face 2 */
+  --color-blue-light: #6cb2eb; /* face 3 */
+  --color-purple-light: #a779e9; /* face 4 */
+  --color-yellow-lighter: #fff9c2; /* face 5 */
+  --color-indigo-lighter: #b2b7ff; /* face 6 */
+  --color-red-light: #ef5753; /* face 7 */
+  --color-red-lighter: #f9acaa; /* face 8 */
+  --color-yellow-light: #fff382; /* face 9 */
 }
 
-/* Utilities that existed in Tailwind 0.x and were removed in later majors. */
-@utility list-reset {
-  list-style: none;
-  padding: 0;
+/*
+ * Theme. Shut The Cube's own world — the deep forest — organised into two
+ * layers that must never trade places:
+ *
+ *   identity  --accent, set by the mode you are playing. It colours the
+ *             chrome: the wordmark's glow, the selected pill, your best,
+ *             hover glows, focus rings. Never a rule of the game.
+ *   meaning   what the board says with colour: selected (--sel), a bonus
+ *             run (--bonus), danger (--bad), a shut tile (--hole). These
+ *             stay the same in every mode, so they always read as rules.
+ */
+:root {
+  /* ground */
+  --ground-1: #14402e;
+  --ground-2: #0d2a1f;
+  --ground-3: #091d16;
+  --ink-2: #123227; /* raised surface: panels, pills */
+
+  /* ink */
+  --bone: #eaf3ee;
+  --muted: #9fb4a8;
+  --line: rgb(234 243 238 / 16%);
+
+  /* identity — overridden per mode below */
+  --accent: #51d88a;
+
+  /* meaning */
+  --sel: #ffe36b;
+  --bonus: #7ff0ae;
+  --bad: #ff8f6b;
+  --tile-ink: #16241d;
+  --hole: #0a1f17;
+
+  /* voices */
+  --font-display: 'Fredoka', 'Avenir Next', system-ui, sans-serif;
+  --font-num: 'Spline Sans Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 }
-@utility no-outline {
-  outline: 0;
+[data-mode='beginner'] {
+  --accent: #4dd0c0;
 }
-@utility flex-no-shrink {
-  flex-shrink: 0;
+[data-mode='medium'] {
+  --accent: #6cb2eb;
+}
+[data-mode='ninja'] {
+  --accent: #ff8f6b;
 }
 
-/* Custom utilities the original markup referenced but never defined. */
-@utility bg-gradient-brand {
-  background: linear-gradient(170deg, var(--ground-1) 0%, var(--ground-2) 55%, var(--ground-3) 100%);
-}
-@utility bg-modal {
-  background-color: rgb(34 41 47 / 45%);
-}
-
-/* ---------- global app styles (ported from the old App.vue) ---------- */
+/* ---------- base ---------- */
 
 #app,
 body {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: Avenir, 'Avenir Next', system-ui, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
@@ -70,58 +77,253 @@ body {
   user-select: none;
 }
 
-/*
- * Theme.
- *
- * The board used to sit on the brand's vivid green: 63% average saturation
- * behind tiles averaging 77% lightness, so the ground was more colourful than
- * the content. The mint tile was ΔE 23.9 from it and visually merged. A deep
- * forest ground keeps the identity while letting the tiles be the colour:
- * worst-case separation goes to ΔE 64.1.
- */
-:root {
-  --ground-1: #14402e;
-  --ground-2: #0d2a1f;
-  --ground-3: #091d16;
-  --ink: #eaf3ee;
-  --ink-dim: #9fb4a8;
-  --tile-ink: #16241d;
-  --accent: #ffe36b;
-  --accent-bonus: #7ff0ae;
-}
-
 body {
   margin: 0;
   min-height: 100dvh;
-  color: var(--ink);
+  color: var(--bone);
   background: var(--ground-2);
   background: linear-gradient(170deg, var(--ground-1) 0%, var(--ground-2) 55%, var(--ground-3) 100%);
   background-attachment: fixed;
 }
 
 a {
-  color: var(--ink);
+  color: var(--bone);
 }
 
+/* The display voice: the wordmark, verdicts, celebrations, the big CTA.
+   The numeral voice: readouts and timers — mono, so counts never jitter. */
+.display {
+  font-family: var(--font-display);
+}
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Key names, inline (<kbd>Space</kbd>) — drawn as a key cap everywhere. */
+kbd {
+  font: inherit;
+  font-size: 0.82em;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0 0.35em;
+  color: var(--bone);
+}
+
+/* ---------- shared grammar ---------- */
+
+/* Uppercase micro-label: captions, readout titles, hints. */
+.micro {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Toggle pill. aria-pressed inverts it; the accent only glows, never fills. */
+.pill {
+  padding: 10px 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: rgb(9 29 22 / 60%);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.pill small {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  margin-top: 2px;
+  opacity: 0.75;
+}
+.pill:hover {
+  border-color: color-mix(in srgb, var(--accent) 75%, transparent);
+  color: var(--bone);
+}
+.pill[aria-pressed='true'] {
+  color: var(--tile-ink);
+  background: var(--bone);
+  border-color: var(--bone);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.pill[aria-pressed='true']:hover {
+  color: var(--tile-ink);
+}
+
+/* The one solid button on a screen, in the mode's own colour. */
+.cta {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #10291d;
+  background: var(--accent);
+  border: 0;
+  border-radius: 999px;
+  padding: 15px 40px;
+  cursor: pointer;
+  transition: transform 0.09s, box-shadow 0.09s;
+}
+.cta:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 36px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* Outlined companion action. */
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 12px 24px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone);
+  background: rgb(9 29 22 / 60%);
+  cursor: pointer;
+  transition: border-color 0.1s;
+  text-decoration: none;
+}
+.ghost:hover {
+  border-color: color-mix(in srgb, var(--accent) 75%, transparent);
+}
+
+/* Keyboard hint row. */
+.kbd-row {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.85;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.kbd-row b {
+  display: inline-block;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-weight: 500;
+  color: var(--bone);
+  margin-right: 4px;
+}
+
+/* Glass panel: results, stats, help. */
+.panel-glass {
+  background: rgb(13 42 31 / 88%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 18px 58px rgb(0 0 0 / 45%);
+}
+
+/* ---------- aurora ---------- */
 /*
- * Board sizing.
- *
- * The 2018 layout hard-coded 35px and 45px tiles behind `@media
- * (device-width: …)` queries, which are deprecated and never respond to the
- * actual window — the board stayed the same size from a phone to a 27" display
- * and used 40% of the width. Tiles are now derived from whichever of the two
- * axes runs out first, so the board fills whatever room it is given.
+ * Ambient drifting light in the forest's own colours, plus grain, behind
+ * everything. Field one wears the mode's accent so the room takes its tint.
+ * Phones get the light without the drift: the fields are painted once and
+ * never animated, so nothing repaints while the board is being played.
  */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.aurora i {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  filter: blur(90px);
+}
+.aurora i:nth-child(1) {
+  width: 55vmax;
+  height: 55vmax;
+  left: -12vmax;
+  top: -14vmax;
+  background: radial-gradient(circle, var(--accent), transparent 65%);
+  opacity: 0.1;
+}
+.aurora i:nth-child(2) {
+  width: 44vmax;
+  height: 44vmax;
+  right: -10vmax;
+  top: 24vh;
+  background: radial-gradient(circle, #7ff0ae, transparent 65%);
+  opacity: 0.06;
+}
+.aurora i:nth-child(3) {
+  width: 38vmax;
+  height: 38vmax;
+  left: 28vw;
+  bottom: -16vmax;
+  background: radial-gradient(circle, #ffe36b, transparent 65%);
+  opacity: 0.05;
+}
+@media (min-width: 641px) and (prefers-reduced-motion: no-preference) {
+  .aurora i {
+    will-change: transform;
+  }
+  .aurora i:nth-child(1) {
+    animation: drift1 34s ease-in-out infinite alternate;
+  }
+  .aurora i:nth-child(2) {
+    animation: drift2 27s ease-in-out infinite alternate;
+  }
+  .aurora i:nth-child(3) {
+    animation: drift3 41s ease-in-out infinite alternate;
+  }
+}
+@keyframes drift1 {
+  to {
+    transform: translate(9vw, 7vh) scale(1.15);
+  }
+}
+@keyframes drift2 {
+  to {
+    transform: translate(-8vw, -6vh) scale(0.9);
+  }
+}
+@keyframes drift3 {
+  to {
+    transform: translate(-10vw, -5vh) scale(1.2);
+  }
+}
+.aurora::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* ---------- board sizing (measured, not guessed — see git history) ---------- */
 .board-metrics {
   --gap: clamp(3px, 0.9vmin, 9px);
   --board-max: 44rem;
-  /*
-   * Sized from the container query box of .board-area, which is whatever space
-   * the flex column actually left over. This replaced a hand-tuned `--chrome`
-   * reserve for the header and footer: the real chrome is 283px, the constant
-   * guessed 30dvh, and on a 1280x720 window that was 67px short and pushed the
-   * page into a scrollbar. Measuring beats guessing.
-   */
   --tile: min(
     calc((min(100cqw, var(--board-max)) - 8 * var(--gap)) / 9),
     calc((100cqh - (var(--rows) - 1) * var(--gap)) / var(--rows)),

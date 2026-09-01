@@ -4,9 +4,12 @@ import { useGameStore } from '@/stores/game'
 import { useStatsStore } from '@/stores/stats'
 import { SPECIALS } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
+import { sound } from '@/services/sound'
 import { useShake } from '@/composables/useShake'
 import AppIcon from './AppIcon.vue'
+import Confetti from './Confetti.vue'
 import DiceFace from './DiceFace.vue'
+import ShareScore from './ShareScore.vue'
 import SelectedTiles from './SelectedTiles.vue'
 import TileRow from './TileRow.vue'
 import TweenedNumber from './TweenedNumber.vue'
@@ -17,10 +20,10 @@ const toast = ref('')
 const actionEl = ref(null)
 
 const BUTTON = {
-  isNext: { message: 'ROLL DICE', colour: 'action-green', icon: 'dice' },
-  isOver: { message: 'PLAY AGAIN', colour: 'action-red', icon: 'refresh' },
-  isStart: { message: 'START GAME', colour: 'action-green', icon: 'dice' },
-  isWin: { message: 'PLAY AGAIN', colour: 'action-green', icon: 'check' }
+  isNext: { message: 'ROLL DICE', colour: 'action-accent', icon: 'dice' },
+  isOver: { message: 'PLAY AGAIN', colour: 'action-bad', icon: 'refresh' },
+  isStart: { message: 'START GAME', colour: 'action-accent', icon: 'dice' },
+  isWin: { message: 'PLAY AGAIN', colour: 'action-accent', icon: 'check' }
 }
 const button = computed(() => BUTTON[game.state] ?? null)
 
@@ -39,27 +42,29 @@ const isPersonalBest = computed(
   () => game.isFinished && game.sumTilesTaken > 0 && game.sumTilesTaken >= stats.bestFor(game.modeKey)
 )
 const inPlay = computed(() => game.state === '')
+const shareResult = computed(() => ({
+  modeLabel: game.mode.label,
+  modeKey: game.modeKey,
+  score: game.sumTilesTaken,
+  max: game.rows * 45,
+  rolls: game.numberPlay,
+  won: game.state === 'isWin'
+}))
 const timerLow = computed(() => game.mode.turnSeconds > 0 && game.secondsLeft <= 10)
 
-let clickAudio = null
-const playClick = () => {
-  try {
-    clickAudio ??= new Audio(`${import.meta.env.BASE_URL}static/click.mp3`)
-    clickAudio.currentTime = 0
-    clickAudio.play().catch(() => {})
-  } catch {
-    // Audio is a nicety; never let it break a move.
-  }
-}
+/* Each tile answers with its own note; the board is the instrument. */
+const playClick = (face) => sound.tap(face)
 
 const advance = () => {
   if (game.isLoading) return
   game.isLoading = true
   switch (game.state) {
     case 'isStart':
+      sound.roll()
       game.startGame()
       break
     case 'isNext':
+      sound.roll()
       game.nextTurn()
       break
     case 'isOver':
@@ -68,6 +73,27 @@ const advance = () => {
       break
   }
   game.isLoading = false
+}
+
+/* The end of a game and a called-out move each get their own voice. */
+watch(
+  () => game.state,
+  (state) => {
+    if (state === 'isWin') sound.win()
+    else if (state === 'isOver') sound.over()
+  }
+)
+watch(
+  () => game.celebration,
+  (c) => {
+    if (c) sound.run(3)
+  }
+)
+
+const doUndo = () => {
+  if (!game.canUndo) return
+  game.undo()
+  sound.undo()
 }
 
 // ------------------------------------------------------- keyboard grid
@@ -133,7 +159,7 @@ const onWindowKeydown = (event) => {
   }
   if (event.key === 'u' && game.canUndo) {
     event.preventDefault()
-    game.undo()
+    doUndo()
   } else if (event.key === 'h' && inPlay.value) {
     event.preventDefault()
     game.showHint()
@@ -167,6 +193,7 @@ const onAction = async () => {
     <p class="visually-hidden" role="status" aria-live="polite">{{ game.announcement }}</p>
 
     <div class="board-area">
+      <Confetti v-if="game.state === 'isWin'" />
       <div
         class="tile-position board-metrics"
         :class="{ 'single-row': game.rows === 1 }"
@@ -195,15 +222,15 @@ const onAction = async () => {
         <div v-if="button && !game.isLoading" class="action-layer">
           <!-- Shutting the box is the whole point of the game, so the result
                leads and the button that starts the next one follows it. -->
-          <div v-if="game.isFinished" class="result" :class="game.state">
-            <p class="result-eyebrow">
+          <div v-if="game.isFinished" class="result panel-glass" :class="game.state">
+            <p class="result-eyebrow micro">
               {{ game.state === 'isWin' ? 'You did it' : game.note }}
             </p>
-            <h2 class="result-title">
+            <h2 class="result-title display">
               {{ game.state === 'isWin' ? 'BOX SHUT!' : 'Game over' }}
             </h2>
             <p class="result-score">
-              <strong>{{ game.sumTilesTaken }}</strong>
+              <strong class="num">{{ game.sumTilesTaken }}</strong>
               <span>of {{ game.rows * 45 }} points</span>
             </p>
             <p v-if="isPersonalBest" class="pb">
@@ -212,9 +239,10 @@ const onAction = async () => {
             <p v-else-if="game.state === 'isWin'" class="pb subtle">
               Every tile shut in {{ game.numberPlay }} rolls
             </p>
-            <button type="button" class="again" @click="onAction">
+            <button type="button" class="again display" @click="onAction">
               {{ button.message }} <kbd>Space</kbd>
             </button>
+            <ShareScore :result="shareResult" />
           </div>
 
           <button
@@ -226,7 +254,7 @@ const onAction = async () => {
             @click="onAction"
           >
             <AppIcon :name="button.icon" class="action-icon" />
-            <span class="action-label">{{ button.message }}</span>
+            <span class="action-label display">{{ button.message }}</span>
             <span class="action-hint">or press <kbd>Space</kbd></span>
           </button>
         </div>
@@ -235,7 +263,7 @@ const onAction = async () => {
       <!-- Runs, wilds and between-turn events announce themselves here. -->
       <Transition name="pop">
         <div v-if="game.celebration" :key="game.celebration.id" class="celebration">
-          <strong>{{ game.celebration.title }}</strong>
+          <strong class="display">{{ game.celebration.title }}</strong>
           <span>{{ game.celebration.detail }}</span>
         </div>
       </Transition>
@@ -268,7 +296,7 @@ const onAction = async () => {
           >
             <DiceFace v-for="die in game.activeDice" :key="die.id" :value="die.number" />
           </button>
-          <p v-if="game.mode.turnSeconds > 0 && inPlay" class="timer" :class="{ low: timerLow }">
+          <p v-if="game.mode.turnSeconds > 0 && inPlay" class="timer num" :class="{ low: timerLow }">
             <span class="visually-hidden">Time left </span>{{ game.secondsLeft }}s
           </p>
         </div>
@@ -279,7 +307,7 @@ const onAction = async () => {
       </div>
 
       <div class="turn-tools" :class="{ hidden: !inPlay }">
-        <button type="button" class="tool" :disabled="!game.canUndo" @click="game.undo()">
+        <button type="button" class="tool" :disabled="!game.canUndo" @click="doUndo">
           <AppIcon name="undo" /> Undo <kbd>U</kbd>
         </button>
         <button type="button" class="tool" :disabled="!inPlay" @click="game.showHint()">
@@ -357,114 +385,132 @@ const onAction = async () => {
     rgb(9 29 22 / 72%) 45%,
     rgb(9 29 22 / 45%) 100%
   );
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
 }
 .action-button {
   display: grid;
   justify-items: center;
   gap: 0.15rem;
-  padding: 1rem 2rem;
+  padding: 1rem 2.4rem;
   border: 0;
-  border-bottom: 5px solid rgb(0 0 0 / 45%);
-  border-radius: 0.7rem;
+  border-radius: 999px;
   cursor: pointer;
   font: inherit;
   color: #10291d;
   box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+  transition: transform 0.09s, box-shadow 0.09s;
 }
-.action-green {
-  background: #51d88a;
+.action-accent {
+  background: var(--accent);
 }
-.action-red {
-  background: #ff8f6b;
+.action-bad {
+  background: var(--bad);
+}
+.action-button:hover {
+  transform: scale(1.04);
+  box-shadow:
+    0 8px 24px rgb(0 0 0 / 45%),
+    0 0 36px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 .action-icon {
   font-size: 1.5rem;
 }
 .action-label {
   font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 .action-hint {
   font-size: 0.7rem;
   opacity: 0.72;
 }
 .action-hint kbd {
-  font: inherit;
-  border: 1px solid currentcolor;
-  border-radius: 3px;
-  padding: 0 0.25rem;
+  color: inherit;
+  border-color: currentcolor;
 }
 .action-button:active {
   transform: translateY(2px);
-  border-bottom-width: 2px;
 }
+
 .result {
   display: grid;
   justify-items: center;
   gap: 0.3rem;
   padding: 1.5rem 1.75rem 1.25rem;
-  border-radius: 1rem;
-  background: rgb(20 64 46 / 92%);
-  border: 1px solid rgb(127 240 174 / 25%);
-  box-shadow: 0 20px 50px rgb(0 0 0 / 55%);
   max-width: 22rem;
+  animation: result-in 0.32s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 .result-eyebrow {
   margin: 0;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--ink-dim);
 }
 .result-title {
   margin: 0;
   font-size: clamp(1.9rem, 8vmin, 3rem);
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  color: var(--bone);
 }
 .isWin .result-title {
-  color: var(--accent-bonus);
-  text-shadow: 0 0 26px rgb(127 240 174 / 45%);
+  color: var(--bonus);
+  text-shadow: 0 0 26px color-mix(in srgb, var(--bonus) 45%, transparent);
 }
 .isOver .result-title {
-  color: #ff8f6b;
+  color: var(--bad);
 }
 .result-score {
   margin: 0.35rem 0 0;
   display: flex;
   align-items: baseline;
   gap: 0.35rem;
-  color: var(--ink);
+  color: var(--bone);
 }
 .result-score strong {
   font-size: 2rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent);
+  font-weight: 700;
+  color: var(--sel);
 }
 .result-score span {
   font-size: 0.8rem;
-  color: var(--ink-dim);
+  color: var(--muted);
 }
 .pb {
+  animation: pb-pop 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) 0.25s backwards;
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
   margin: 0.4rem 0 0;
-  background: var(--accent);
+  background: var(--sel);
   color: #22292f;
   font-weight: 700;
   font-size: 0.75rem;
   border-radius: 999px;
   padding: 0.2rem 0.7rem;
 }
+@keyframes pb-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 .pb.subtle {
   background: none;
-  color: var(--ink-dim);
+  color: var(--muted);
   font-weight: 500;
   padding: 0;
 }
@@ -473,24 +519,28 @@ const onAction = async () => {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font: inherit;
-  font-weight: 700;
-  font-size: 0.9rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
   color: #10291d;
-  background: var(--accent-bonus);
+  background: var(--accent);
   border: 0;
-  border-bottom: 4px solid rgb(0 0 0 / 35%);
-  border-radius: 0.5rem;
-  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  padding: 0.7rem 1.4rem;
   cursor: pointer;
+  transition: transform 0.09s, box-shadow 0.09s;
+}
+.isOver .again {
+  background: var(--bad);
 }
 .again kbd {
-  font: inherit;
   font-size: 0.7rem;
-  opacity: 0.7;
-  border: 1px solid currentcolor;
-  border-radius: 3px;
-  padding: 0 0.25rem;
+  opacity: 0.75;
+  color: inherit;
+  border-color: currentcolor;
+}
+.again:hover {
+  transform: scale(1.04);
 }
 .again:active {
   transform: translateY(1px);
@@ -508,14 +558,14 @@ const onAction = async () => {
 }
 .celebration strong {
   font-size: clamp(1.5rem, 7vmin, 2.4rem);
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--sel);
   text-shadow: 0 3px 18px rgb(0 0 0 / 70%);
 }
 .celebration span {
   font-size: 0.8rem;
-  color: var(--ink);
+  color: var(--bone);
   text-shadow: 0 2px 8px rgb(0 0 0 / 80%);
 }
 .pop-enter-active {
@@ -548,7 +598,7 @@ const onAction = async () => {
   gap: 0.3rem 0.9rem;
   justify-content: center;
   font-size: 0.78rem;
-  color: #c2d4c9;
+  color: var(--muted);
 }
 .legend li {
   display: inline-flex;
@@ -557,19 +607,13 @@ const onAction = async () => {
 }
 .legend-mark {
   font-size: 0.85rem;
-  color: var(--ink);
+  color: var(--bone);
 }
 
 .ways {
   margin: 0.25rem 0 0;
   font-size: 0.78rem;
-  color: #c2d4c9;
-}
-.ways kbd {
-  font: inherit;
-  border: 1px solid currentcolor;
-  border-radius: 3px;
-  padding: 0 0.2rem;
+  color: var(--muted);
 }
 
 .footer {
@@ -594,10 +638,10 @@ const onAction = async () => {
   justify-content: center;
 }
 .readout-bonus {
-  --readout: var(--accent-bonus);
+  --readout: var(--bonus);
 }
 .readout-points {
-  --readout: var(--accent);
+  --readout: var(--sel);
 }
 .dice-cell {
   display: grid;
@@ -609,7 +653,7 @@ const onAction = async () => {
   padding: 0.3rem;
   background: none;
   border: 0;
-  border-radius: 0.6rem;
+  border-radius: 0.8rem;
   cursor: pointer;
 }
 .dice-button:not(:disabled):hover {
@@ -622,12 +666,11 @@ const onAction = async () => {
 }
 .timer {
   margin: 0.15rem 0 0;
-  color: var(--ink);
+  color: var(--bone);
   font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
 }
 .timer.low {
-  color: var(--accent);
+  color: var(--bad);
   font-weight: 700;
 }
 
@@ -649,36 +692,36 @@ const onAction = async () => {
   gap: 0.3rem;
   font: inherit;
   font-size: 0.78rem;
-  color: var(--ink);
+  color: var(--bone);
   background: rgb(255 255 255 / 12%);
-  border: 1px solid rgb(255 255 255 / 18%);
+  border: 1px solid var(--line);
   border-radius: 999px;
   padding: 0.3rem 0.7rem;
   cursor: pointer;
+  transition: border-color 0.1s;
+}
+.tool:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 75%, transparent);
 }
 .tool:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 .tool kbd {
-  font: inherit;
   font-size: 0.66rem;
-  opacity: 0.7;
-  border: 1px solid currentcolor;
-  border-radius: 3px;
-  padding: 0 0.22rem;
+  opacity: 0.75;
 }
 
 .single-note {
   margin: 0 0 0.3rem;
-  color: var(--accent-bonus);
+  color: var(--bonus);
   font-size: 0.78rem;
 }
 .single-die {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  color: var(--ink);
+  color: var(--bone);
   font-size: 0.82rem;
   margin-bottom: 0.3rem;
   cursor: pointer;
@@ -701,9 +744,10 @@ const onAction = async () => {
 }
 
 .toast {
-  color: var(--ink);
+  color: var(--bone);
   background: rgb(9 29 22 / 88%);
-  border-radius: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
   padding: 8px 12px;
   margin: 0 auto 8px;
   max-width: 260px;
@@ -712,13 +756,22 @@ const onAction = async () => {
 
 @media (prefers-reduced-motion: reduce) {
   .action-button,
+  .again,
   .turn-tools {
     transition: none;
+  }
+  .action-button:hover,
+  .again:hover {
+    transform: none;
   }
   .pop-enter-active,
   .pop-leave-active {
     animation: none;
     transition: none;
+  }
+  .result,
+  .pb {
+    animation: none;
   }
 }
 </style>

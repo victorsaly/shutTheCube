@@ -10,8 +10,8 @@ const anyPlayed = computed(() => MODE_LIST.some((m) => stats.hasPlayed(m.key)))
 </script>
 
 <template>
-  <div class="panel">
-    <h2><AppIcon name="chart" /> Your record</h2>
+  <div class="panel panel-glass">
+    <h2 class="display"><AppIcon name="chart" /> Your record</h2>
 
     <p v-if="!anyPlayed" class="empty">No games yet. Play one and your record shows up here.</p>
 
@@ -28,10 +28,10 @@ const anyPlayed = computed(() => MODE_LIST.some((m) => stats.hasPlayed(m.key)))
       <tbody>
         <tr v-for="mode in MODE_LIST" :key="mode.key" :class="{ dim: !stats.hasPlayed(mode.key) }">
           <th scope="row">{{ mode.label }}</th>
-          <td>{{ stats.forMode(mode.key).played }}</td>
-          <td class="best">{{ stats.bestFor(mode.key) || '—' }}</td>
-          <td>{{ stats.averageFor(mode.key) || '—' }}</td>
-          <td>
+          <td class="num">{{ stats.forMode(mode.key).played }}</td>
+          <td class="best num">{{ stats.bestFor(mode.key) || '—' }}</td>
+          <td class="num">{{ stats.averageFor(mode.key) || '—' }}</td>
+          <td class="num">
             {{ stats.forMode(mode.key).wins }}
             <span v-if="stats.hasPlayed(mode.key)" class="rate">
               ({{ stats.winRateFor(mode.key) }}%)
@@ -66,17 +66,20 @@ const anyPlayed = computed(() => MODE_LIST.some((m) => stats.hasPlayed(m.key)))
 <style scoped>
 .panel {
   text-align: left;
+  width: min(420px, 100%);
+  padding: 1.4rem 1.3rem 1.1rem;
 }
 h2 {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   margin: 0 0 0.75rem;
-  font-size: 1rem;
-  color: #22292f;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--bone);
 }
 .empty {
-  color: #606f7b;
+  color: var(--muted);
   font-size: 0.85rem;
   margin: 0 0 1rem;
 }
@@ -84,6 +87,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.82rem;
+  color: var(--bone);
 }
 th,
 td {
@@ -92,8 +96,8 @@ td {
 }
 thead th {
   font-weight: 600;
-  color: #8795a1;
-  border-bottom: 1px solid #dae1e7;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -104,14 +108,14 @@ thead th:first-child {
   font-weight: 600;
 }
 tbody tr + tr {
-  border-top: 1px solid #eef1f3;
+  border-top: 1px solid rgb(234 243 238 / 8%);
 }
 .best {
   font-weight: 700;
-  color: #1a8b4b;
+  color: var(--bonus);
 }
 .rate {
-  color: #8795a1;
+  color: var(--muted);
 }
 .dim {
   opacity: 0.45;
@@ -119,7 +123,7 @@ tbody tr + tr {
 .streaks {
   margin: 0.6rem 0 0;
   font-size: 0.75rem;
-  color: #606f7b;
+  color: var(--muted);
 }
 .actions {
   display: flex;
@@ -129,18 +133,15 @@ tbody tr + tr {
 .link {
   background: none;
   border: 0;
-  color: #2779bd;
+  color: var(--bone);
   font: inherit;
   font-size: 0.82rem;
   text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
   padding: 0.2rem;
 }
 .danger {
-  color: #ef5753;
-}
-.link:focus-visible {
-  outline: 2px solid #2779bd;
-  outline-offset: 2px;
+  color: var(--bad);
 }
 </style>

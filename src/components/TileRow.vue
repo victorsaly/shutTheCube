@@ -16,7 +16,8 @@ const selectTile = (position) => {
   const claimed = game.playTile(props.rowIndex, position)
   if (claimed.length === 0) return
 
-  props.playClick()
+  // The tile's face rides along so the board can answer with its note.
+  props.playClick(props.tiles[position].index)
   setTimeout(() => {
     claimed.forEach(({ rowIndex, tile }) => {
       game.settleTile(rowIndex, tile.id)
@@ -113,9 +114,9 @@ li {
   position: relative;
   width: var(--tile);
   height: var(--tile-h, var(--tile));
-  font-family: inherit;
+  font-family: var(--font-display);
   font-size: var(--tile-font);
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1;
   display: grid;
@@ -135,13 +136,6 @@ li {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
   z-index: 2;
-}
-.isAvailable {
-  box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
-}
-.isAvailable:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.06);
 }
 .box:active:not(:disabled) {
   transform: translateY(1px);
@@ -163,16 +157,16 @@ li {
 .isTaken {
   color: #7d9188 !important;
   cursor: default;
-  background: #0a1f17 !important;
+  background: var(--hole) !important;
   background-image: none !important;
-  border-bottom-color: #0a1f17;
+  border-bottom-color: var(--hole);
   box-shadow: inset 0 2px 5px rgb(0 0 0 / 55%);
   transform: scale(0.9);
 }
 .isInUse {
   color: #22292f !important;
   cursor: not-allowed;
-  background: var(--accent) !important;
+  background: var(--sel) !important;
   background-image: none !important;
   box-shadow:
     inset 0 0 0 max(2px, calc(var(--tile) * 0.08)) #22292f,
@@ -211,6 +205,7 @@ li {
   border-bottom-color: transparent;
   box-shadow: inset 0 0 0 1px rgb(22 36 29 / 14%);
 }
+
 /* Special tiles wear their mark; the colour stays the face's own. */
 .special-mark {
   position: absolute;
@@ -243,10 +238,10 @@ li {
   display: grid;
   place-items: center;
   font-size: max(9px, calc(var(--tile) * 0.3));
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   color: #10291d;
-  background: var(--accent-bonus);
+  background: var(--bonus);
   border: 1.5px solid #10291d;
   border-radius: 999px;
   pointer-events: none;
@@ -257,7 +252,7 @@ li {
     0 0 0 2px rgb(127 240 174 / 40%);
 }
 .isPreview {
-  outline: 3px solid var(--accent-bonus);
+  outline: 3px solid var(--bonus);
   outline-offset: 2px;
   z-index: 3;
   filter: brightness(1.1);
@@ -307,115 +302,11 @@ li {
   .isTaken {
     transform: none;
   }
-  .explosion,
-  /* Special tiles wear their mark; the colour stays the face's own. */
-.special-mark {
-  position: absolute;
-  bottom: 2%;
-  left: 6%;
-  font-size: max(8px, calc(var(--tile) * 0.28));
-  line-height: 1;
-  opacity: 0.8;
-  pointer-events: none;
-}
-.isWild {
-  box-shadow:
-    0 2px 0 rgb(0 0 0 / 30%),
-    inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #b06bd8;
-}
-.isLocked {
-  box-shadow:
-    0 2px 0 rgb(0 0 0 / 30%),
-    inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #2779bd;
-}
-
-/* A tile that would take a whole column with it. */
-.run-badge {
-  position: absolute;
-  top: -4%;
-  right: -4%;
-  min-width: 42%;
-  max-width: 22px;
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  font-size: max(9px, calc(var(--tile) * 0.3));
-  font-weight: 800;
-  line-height: 1;
-  color: #10291d;
-  background: var(--accent-bonus);
-  border: 1.5px solid #10291d;
-  border-radius: 999px;
-  pointer-events: none;
-}
-.hasRun {
-  box-shadow:
-    0 2px 0 rgb(0 0 0 / 30%),
-    0 0 0 2px rgb(127 240 174 / 40%);
-}
-.isPreview {
-  outline: 3px solid var(--accent-bonus);
-  outline-offset: 2px;
-  z-index: 3;
-  filter: brightness(1.1);
-}
-
-.isHinted {
+  .explosion {
     animation: none;
   }
-  /* Special tiles wear their mark; the colour stays the face's own. */
-.special-mark {
-  position: absolute;
-  bottom: 2%;
-  left: 6%;
-  font-size: max(8px, calc(var(--tile) * 0.28));
-  line-height: 1;
-  opacity: 0.8;
-  pointer-events: none;
-}
-.isWild {
-  box-shadow:
-    0 2px 0 rgb(0 0 0 / 30%),
-    inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #b06bd8;
-}
-.isLocked {
-  box-shadow:
-    0 2px 0 rgb(0 0 0 / 30%),
-    inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #2779bd;
-}
-
-/* A tile that would take a whole column with it. */
-.run-badge {
-  position: absolute;
-  top: -4%;
-  right: -4%;
-  min-width: 42%;
-  max-width: 22px;
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  font-size: max(9px, calc(var(--tile) * 0.3));
-  font-weight: 800;
-  line-height: 1;
-  color: #10291d;
-  background: var(--accent-bonus);
-  border: 1.5px solid #10291d;
-  border-radius: 999px;
-  pointer-events: none;
-}
-.hasRun {
-  box-shadow:
-    0 2px 0 rgb(0 0 0 / 30%),
-    0 0 0 2px rgb(127 240 174 / 40%);
-}
-.isPreview {
-  outline: 3px solid var(--accent-bonus);
-  outline-offset: 2px;
-  z-index: 3;
-  filter: brightness(1.1);
-}
-
-.isHinted {
+  .isHinted {
+    animation: none;
     outline: 3px dashed #22292f;
     outline-offset: 2px;
   }

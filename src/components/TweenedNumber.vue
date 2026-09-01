@@ -32,12 +32,12 @@ const displayed = useTweenedNumber(toRef(props, 'value'), 500)
   line-height: 1;
 }
 .value {
-  font-size: clamp(1.6rem, 5.5vmin, 2.6rem);
-  font-weight: 800;
+  font-family: var(--font-num);
+  font-size: clamp(1.5rem, 5.2vmin, 2.4rem);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1, 'lnum' 1;
-  letter-spacing: -0.03em;
-  color: var(--readout, var(--ink));
+  color: var(--readout, var(--bone));
   text-shadow: 0 2px 6px rgb(0 0 0 / 45%);
 }
 .label {
@@ -45,7 +45,7 @@ const displayed = useTweenedNumber(toRef(props, 'value'), 500)
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: var(--ink-dim);
+  color: var(--muted);
 }
 
 .compact .value {
