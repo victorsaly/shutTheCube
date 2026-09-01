@@ -264,18 +264,32 @@ li:last-child .tip {
   background: #22292f;
   opacity: 0.5;
 }
+/*
+ * On the nine-row boards most tiles are unplayable most turns, so the two
+ * states are pushed apart from both ends: a playable tile wears a light rim
+ * and a soft halo on top of its raised edge, an unplayable one is drained
+ * harder and its numeral recedes with it (75% ink on the light veil is still
+ * ~5.5:1 — comfortably past the 3:1 large-text floor for numerals this big).
+ */
 .isAvailable {
   color: var(--tile-ink);
-  box-shadow: 0 2px 0 rgb(0 0 0 / 30%);
+  box-shadow:
+    0 2px 0 rgb(0 0 0 / 30%),
+    0 0 0 1px rgb(255 255 255 / 45%),
+    0 0 14px rgb(234 243 238 / 24%);
 }
 .isAvailable:hover {
   transform: translateY(-2px);
   filter: brightness(1.07);
+  box-shadow:
+    0 4px 2px rgb(0 0 0 / 30%),
+    0 0 0 1px rgb(255 255 255 / 65%),
+    0 0 18px rgb(234 243 238 / 38%);
 }
 .isNotAvailable {
-  color: var(--tile-ink) !important;
+  color: rgb(22 36 29 / 75%) !important;
   cursor: not-allowed;
-  background-image: linear-gradient(rgb(188 200 194 / 72%), rgb(188 200 194 / 72%));
+  background-image: linear-gradient(rgb(188 200 194 / 82%), rgb(188 200 194 / 82%));
   transform: scale(0.86);
   border-bottom-color: transparent;
   box-shadow: inset 0 0 0 1px rgb(22 36 29 / 14%);
@@ -349,7 +363,8 @@ li:last-child .tip {
 .hasRun {
   box-shadow:
     0 2px 0 rgb(0 0 0 / 30%),
-    0 0 0 2px rgb(127 240 174 / 40%);
+    0 0 0 2px rgb(127 240 174 / 55%),
+    0 0 14px rgb(127 240 174 / 25%);
 }
 .isPreview {
   outline: 3px solid var(--bonus);

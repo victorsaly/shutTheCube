@@ -263,7 +263,7 @@ const onAction = async () => {
           >
             <AppIcon :name="button.icon" class="action-icon" />
             <span class="action-label display">{{ button.message }}</span>
-            <span class="action-hint">or press <kbd>Space</kbd></span>
+            <span class="action-hint on-keys">or press <kbd>Space</kbd></span>
           </button>
         </div>
       </Transition>
@@ -353,7 +353,8 @@ const onAction = async () => {
             <SelectedTiles />
             <p v-if="game.waysToMatch.length > 1" class="ways">
               {{ game.waysToMatch.length }} ways to make {{ game.remainingToMatch }} —
-              <kbd>H</kbd> cycles them
+              <span class="on-keys"><kbd>H</kbd> cycles them</span>
+              <span class="on-touch">Hint cycles them</span>
             </p>
           </template>
           <label
@@ -688,7 +689,7 @@ const onAction = async () => {
 }
 .legend li {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.3rem;
 }
 .legend b {

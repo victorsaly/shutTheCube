@@ -90,6 +90,19 @@ a {
   color: var(--bone);
 }
 
+/*
+ * Tiles get tapped in quick bursts. Without this the browser holds each tap
+ * back in case a second one arrives to mean zoom, which reads as lag, and a
+ * fast double tap on the board zooms the page instead of playing two tiles.
+ */
+button,
+a,
+label,
+input,
+summary {
+  touch-action: manipulation;
+}
+
 /* The display voice: the wordmark, verdicts, celebrations, the big CTA.
    The numeral voice: readouts and timers — mono, so counts never jitter. */
 .display {
@@ -115,6 +128,24 @@ kbd {
   border-radius: 5px;
   padding: 0 0.35em;
   color: var(--bone);
+}
+
+/*
+ * A thumb has no keys, so every cap goes at once rather than one screen at a
+ * time. Where a sentence was leaning on a cap to finish it, `.on-keys` and
+ * `.on-touch` carry the two wordings and exactly one of them ever shows.
+ */
+.on-touch {
+  display: none;
+}
+@media (hover: none) and (pointer: coarse) {
+  kbd,
+  .on-keys {
+    display: none;
+  }
+  .on-touch {
+    display: inline;
+  }
 }
 
 /* ---------- shared grammar ---------- */
