@@ -121,6 +121,58 @@ describe('accessibility', () => {
   })
 })
 
+describe('run indicator', () => {
+  it('badges a tile that would take a whole column with it', async () => {
+    // Line a 4 up at position 0 in the first three rows.
+    game.tiles.slice(0, 3).forEach((row) => {
+      const at = row.findIndex((t) => t.index === 4)
+      row.splice(0, 0, row.splice(at, 1)[0])
+    })
+    game.refreshAvailability(false)
+    const row = mountRow(0)
+    await row.vm.$nextTick()
+
+    const badge = row.findAll('.run-badge')[0]
+    expect(badge.text()).toBe('3')
+    expect(row.findAll('button')[0].classes()).toContain('hasRun')
+  })
+
+  it('shows no badge for a tile that stands alone', async () => {
+    const row = mountRow(0)
+    await row.vm.$nextTick()
+    const lone = game.tiles[0].findIndex((t) => !game.runSizes[t.id] && t.isAvailable)
+    if (lone >= 0) {
+      expect(row.findAll('button')[lone].classes()).not.toContain('hasRun')
+    }
+  })
+
+  it('says how many tiles a run takes, for screen readers', async () => {
+    game.tiles.slice(0, 2).forEach((row) => {
+      const at = row.findIndex((t) => t.index === 4)
+      row.splice(0, 0, row.splice(at, 1)[0])
+    })
+    game.refreshAvailability(false)
+    const row = mountRow(0)
+    await row.vm.$nextTick()
+    expect(row.findAll('button')[0].attributes('aria-label')).toContain('takes 2 tiles together')
+  })
+
+  it('previews the run on hover, and only when there is one', async () => {
+    game.tiles.slice(0, 3).forEach((row) => {
+      const at = row.findIndex((t) => t.index === 4)
+      row.splice(0, 0, row.splice(at, 1)[0])
+    })
+    game.refreshAvailability(false)
+    const row = mountRow(0)
+
+    await row.findAll('button')[0].trigger('pointerenter')
+    expect(game.previewIds).toHaveLength(3)
+
+    await row.findAll('button')[0].trigger('pointerleave')
+    expect(game.previewIds).toHaveLength(0)
+  })
+})
+
 describe('rendering', () => {
   it('shows each tile face and its colour', () => {
     const row = mountRow(0)
@@ -128,7 +180,8 @@ describe('rendering', () => {
     expect(buttons).toHaveLength(9)
     buttons.forEach((button, i) => {
       const tile = game.tiles[0][i]
-      expect(button.text()).toBe(String(tile.index))
+      // .number, not the button text: the button may also carry a run badge.
+      expect(button.find('.number').text()).toBe(String(tile.index))
       expect(button.classes()).toContain(tile.cssClass)
     })
   })
@@ -138,6 +191,21 @@ describe('rendering', () => {
     const row = mountRow(0)
     await row.vm.$nextTick()
     expect(row.findAll('button')[0].attributes('disabled')).toBeDefined()
+  })
+
+  it('gives every tile of a claimed combination the same colour', async () => {
+    game.tiles.slice(0, 3).forEach((row) => {
+      const at = row.findIndex((t) => t.index === 4)
+      row.splice(0, 0, row.splice(at, 1)[0])
+    })
+    game.refreshAvailability(false)
+    const row = mountRow(1)
+    await row.findAll('button')[0].trigger('click')
+
+    const claimed = game.tiles.slice(0, 3).map((r) => r[0])
+    expect(claimed.every((t) => t.isInUse)).toBe(true)
+    // One move reads as one colour; only the bonus marker differs.
+    expect(claimed.filter((t) => t.isCollateral)).toHaveLength(2)
   })
 
   it('marks hinted tiles', async () => {

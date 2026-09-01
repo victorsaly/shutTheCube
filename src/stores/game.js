@@ -58,6 +58,44 @@ export const useGameStore = defineStore('game', () => {
     tiles.value.flat().filter((t) => t.isInUse && !t.isCollateral)
   )
   const canUndo = computed(() => history.value.length > 0 && !isFinished.value)
+
+  /**
+   * How many tiles each playable tile would claim, for every tile whose run is
+   * longer than one. The collapsing-column rule was invisible until after the
+   * click, so a player had no way to spot the big moves.
+   */
+  const runSizes = computed(() => {
+    const sizes = {}
+    if (!mode.value.allowsRuns || state.value !== '') return sizes
+    tiles.value.forEach((row, rowIndex) =>
+      row.forEach((tile, position) => {
+        if (!tile.isAvailable || tile.isTaken || tile.isInUse) return
+        if (sumTilesInUse.value + tile.index > diceSum.value) return
+        const size = runFrom(rowIndex, position).length
+        if (size > 1) sizes[tile.id] = size
+      })
+    )
+    return sizes
+  })
+
+  /** The largest run currently on offer, so the board can call it out. */
+  const bestRun = computed(() => Math.max(0, ...Object.values(runSizes.value)))
+
+  /** Tiles a click would claim, previewed on hover or focus. */
+  const previewIds = ref([])
+  const previewRun = (rowIndex, position) => {
+    if (state.value !== '') return
+    const tile = tiles.value[rowIndex]?.[position]
+    if (!tile?.isAvailable || sumTilesInUse.value + tile.index > diceSum.value) {
+      previewIds.value = []
+      return
+    }
+    const run = runFrom(rowIndex, position)
+    previewIds.value = run.length > 1 ? run.map(({ tile: t }) => t.id) : []
+  }
+  const clearPreview = () => {
+    previewIds.value = []
+  }
   const remainingToMatch = computed(() => diceSum.value - sumTilesInUse.value)
 
   /** The classic rule: one die is allowed once nothing above a 6 is left. */
@@ -69,6 +107,29 @@ export const useGameStore = defineStore('game', () => {
   )
 
   const eachTile = (fn) => tiles.value.forEach((row) => row.forEach(fn))
+
+  /**
+   * Every tile a click on `position` in `rowIndex` claims: the tile itself,
+   * plus the run of the same face in adjacent rows, as far as it continues.
+   */
+  const runFrom = (rowIndex, position) => {
+    const face = tiles.value[rowIndex]?.[position]?.index
+    if (face === undefined) return []
+    const claimed = [{ rowIndex, tile: tiles.value[rowIndex][position] }]
+    if (!mode.value.allowsRuns) return claimed
+
+    const matches = (i) => {
+      const t = tiles.value[i]?.[position]
+      return t && t.index === face && !t.isTaken && !t.isInUse
+    }
+    for (let i = rowIndex - 1; i >= 0 && matches(i); i--) {
+      claimed.unshift({ rowIndex: i, tile: tiles.value[i][position] })
+    }
+    for (let i = rowIndex + 1; i < rows.value && matches(i); i++) {
+      claimed.push({ rowIndex: i, tile: tiles.value[i][position] })
+    }
+    return claimed
+  }
   const findTile = (rowIndex, tileId) => tiles.value[rowIndex]?.find((t) => t.id === tileId)
 
   const recountSums = () => {
@@ -131,6 +192,7 @@ export const useGameStore = defineStore('game', () => {
     secondsLeft.value = mode.value.turnSeconds
     hintedIds.value = []
     history.value = []
+    previewIds.value = []
     singleDie.value = false
     announcement.value = ''
   }
@@ -145,6 +207,7 @@ export const useGameStore = defineStore('game', () => {
     numberPlay.value += 1
     hintedIds.value = []
     history.value = []
+    previewIds.value = []
     announcement.value = `Rolled ${diceSum.value}. Select tiles that add up to ${diceSum.value}.`
   }
 
@@ -240,29 +303,6 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /**
-   * Every tile a click on `position` in `rowIndex` claims: the tile itself,
-   * plus the run of the same face in adjacent rows, as far as it continues.
-   */
-  const runFrom = (rowIndex, position) => {
-    const face = tiles.value[rowIndex]?.[position]?.index
-    if (face === undefined) return []
-    const claimed = [{ rowIndex, tile: tiles.value[rowIndex][position] }]
-    if (!mode.value.allowsRuns) return claimed
-
-    const matches = (i) => {
-      const t = tiles.value[i]?.[position]
-      return t && t.index === face && !t.isTaken && !t.isInUse
-    }
-    for (let i = rowIndex - 1; i >= 0 && matches(i); i--) {
-      claimed.unshift({ rowIndex: i, tile: tiles.value[i][position] })
-    }
-    for (let i = rowIndex + 1; i < rows.value && matches(i); i++) {
-      claimed.push({ rowIndex: i, tile: tiles.value[i][position] })
-    }
-    return claimed
-  }
-
-  /**
    * Try to play the tile at `position` in `rowIndex`.
    * Returns the tiles claimed, or an empty array if the move is not legal.
    */
@@ -291,6 +331,7 @@ export const useGameStore = defineStore('game', () => {
     })
     history.value.push(claimed.map(({ rowIndex: r, tile: t }) => ({ rowIndex: r, id: t.id })))
     hintedIds.value = []
+    previewIds.value = []
     sumTilesInUse.value = sumTilesWhere(tiles.value, (t) => t.isInUse && !t.isCollateral)
     announcement.value =
       remainingToMatch.value > 0
@@ -388,13 +429,13 @@ export const useGameStore = defineStore('game', () => {
     // state
     tiles, dice, state, note, numberPlay, diceInUse, isLoading, isVisible,
     sumTilesInUse, sumTilesTaken, gamePoints, gameBonus, modeKey, secondsLeft,
-    hintedIds, history, singleDie, announcement,
+    hintedIds, history, singleDie, announcement, previewIds,
     // getters
     mode, rows, activeDice, diceSum, isFinished, selectedTiles, canUndo,
-    remainingToMatch, canRollSingleDie,
+    remainingToMatch, canRollSingleDie, runSizes, bestRun,
     // actions
     newGame, restart, startGame, nextTurn, refreshAvailability, playTile,
     settleTile, rejectTile, compactRow, undo, showHint, clearHint,
-    toggleSingleDie, stopTimer
+    toggleSingleDie, stopTimer, runFrom, previewRun, clearPreview
   }
 })

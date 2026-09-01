@@ -25,11 +25,15 @@ const selectTile = (position) => {
   }, 500)
 }
 
+const runSize = (t) => game.runSizes[t.id] ?? 0
+
 const stateOf = (t) => {
   if (t.isTaken) return 'Shut'
   if (t.isInUse) return t.isCollateral ? 'Selected as bonus' : 'Selected'
   if (game.state !== '') return 'Waiting for the roll'
-  return t.isAvailable ? 'Playable' : 'Not playable'
+  if (!t.isAvailable) return 'Not playable'
+  const run = runSize(t)
+  return run > 1 ? `Playable, takes ${run} tiles together` : 'Playable'
 }
 </script>
 
@@ -51,7 +55,9 @@ const stateOf = (t) => {
               isTaken: t.isTaken,
               isCollateral: t.isCollateral,
               isInUse: t.isInUse,
-              isHinted: game.hintedIds.includes(t.id)
+              isHinted: game.hintedIds.includes(t.id),
+              isPreview: game.previewIds.includes(t.id),
+              hasRun: runSize(t) > 1
             }
           ]"
           :data-cell="`${rowIndex}-${position}`"
@@ -60,8 +66,16 @@ const stateOf = (t) => {
           :aria-label="`Tile ${t.index}. ${stateOf(t)}`"
           :aria-pressed="t.isInUse"
           @click="selectTile(position)"
+          @pointerenter="game.previewRun(rowIndex, position)"
+          @pointerleave="game.clearPreview()"
+          @focus="game.previewRun(rowIndex, position)"
+          @blur="game.clearPreview()"
         >
           <span class="number">{{ t.index }}</span>
+          <!-- How many tiles this one click would take, when it is more than one. -->
+          <span v-if="runSize(t) > 1" class="run-badge" aria-hidden="true">
+            {{ runSize(t) }}
+          </span>
         </button>
       </div>
     </li>
@@ -88,6 +102,7 @@ li {
 }
 
 .box {
+  position: relative;
   width: var(--tile);
   height: var(--tile-h, var(--tile));
   font-family: inherit;
@@ -155,11 +170,22 @@ li {
     inset 0 0 0 max(2px, calc(var(--tile) * 0.08)) #22292f,
     0 0 0 2px rgb(255 227 107 / 45%);
 }
-.isCollateral {
-  color: #12351f !important;
-  background: var(--accent-bonus) !important;
-  background-image: none !important;
-  box-shadow: inset 0 0 0 max(2px, calc(var(--tile) * 0.08)) #12351f;
+/*
+ * A claimed combination is one move, so it reads as one colour. The bonus
+ * tiles it pulled in are marked by a corner notch rather than a second hue.
+ */
+.isCollateral::after {
+  content: '';
+  position: absolute;
+  right: 8%;
+  top: 8%;
+  width: 22%;
+  height: 22%;
+  max-width: 9px;
+  max-height: 9px;
+  border-radius: 50%;
+  background: #22292f;
+  opacity: 0.5;
 }
 .isAvailable {
   color: var(--tile-ink);
@@ -177,6 +203,37 @@ li {
   border-bottom-color: transparent;
   box-shadow: inset 0 0 0 1px rgb(22 36 29 / 14%);
 }
+/* A tile that would take a whole column with it. */
+.run-badge {
+  position: absolute;
+  top: -4%;
+  right: -4%;
+  min-width: 42%;
+  max-width: 22px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  font-size: max(9px, calc(var(--tile) * 0.3));
+  font-weight: 800;
+  line-height: 1;
+  color: #10291d;
+  background: var(--accent-bonus);
+  border: 1.5px solid #10291d;
+  border-radius: 999px;
+  pointer-events: none;
+}
+.hasRun {
+  box-shadow:
+    0 2px 0 rgb(0 0 0 / 30%),
+    0 0 0 2px rgb(127 240 174 / 40%);
+}
+.isPreview {
+  outline: 3px solid var(--accent-bonus);
+  outline-offset: 2px;
+  z-index: 3;
+  filter: brightness(1.1);
+}
+
 .isHinted {
   animation: hint-pulse 1s ease-in-out 3;
   box-shadow: 0 0 0 max(2px, calc(var(--tile) * 0.08)) #22292f;
@@ -222,10 +279,72 @@ li {
     transform: none;
   }
   .explosion,
-  .isHinted {
+  /* A tile that would take a whole column with it. */
+.run-badge {
+  position: absolute;
+  top: -4%;
+  right: -4%;
+  min-width: 42%;
+  max-width: 22px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  font-size: max(9px, calc(var(--tile) * 0.3));
+  font-weight: 800;
+  line-height: 1;
+  color: #10291d;
+  background: var(--accent-bonus);
+  border: 1.5px solid #10291d;
+  border-radius: 999px;
+  pointer-events: none;
+}
+.hasRun {
+  box-shadow:
+    0 2px 0 rgb(0 0 0 / 30%),
+    0 0 0 2px rgb(127 240 174 / 40%);
+}
+.isPreview {
+  outline: 3px solid var(--accent-bonus);
+  outline-offset: 2px;
+  z-index: 3;
+  filter: brightness(1.1);
+}
+
+.isHinted {
     animation: none;
   }
-  .isHinted {
+  /* A tile that would take a whole column with it. */
+.run-badge {
+  position: absolute;
+  top: -4%;
+  right: -4%;
+  min-width: 42%;
+  max-width: 22px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  font-size: max(9px, calc(var(--tile) * 0.3));
+  font-weight: 800;
+  line-height: 1;
+  color: #10291d;
+  background: var(--accent-bonus);
+  border: 1.5px solid #10291d;
+  border-radius: 999px;
+  pointer-events: none;
+}
+.hasRun {
+  box-shadow:
+    0 2px 0 rgb(0 0 0 / 30%),
+    0 0 0 2px rgb(127 240 174 / 40%);
+}
+.isPreview {
+  outline: 3px solid var(--accent-bonus);
+  outline-offset: 2px;
+  z-index: 3;
+  filter: brightness(1.1);
+}
+
+.isHinted {
     outline: 3px dashed #22292f;
     outline-offset: 2px;
   }

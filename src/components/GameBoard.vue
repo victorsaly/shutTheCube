@@ -204,10 +204,16 @@ const onAction = async () => {
         <div class="slot">
           <TweenedNumber
             v-if="game.mode.allowsRuns"
+            class="readout-bonus"
             title="Bonus"
             :value="game.gameBonus"
           />
-          <TweenedNumber v-else title="Best" :value="stats.bestFor(game.modeKey)" />
+          <TweenedNumber
+            v-else
+            class="readout-bonus"
+            title="Best"
+            :value="stats.bestFor(game.modeKey)"
+          />
         </div>
 
         <div class="dice-cell">
@@ -231,7 +237,7 @@ const onAction = async () => {
         </div>
 
         <div class="slot">
-          <TweenedNumber title="Points" :value="game.gamePoints" />
+          <TweenedNumber class="readout-points" title="Points" :value="game.gamePoints" />
         </div>
       </div>
 
@@ -376,6 +382,12 @@ const onAction = async () => {
   min-width: 0;
   display: flex;
   justify-content: center;
+}
+.readout-bonus {
+  --readout: var(--accent-bonus);
+}
+.readout-points {
+  --readout: var(--accent);
 }
 .dice-cell {
   display: grid;

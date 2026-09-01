@@ -20,7 +20,7 @@ const stats = useStatsStore()
     </button>
 
     <div class="slot">
-      <TweenedNumber compact title="Play" :value="game.numberPlay" />
+      <TweenedNumber compact class="readout-play" title="Play" :value="game.numberPlay" />
     </div>
 
     <div class="brand">
@@ -32,7 +32,7 @@ const stats = useStatsStore()
     </div>
 
     <div class="slot">
-      <TweenedNumber compact title="Total" :value="game.sumTilesTaken" />
+      <TweenedNumber compact class="readout-total" title="Total" :value="game.sumTilesTaken" />
     </div>
 
     <button type="button" class="chip" @click="game.restart()">
@@ -56,6 +56,12 @@ const stats = useStatsStore()
   min-width: 0;
   display: flex;
   justify-content: center;
+}
+.readout-play {
+  --readout: var(--ink);
+}
+.readout-total {
+  --readout: var(--accent);
 }
 .brand img {
   max-height: 24px;

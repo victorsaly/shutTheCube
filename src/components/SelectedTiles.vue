@@ -12,7 +12,7 @@ const remaining = computed(() => game.diceSum - tileSum.value)
   <div>
     <ul>
       <li v-for="t in game.selectedTiles" :key="t.id">
-        <div class="box animated flip" :class="t.cssClass">
+        <div class="box animated flip">
           <span class="number">{{ t.index }}</span>
         </div>
       </li>
@@ -65,7 +65,8 @@ li {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #16241d;
+  color: #22292f;
+  background: var(--accent);
   font-weight: 700;
   font-size: clamp(12px, 3vmin, 19px);
   border-bottom: 3px solid rgb(0 0 0 / 40%);

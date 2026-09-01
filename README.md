@@ -15,6 +15,11 @@ On the nine-row boards, playing a tile also claims the same face in the rows dir
 below it, as far as the run of matching faces continues. Those extra tiles score as **Bonus** and
 are banked with the rest, but they do not count toward the current roll.
 
+Any tile that would take a column with it carries a **badge with the number of tiles it claims**,
+and hovering or focusing it previews the whole run — so the big moves are visible before you
+commit to one rather than only after. Every tile of a claimed combination shares one colour,
+because it was one move; the bonus tiles are marked with a small dot.
+
 ### Modes
 
 | Mode | Board | Rule of its own |
