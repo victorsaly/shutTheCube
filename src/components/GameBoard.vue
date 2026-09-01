@@ -833,10 +833,12 @@ const onAction = async () => {
   cursor: pointer;
 }
 
-/* Reserved to fit its tallest tenant (selected tiles + prompt), so the
-   board above never resizes as the tray speaks. */
+/* Reserved to fit its tallest tenant — a selected-tiles row, its sum line
+   AND the ways line together — so the board above never resizes as the tray
+   speaks. Measured against the real render — the <kbd> cap in the ways
+   line grows its line box past the type size. */
 .caption {
-  min-height: 4.4rem;
+  min-height: 5.3rem;
   display: grid;
   place-items: center;
   padding: 0 0.5rem;

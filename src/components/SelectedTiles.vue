@@ -60,15 +60,15 @@ li {
   display: block;
 }
 .box {
-  width: clamp(24px, 6vmin, 40px);
-  height: clamp(24px, 6vmin, 40px);
+  width: clamp(22px, 5vmin, 32px);
+  height: clamp(22px, 5vmin, 32px);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #22292f;
   background: var(--sel);
   font-weight: 700;
-  font-size: clamp(12px, 3vmin, 19px);
+  font-size: clamp(11px, 2.5vmin, 16px);
   border-bottom: 3px solid rgb(0 0 0 / 40%);
   border-radius: 5px;
 }
