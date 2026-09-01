@@ -75,6 +75,25 @@ npm run build     # production build into dist/
 npm run preview   # serve the production build locally
 ```
 
+## Analytics
+
+Off by default: with no token configured the site contacts no third party and
+sets no cookie, which a test asserts.
+
+To turn on Cloudflare Web Analytics — cookieless and aggregate, so no consent
+banner is needed:
+
+1. In the Cloudflare dashboard, **Web Analytics → Add a site** for
+   `shutthecube.com`. You do not need to move your DNS to Cloudflare.
+2. Copy the beacon token. It is public by design — it ships in the page source
+   of every site that uses it — so it belongs in a repository *variable*, not a
+   secret.
+3. Add it as repository variable `CF_BEACON_TOKEN`
+   (*Settings → Secrets and variables → Actions → Variables*).
+4. Update [`public/privacy.html`](public/privacy.html) in the same change: the
+   policy currently states the game uses no analytics, and that must not become
+   untrue before the code does.
+
 ## Deployment
 
 Pushing to `master` builds and publishes to GitHub Pages via

@@ -30,6 +30,10 @@ jobs:
       # is a real defect rather than noise. It must not be retried away.
       - run: npm test
       - run: npm run build
+        env:
+          # Public by design: the Cloudflare beacon token ships in the page
+          # source. Set it as a repository variable to turn analytics on.
+          VITE_CF_BEACON: ${{ vars.CF_BEACON_TOKEN }}
       # dist/ carries CNAME, robots.txt and sitemap.xml from public/, so the
       # custom domain is served by the deploy itself.
       - uses: actions/upload-pages-artifact@v3
