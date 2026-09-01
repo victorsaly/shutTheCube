@@ -22,6 +22,9 @@ export default defineConfig({
       injectRegister: null,
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,ico,mp3,woff2,webmanifest}'],
+        /* Social cards exist for link scrapers, never for the offline app —
+           precaching them would ship ~1MB nobody playing the game ever sees. */
+        globIgnores: ['**/static/social/**', '**/static/og-image.png'],
         cleanupOutdatedCaches: true,
         /*
          * No navigateFallback on purpose. The game has no client-side router,

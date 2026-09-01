@@ -13,8 +13,12 @@ export const barBlocks = (score, max) => {
   return '🟩'.repeat(filled) + '⬛'.repeat(10 - filled)
 }
 
-/** The same game, on the same mode — what the recipient is being dared into. */
-export const challengeUrl = (modeKey) => `${SITE_URL}/?mode=${encodeURIComponent(modeKey)}`
+/**
+ * The same game, on the same mode — what the recipient is being dared into.
+ * Each mode's challenge page carries its own social card (og:image), so the
+ * link previews the mode itself; the page redirects straight into the game.
+ */
+export const challengeUrl = (modeKey) => `${SITE_URL}/challenge/${encodeURIComponent(modeKey)}.html`
 
 /**
  * One finished game as chat text.

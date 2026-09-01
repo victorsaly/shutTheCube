@@ -125,8 +125,10 @@ li {
   cursor: pointer;
   color: #22292f;
   border: 0;
-  border-bottom: max(2px, calc(var(--tile) * 0.09)) solid rgb(0 0 0 / 45%);
-  border-radius: max(3px, calc(var(--tile) * 0.14));
+  --edge: max(2px, calc(var(--tile) * 0.09));
+  --corner: max(3px, calc(var(--tile) * 0.14));
+  border-bottom: var(--edge) solid rgb(0 0 0 / 45%);
+  border-radius: var(--corner);
   transition:
     transform 0.12s ease,
     filter 0.2s linear,
@@ -138,8 +140,8 @@ li {
   z-index: 2;
 }
 .box:active:not(:disabled) {
+  --edge: 2px;
   transform: translateY(1px);
-  border-bottom-width: 2px;
 }
 
 /*
@@ -216,15 +218,26 @@ li {
   opacity: 0.8;
   pointer-events: none;
 }
-.isWild {
-  box-shadow:
-    0 2px 0 rgb(0 0 0 / 30%),
-    inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #b06bd8;
+/*
+ * An inset shadow is clipped to the padding box, so it stopped short of the
+ * raised bottom edge and the ring read as three-sided. A pseudo element
+ * stretched past that edge carries it all the way round.
+ */
+.isWild,
+.isLocked {
+  --mark-ring: #b06bd8;
 }
 .isLocked {
-  box-shadow:
-    0 2px 0 rgb(0 0 0 / 30%),
-    inset 0 0 0 max(2px, calc(var(--tile) * 0.07)) #2779bd;
+  --mark-ring: #2779bd;
+}
+.isWild::before,
+.isLocked::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 calc(-1 * var(--edge)) 0;
+  border: max(2px, calc(var(--tile) * 0.07)) solid var(--mark-ring);
+  border-radius: var(--corner);
+  pointer-events: none;
 }
 
 /* A tile that would take a whole column with it. */
