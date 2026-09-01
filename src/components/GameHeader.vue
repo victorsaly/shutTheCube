@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { useGameStore } from '@/stores/game'
 import { useMatchStore } from '@/stores/match'
 import { useStatsStore } from '@/stores/stats'
@@ -17,16 +17,47 @@ const toggleMute = () => {
   muted.value = !muted.value
   setMuted(muted.value)
 }
+
+/*
+ * Restart and Menu both throw a game away, and both sit one tap from the
+ * board — so mid-game they arm on the first tap and fire on the second.
+ * An untouched game (or a finished one) still leaves in one tap.
+ */
+const armed = ref('')
+let armTimer = 0
+const inProgress = computed(() => game.numberPlay > 0 && !game.isFinished)
+const guarded = (which, fn) => {
+  if (!inProgress.value && !(which === 'menu' && match.active)) return fn()
+  if (armed.value === which) {
+    clearTimeout(armTimer)
+    armed.value = ''
+    return fn()
+  }
+  armed.value = which
+  clearTimeout(armTimer)
+  armTimer = setTimeout(() => (armed.value = ''), 2500)
+}
+onUnmounted(() => clearTimeout(armTimer))
+
+const toMenu = () =>
+  guarded('menu', () => {
+    game.isVisible = false
+    match.reset()
+  })
+const doRestart = () => guarded('restart', () => game.restart())
 </script>
 
 <template>
   <header class="bar">
     <!-- Fixed, equal end columns keep the brand on the centre line. -->
     <div class="end">
-      <button type="button" class="chip" title="Back to menu" aria-label="Back to menu"
-        @click="((game.isVisible = false), match.reset())">
+      <button type="button" class="chip" :class="{ armed: armed === 'menu' }"
+        :title="armed === 'menu' ? 'Tap again to leave' : 'Back to menu'"
+        :aria-label="armed === 'menu' ? 'Tap again to leave the game' : 'Back to menu'"
+        @click="toMenu">
         <AppIcon name="home" />
       </button>
+      <span v-if="armed === 'menu'" class="confirm-note left" aria-live="polite">Tap again</span>
     </div>
 
     <div class="slot">
@@ -55,16 +86,20 @@ const toggleMute = () => {
       </button>
       <!-- Labelled restart, not an X: an X reads as "close" next to a home
            button that already goes back. -->
-      <button type="button" class="chip" title="Restart" aria-label="Restart this game"
-        @click="game.restart()">
+      <button type="button" class="chip" :class="{ armed: armed === 'restart' }"
+        :title="armed === 'restart' ? 'Tap again to restart' : 'Restart'"
+        :aria-label="armed === 'restart' ? 'Tap again to restart this game' : 'Restart this game'"
+        @click="doRestart">
         <AppIcon name="refresh" />
       </button>
+      <span v-if="armed === 'restart'" class="confirm-note right" aria-live="polite">Tap again</span>
     </div>
   </header>
 </template>
 
 <style scoped>
 .bar {
+  position: relative;
   flex: none;
   display: grid;
   grid-template-columns: 5.2rem 1fr minmax(0, auto) 1fr 5.2rem;
@@ -138,6 +173,42 @@ const toggleMute = () => {
 }
 .chip[aria-pressed='true'] {
   color: var(--muted);
+}
+.chip.armed {
+  color: var(--bad);
+  border-color: var(--bad);
+  animation: chip-arm 0.9s ease-in-out infinite;
+}
+@keyframes chip-arm {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--bad) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--bad) 0%, transparent);
+  }
+}
+.confirm-note {
+  position: absolute;
+  top: 100%;
+  margin-top: 3px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bad);
+  white-space: nowrap;
+  z-index: 7;
+}
+.confirm-note.left {
+  left: 0.6rem;
+}
+.confirm-note.right {
+  right: 0.6rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chip.armed {
+    animation: none;
+  }
 }
 
 /*

@@ -67,6 +67,45 @@ const isPersonalBest = computed(
     game.sumTilesTaken >= stats.bestFor(game.modeKey)
 )
 const inPlay = computed(() => game.state === '')
+/*
+ * One-time coaching: the collapsing-column rule is the game's best idea and
+ * nothing in the UI explains it. The tip sits in the tray for the whole game
+ * (never mid-game, so the board's height stays put) until a run is claimed.
+ */
+const TIP_KEY = 'shutTheCube.runTipDone'
+const runTipDone = (() => {
+  try {
+    return localStorage.getItem(TIP_KEY) === '1'
+  } catch {
+    return true
+  }
+})()
+const showRunTip = ref(!runTipDone && game.mode.allowsRuns)
+watch(
+  () => game.celebration,
+  (c) => {
+    if (!c || !c.detail?.includes('in one move')) return
+    try {
+      localStorage.setItem(TIP_KEY, '1')
+    } catch {
+      // Fine to teach again next time.
+    }
+  }
+)
+/* The board stays mounted across rematches, so re-read the flag whenever a
+   fresh game begins — the tip retires on the next game, never mid-board. */
+watch(
+  () => game.state,
+  (state) => {
+    if (state !== 'isStart') return
+    try {
+      showRunTip.value = localStorage.getItem(TIP_KEY) !== '1' && game.mode.allowsRuns
+    } catch {
+      showRunTip.value = false
+    }
+  }
+)
+
 /* The tray never sits empty: between turns it says what it is for. */
 const trayHint = computed(() =>
   game.state === 'isStart'
@@ -439,6 +478,11 @@ const onAction = async () => {
 
         <!-- Once on, this stays for the rest of the game — one layout change,
              not a per-turn one, so it may sit outside the reserved caption. -->
+        <p v-if="showRunTip" class="run-tip">
+          Tiles wearing a <span class="tip-badge" aria-hidden="true">2</span> badge take the whole
+          column in one move<span class="pointer-fine"> — hover one to preview the run</span>.
+        </p>
+
         <p v-if="game.mustRollSingleDie" class="single-note">
           One die — only {{ game.openTotal }} left on the board
         </p>
@@ -837,6 +881,24 @@ const onAction = async () => {
   font-size: 0.8rem;
   color: var(--muted);
 }
+.run-tip {
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  color: var(--bonus);
+}
+.tip-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #10291d;
+  background: var(--bonus);
+  border: 1px solid #10291d;
+  border-radius: 999px;
+  vertical-align: -2px;
+}
 .legend {
   list-style: none;
   margin: 0 0 0.35rem;
@@ -1023,6 +1085,14 @@ const onAction = async () => {
   margin: 0 auto 8px;
   max-width: 260px;
   font-size: 14px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .tool kbd,
+  .action-hint,
+  .again kbd {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

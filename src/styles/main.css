@@ -157,6 +157,20 @@ kbd {
 
 /* ---------- shared grammar ---------- */
 
+/* Say it for the input the player actually has: keyboard wording on fine
+   pointers, plain wording on touch. */
+.pointer-coarse {
+  display: none;
+}
+@media (hover: none) and (pointer: coarse) {
+  .pointer-fine {
+    display: none;
+  }
+  .pointer-coarse {
+    display: inline;
+  }
+}
+
 /* Uppercase micro-label: captions, readout titles, hints. */
 .micro {
   font-size: 11px;
