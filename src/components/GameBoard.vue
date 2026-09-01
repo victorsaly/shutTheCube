@@ -120,6 +120,12 @@ watch(
  * the score is already safe in local storage either way.
  */
 const rankable = computed(() => !match.active && game.isFinished && game.isDaily)
+/*
+ * A finished solo game that was not the daily. It cannot be ranked — an
+ * unseeded board cannot be rebuilt, so its score cannot be checked — but
+ * saying nothing at all reads as the leaderboard being broken.
+ */
+const unranked = computed(() => !match.active && game.isFinished && !game.isDaily)
 
 const submission = () => ({
   mode: game.modeKey,
@@ -438,6 +444,10 @@ const onAction = async () => {
               Put this score on the daily board
               <small>Sign in with Google · your name only, no email</small>
             </button>
+            <p v-else-if="unranked" class="unranked-line micro">
+              Free play isn’t ranked — everyone needs the same board to compare.
+              Switch on <b>Daily</b> on the menu to play for the leaderboard.
+            </p>
 
             <button type="button" class="again display" @click="onAction">
               {{ button.message }} <kbd>Space</kbd>
@@ -834,6 +844,18 @@ const onAction = async () => {
   font-weight: 500;
   padding: 0;
 }
+.unranked-line {
+  margin: 0 0 10px;
+  max-width: 34ch;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+.unranked-line b {
+  color: var(--bone);
+}
+
 .rank-link {
   background: none;
   border: 0;

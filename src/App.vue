@@ -148,7 +148,8 @@ onUnmounted(() => {
             >
               Daily <b class="num">#{{ dayLabel }}</b>
               <small>
-                Everyone gets the same board · new in {{ countdownLabel }}
+                Same board for everyone · counts on the leaderboard · new in
+                {{ countdownLabel }}
               </small>
             </button>
             <p v-if="streak > 1" class="streak num" :title="`${streak} days in a row`">
