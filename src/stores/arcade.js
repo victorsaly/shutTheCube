@@ -101,8 +101,15 @@ export const useArcadeStore = defineStore('arcade', () => {
     if (me) {
       player.value = me
       await postBacklog()
-    } else {
+    } else if (!readToken()) {
+      // whoAmI drops the stored token only on a real 401. Any other failure is
+      // the network having a moment, and signing someone out for being offline
+      // would break the very thing being offline-first is for.
       token.value = null
+    } else {
+      // Could not confirm who we are, but the session may well still be good:
+      // keep it, and let the next post find out.
+      player.value = player.value ?? { name: '' }
     }
   }
 

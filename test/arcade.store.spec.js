@@ -86,7 +86,7 @@ describe('signing in', () => {
     expect(localStorage.getItem('shutTheCube.session')).toBe(null)
   })
 
-  it('stays signed out, quietly, when the network is down', async () => {
+  it('keeps the session through a network outage', async () => {
     localStorage.setItem('shutTheCube.session', 'tok')
     arcade.token = 'tok'
     vi.stubGlobal(
@@ -97,7 +97,11 @@ describe('signing in', () => {
     )
 
     await expect(arcade.restore()).resolves.not.toThrow()
-    expect(arcade.signedIn).toBe(false)
+    // Being offline is not being signed out — the token is only dropped when
+    // the server actually refuses it. Signing people out for losing signal
+    // would break the very thing being offline-first is for.
+    expect(arcade.token).toBe('tok')
+    expect(localStorage.getItem('shutTheCube.session')).toBe('tok')
   })
 })
 
