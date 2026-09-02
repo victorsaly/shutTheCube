@@ -109,7 +109,13 @@ export const useStatsStore = defineStore('stats', () => {
    * nothing.
    */
   const recordDaily = (key, stamp, result) => {
-    if (dailyResult(key, stamp)) return false
+    const existing = dailyResult(key, stamp)
+    // Only the first attempt counts — with one exception: a record from before
+    // games carried their turn-by-turn proof can never reach the leaderboard,
+    // so a finished game that does carry it may take the slot over.
+    if (existing && (Array.isArray(existing.turns) || !Array.isArray(result?.turns))) {
+      return false
+    }
     const kept = Object.fromEntries(
       Object.entries({
         ...dailies.value,
