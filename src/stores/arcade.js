@@ -52,6 +52,13 @@ export const useArcadeStore = defineStore('arcade', () => {
   const loadingBoard = ref(false)
   /** The rank just earned, shown once on the result card. */
   const lastRank = ref(null)
+  /**
+   * Why the last post did not land, if it did not.
+   *
+   * Failing silently is what made "I played and nothing appeared" impossible
+   * to tell apart from "the board is broken".
+   */
+  const postError = ref('')
   const busy = ref(false)
   const error = ref('')
 
@@ -167,7 +174,7 @@ export const useArcadeStore = defineStore('arcade', () => {
         score: entry.score,
         rolls: entry.rolls,
         won: entry.won,
-        moves: entry.moves
+        turns: entry.turns
       })
       // A refusal is marked done too, so a score the server will never accept
       // is not retried on every single sign-in for the next ninety days.
@@ -186,8 +193,12 @@ export const useArcadeStore = defineStore('arcade', () => {
    */
   const postScore = async (result) => {
     lastRank.value = null
+    postError.value = ''
     if (!token.value || result?.seed == null || !result?.period) return null
     const posted = await submitScore(token.value, result)
+    if (!posted) {
+      postError.value = 'Could not reach the leaderboard. Your score is saved here.'
+    }
     if (posted?.ok) {
       lastRank.value = posted.rank ?? null
       // Mark it done locally, or the backlog sweep would post it all over
@@ -203,6 +214,7 @@ export const useArcadeStore = defineStore('arcade', () => {
     board,
     loadingBoard,
     lastRank,
+    postError,
     busy,
     error,
     signedIn,

@@ -251,20 +251,33 @@ describe('the daily board', () => {
     expect(game.isDaily).toBe(false)
   })
 
-  it('records the moves it plays, and forgets them on undo', () => {
+  it('records each turn with its roll, and forgets a move on undo', () => {
     const game = useGameStore()
     game.newGame('beginner', null, { daily: true, stamp: '2026-09-01' })
     game.startGame()
-    expect(game.moves).toEqual([])
+
+    // The roll is recorded before anything can be played against it.
+    expect(game.turns.length).toBe(1)
+    expect(game.turns[0].d.length).toBeGreaterThan(0)
+    expect(game.turns[0].m).toEqual([])
 
     const target = game.tiles[0].findIndex((t) => t.isAvailable)
     if (target >= 0) {
       game.playTile(0, target)
-      expect(game.moves.length).toBe(1)
-      expect(game.moves[0]).toHaveProperty('f')
+      expect(game.turns[0].m.length).toBe(1)
+      expect(game.turns[0].m[0]).toHaveProperty('f')
+      expect(game.turns[0].m[0]).toHaveProperty('n')
       game.undo()
-      expect(game.moves.length).toBe(0)
+      expect(game.turns[0].m.length).toBe(0)
     }
+  })
+
+  it('starts a fresh record when the game restarts', () => {
+    const game = useGameStore()
+    game.newGame('beginner', null, { daily: true, stamp: '2026-09-01' })
+    game.startGame()
+    game.restart()
+    expect(game.turns).toEqual([])
   })
 })
 

@@ -70,12 +70,19 @@ export const useGameStore = defineStore('game', () => {
   /** The date a daily board belongs to, or null when this is not a daily. */
   const dayStamp = ref(null)
   /**
-   * Every tile played this game, in order — the origin tile of each move, not
-   * the run it dragged along. Unused by the game itself; it exists so a score
-   * can later be verified by replaying it against the seed rather than taken
-   * on trust from the browser that reports it.
+   * The game as it actually happened, turn by turn: what was rolled, what
+   * happened between turns, and what was played.
+   *
+   * Unused by the game itself. It exists so the leaderboard can *replay* a
+   * submitted game against its seed and work out the score for itself, rather
+   * than believing the number the browser reports. Recording the roll and the
+   * event of each turn is what makes the random stream reconstructable — the
+   * server can consume exactly the same draws in the same order and check that
+   * the dice really were the dice this seed deals.
    */
-  const moves = ref([])
+  const turns = ref([])
+  /** The event drawn for the turn that is about to be rolled. */
+  let pendingEvent = null
 
   /**
    * The play stream: dice, events, mid-game reshuffles.
@@ -301,7 +308,8 @@ export const useGameStore = defineStore('game', () => {
     // A seeded game deals the same dice every time it is played, so the play
     // stream goes back to the top rather than carrying on where it left off.
     resetRng()
-    moves.value = []
+    turns.value = []
+    pendingEvent = null
     eachTile((t) => {
       t.isAvailable = false
       t.isInUse = false
@@ -336,6 +344,14 @@ export const useGameStore = defineStore('game', () => {
       d.isAvailable = i < count
       d.number = d.isAvailable ? Math.floor(rng() * 6) + 1 : 0
     })
+    // Recorded before anything can be played on it, so the roll is the seed's
+    // and not something assembled after the fact to justify a score.
+    turns.value.push({
+      d: dice.value.filter((d) => d.isAvailable).map((d) => d.number),
+      e: pendingEvent,
+      m: []
+    })
+    pendingEvent = null
     diceInUse.value = true
     numberPlay.value += 1
     hintedIds.value = []
@@ -371,6 +387,7 @@ export const useGameStore = defineStore('game', () => {
 
     const chosen = choices[Math.floor(rng() * choices.length)]
     event.value = chosen
+    pendingEvent = chosen.key
 
     if (chosen.key === 'thirdDie') {
       extraDie.value = true
@@ -446,7 +463,7 @@ export const useGameStore = defineStore('game', () => {
           won,
           rolls: numberPlay.value,
           seed: seed.value,
-          moves: moves.value
+          turns: turns.value
         })
       }
     }
@@ -554,8 +571,10 @@ export const useGameStore = defineStore('game', () => {
     })
     history.value.push(claimed.map(({ rowIndex: r, tile: t }) => ({ rowIndex: r, id: t.id })))
     // Kept for later server-side verification; short keys because this is
-    // destined for a URL and a request body, not for reading.
-    moves.value.push({ r: rowIndex, f: tile.index, k: tile.kind, w: worth })
+    // destined for a request body, not for reading. `n` is how many tiles the
+    // run claimed — every one of them shows the same face, so the move is
+    // worth n times that face.
+    turns.value.at(-1)?.m.push({ f: tile.index, n: claimed.length, w: worth, k: tile.kind })
     hintedIds.value = []
     previewIds.value = []
     hintIndex.value = 0
@@ -607,7 +626,7 @@ export const useGameStore = defineStore('game', () => {
     if (!group) return
     // An undone move never happened, so it must not appear in the record a
     // score is later verified against.
-    moves.value.pop()
+    turns.value.at(-1)?.m.pop()
     group.forEach(({ rowIndex, id }) => {
       const tile = findTile(rowIndex, id)
       if (!tile) return
@@ -672,7 +691,7 @@ export const useGameStore = defineStore('game', () => {
     tiles, dice, state, note, numberPlay, diceInUse, isLoading, isVisible,
     sumTilesInUse, sumTilesTaken, gamePoints, gameBonus, modeKey, secondsLeft,
     hintedIds, history, singleDie, announcement, previewIds, celebration, event,
-    seed, dayStamp, moves,
+    seed, dayStamp, turns,
     // getters
     mode, rows, activeDice, diceSum, isFinished, selectedTiles, canUndo,
     remainingToMatch, canRollSingleDie, mustRollSingleDie, openTotal, runSizes, bestRun,

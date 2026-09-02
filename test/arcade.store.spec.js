@@ -109,7 +109,7 @@ describe('posting a score', () => {
     score: 300,
     rolls: 20,
     won: false,
-    moves: [{ r: 0, f: 4 }]
+    turns: [{ d: [4], e: null, m: [{ f: 4, n: 1, w: 4, k: 'normal' }] }]
   }
 
   it('does nothing at all when signed out', async () => {
@@ -152,7 +152,7 @@ describe('posting a score', () => {
     const body = JSON.parse(fetcher.mock.calls[0][1].body)
     expect(body.game).toBe('shutthecube')
     expect(body.seed).toBe(1234)
-    expect(body.moves).toEqual([{ r: 0, f: 4 }])
+    expect(body.turns).toEqual([{ d: [4], e: null, m: [{ f: 4, n: 1, w: 4, k: 'normal' }] }])
   })
 
   it('swallows a refusal rather than interrupting the end of a game', async () => {
@@ -231,7 +231,7 @@ describe('the backlog', () => {
     score: 300,
     rolls: 20,
     won: false,
-    moves: [{ r: 0, f: 4 }]
+    turns: [{ d: [4], e: null, m: [{ f: 4, n: 1, w: 4, k: 'normal' }] }]
   }
 
   it('posts a daily played before signing in', async () => {
@@ -242,7 +242,7 @@ describe('the backlog', () => {
       won: false,
       rolls: 20,
       seed: 1234,
-      moves: [{ r: 0, f: 4 }]
+      turns: [{ d: [4], e: null, m: [{ f: 4, n: 1, w: 4, k: 'normal' }] }]
     })
     arcade.token = 'tok'
     const fetcher = vi.fn(async () => jsonResponse({ ok: true, rank: 2 }))
@@ -256,6 +256,7 @@ describe('the backlog', () => {
 
   it('ignores a daily with no proof behind it', async () => {
     const stats = useStatsStore()
+    // No turns recorded, so there is nothing the server could check.
     stats.recordDaily('medium', '2026-09-02', { score: 300, won: false, rolls: 20 })
     arcade.token = 'tok'
     const fetcher = vi.fn()
@@ -272,7 +273,7 @@ describe('the backlog', () => {
       won: false,
       rolls: 20,
       seed: 1234,
-      moves: [{ r: 0, f: 4 }]
+      turns: [{ d: [4], e: null, m: [{ f: 4, n: 1, w: 4, k: 'normal' }] }]
     })
     arcade.token = 'tok'
     vi.stubGlobal(
@@ -298,7 +299,7 @@ describe('the backlog', () => {
       won: false,
       rolls: 20,
       seed: 1234,
-      moves: [{ r: 0, f: 4 }]
+      turns: [{ d: [4], e: null, m: [{ f: 4, n: 1, w: 4, k: 'normal' }] }]
     })
     arcade.token = 'tok'
     vi.stubGlobal(

@@ -134,7 +134,7 @@ const submission = () => ({
   score: game.sumTilesTaken,
   rolls: game.numberPlay,
   won: game.state === 'isWin',
-  moves: game.moves
+  turns: game.turns
 })
 
 watch(
@@ -444,6 +444,9 @@ const onAction = async () => {
               Put this score on the daily board
               <small>Sign in with Google · your name only, no email</small>
             </button>
+            <p v-else-if="arcade.postError" class="unranked-line micro" role="status">
+              {{ arcade.postError }}
+            </p>
             <p v-else-if="unranked" class="unranked-line micro">
               Free play isn’t ranked — everyone needs the same board to compare.
               Switch on <b>Daily</b> on the menu to play for the leaderboard.

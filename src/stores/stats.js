@@ -134,7 +134,7 @@ export const useStatsStore = defineStore('stats', () => {
     const out = []
     for (const [stamp, modes] of Object.entries(dailies.value)) {
       for (const [mode, result] of Object.entries(modes ?? {})) {
-        if (result?.posted || result?.seed == null || !Array.isArray(result?.moves)) continue
+        if (result?.posted || result?.seed == null || !Array.isArray(result?.turns)) continue
         out.push({ mode, period: stamp, ...result })
       }
     }

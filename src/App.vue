@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useGameStore } from '@/stores/game'
 import { useMatchStore } from '@/stores/match'
 import { useStatsStore } from '@/stores/stats'
@@ -34,8 +34,30 @@ const SUBS = {
 
 /** 1 = solo, 2 = pass-and-play on this device. */
 const players = ref(1)
-/** Whether the mode cards deal today's shared board instead of a random one. */
-const daily = ref(false)
+/**
+ * Whether the mode cards deal today's shared board instead of a random one.
+ *
+ * Remembered, because it was not: every trip back to the menu silently turned
+ * it off again, so a second game quietly stopped counting for the leaderboard
+ * with nothing on screen to say so.
+ */
+const DAILY_PREF = 'shutTheCube.dailyPreferred'
+const daily = ref(
+  (() => {
+    try {
+      return localStorage.getItem(DAILY_PREF) === '1'
+    } catch {
+      return false
+    }
+  })()
+)
+watch(daily, (on) => {
+  try {
+    localStorage.setItem(DAILY_PREF, on ? '1' : '0')
+  } catch {
+    // A preference that cannot be stored still holds for this visit.
+  }
+})
 
 const today = todayStamp()
 const dayLabel = dayNumber(today)
