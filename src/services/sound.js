@@ -134,9 +134,32 @@ const safely = (fn) => {
 }
 
 export const sound = {
-  /** A tile played: its own note on the scale. */
-  tap(face) {
-    safely(() => hit(freqOf(face)))
+  /**
+   * A tile played: its own note on the scale.
+   *
+   * `progress` is how much of the board is already shut, 0 to 1, and the note
+   * grows with it — a longer tail first, then a fifth above, then the root an
+   * octave down. A board most of the way home sounds fuller than an opening
+   * move, so a good run is audibly a good run rather than the same tap
+   * repeated. Passing nothing leaves the plain note exactly as it was.
+   */
+  tap(face, progress = 0) {
+    safely(() => {
+      const p = Math.max(0, Math.min(1, progress))
+      const root = freqOf(face)
+      // The tail opens out from a quarter-second to nearly half.
+      hit(root, { decay: 0.28 + p * 0.18, vol: 0.22 })
+      if (p >= 0.4) {
+        // A fifth above, quiet, fading in as the board empties.
+        const mix = (p - 0.4) / 0.6
+        hit(root * 2 ** (7 / 12), { vol: 0.05 + mix * 0.05, decay: 0.3 })
+      }
+      if (p >= 0.7) {
+        // And the root beneath it, for weight in the closing stretch.
+        const mix = (p - 0.7) / 0.3
+        hit(root / 2, { vol: 0.05 + mix * 0.06, decay: 0.42 })
+      }
+    })
   },
 
   /** A selection undone: the note walks back down. */

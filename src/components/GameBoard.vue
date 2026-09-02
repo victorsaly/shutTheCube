@@ -183,9 +183,10 @@ const shareResult = computed(() =>
 )
 const timerLow = computed(() => game.mode.turnSeconds > 0 && game.secondsLeft <= 10)
 
-/* Each tile answers with its own note; the board is the instrument. */
+/* Each tile answers with its own note; the board is the instrument. And the
+   instrument opens up as the board empties — see `sound.tap`. */
 const playClick = (face) => {
-  sound.tap(face)
+  sound.tap(face, game.sumTilesTaken / Math.max(1, game.rows * 45))
   haptic(8)
 }
 

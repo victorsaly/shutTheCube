@@ -325,3 +325,27 @@ describe('the shared card', () => {
     expect(scoreCard({ ...base, streak: 4 })).toContain('🔥 4 day streak')
   })
 })
+
+describe('the chase', () => {
+  /*
+   * The gap to your best is the reason the last few turns matter, so it has to
+   * be right at the edges: exactly level, one past, and a board with no best
+   * to chase yet.
+   */
+  const gapFor = (best, taken) => {
+    const gap = best - taken
+    return gap > 0 ? `${gap} to beat` : gap === 0 ? 'level with best' : `${-gap} past best`
+  }
+
+  it('counts down while behind', () => {
+    expect(gapFor(300, 250)).toBe('50 to beat')
+  })
+
+  it('calls out being exactly level', () => {
+    expect(gapFor(300, 300)).toBe('level with best')
+  })
+
+  it('counts up once ahead', () => {
+    expect(gapFor(300, 312)).toBe('12 past best')
+  })
+})

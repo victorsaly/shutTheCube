@@ -45,6 +45,23 @@ const toMenu = () =>
     match.reset()
   })
 const doRestart = () => guarded('restart', () => game.restart())
+
+/*
+ * The chase.
+ *
+ * A personal best sitting in the corner is a fact; the gap to it, counting
+ * down as tiles are banked, is a reason to keep going. It appears only once
+ * there is a best to chase, and only in a solo game — a pass-and-play match
+ * is its own contest and already has an opponent.
+ */
+const best = computed(() => stats.bestFor(game.modeKey))
+const chase = computed(() => {
+  if (match.active || !best.value || game.state === 'isStart') return null
+  const gap = best.value - game.sumTilesTaken
+  return gap > 0
+    ? { behind: true, gap, label: `${gap} to beat` }
+    : { behind: false, gap: -gap, label: gap === 0 ? 'level with best' : `${-gap} past best` }
+})
 </script>
 
 <template>
@@ -68,14 +85,18 @@ const doRestart = () => guarded('restart', () => game.restart())
       <p class="name display"><BrandMark :size="20" /> Shut The Cube</p>
       <p class="mode micro">
         {{ game.mode.label }}
-        <span v-if="stats.bestFor(game.modeKey)" class="best">
-          · best {{ stats.bestFor(game.modeKey) }}
-        </span>
+        <!-- Once the chase is running it says the same thing, live. -->
+        <span v-if="best && !chase" class="best">· best {{ best }}</span>
       </p>
     </div>
 
     <div class="slot">
       <TweenedNumber compact class="readout-total" title="Total" :value="game.sumTilesTaken" />
+      <!-- Live gap to your best: the number that makes the last few turns
+           matter. Announced politely so it is not read out every tile. -->
+      <p v-if="chase" class="chase micro" :class="{ ahead: !chase.behind }" aria-live="polite">
+        <span class="num">{{ chase.label }}</span>
+      </p>
     </div>
 
     <div class="end right">
@@ -107,6 +128,22 @@ const doRestart = () => guarded('restart', () => game.restart())
   gap: 0.4rem;
   padding: max(0.4rem, env(safe-area-inset-top)) 0.6rem 0.2rem;
 }
+/* The gap to your best, under the running total. Sized down and given its
+   own line so it reads as a caption rather than competing with the score. */
+.chase {
+  margin: 2px 0 0;
+  text-align: center;
+  color: var(--muted);
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  font-size: 0.58rem;
+}
+.chase.ahead {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .end {
   display: flex;
   gap: 6px;
@@ -118,6 +155,8 @@ const doRestart = () => guarded('restart', () => game.restart())
 .slot {
   min-width: 0;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
 }
 .readout-play {
