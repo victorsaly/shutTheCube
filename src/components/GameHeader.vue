@@ -83,11 +83,17 @@ const chase = computed(() => {
 
     <div class="brand">
       <p class="name display"><BrandMark :size="20" /> Shut The Cube</p>
-      <p class="mode micro">
+      <!-- The game opens straight onto a board, so this is how the modes,
+           the daily and the boards are found. A label nobody can press is no
+           use as the only way back. -->
+      <button type="button" class="mode micro" :class="{ armed: armed === 'menu' }"
+        :title="armed === 'menu' ? 'Tap again to leave' : 'Change mode, or see the boards'"
+        @click="toMenu">
+        <span v-if="game.isDaily" class="daily-tag">Daily #{{ game.dayIndex }}</span>
         {{ game.mode.label }}
-        <!-- Once the chase is running it says the same thing, live. -->
         <span v-if="best && !chase" class="best">· best {{ best }}</span>
-      </p>
+        <span class="caret" aria-hidden="true">▾</span>
+      </button>
     </div>
 
     <div class="slot">
@@ -144,6 +150,35 @@ const chase = computed(() => {
   font-weight: 600;
 }
 
+/* The mode line doubles as the way back to the menu. A button is inline by
+   default, which put it alongside the wordmark instead of under it. */
+.mode {
+  display: block;
+  background: none;
+  border: 0;
+  padding: 2px 6px;
+  border-radius: 7px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.mode:hover {
+  background: rgb(234 243 238 / 8%);
+}
+.mode.armed {
+  color: var(--bad);
+}
+.caret {
+  opacity: 0.5;
+  margin-left: 2px;
+}
+/* Playing the day's shared board is worth knowing while you are on it. */
+.daily-tag {
+  color: var(--accent);
+  font-weight: 600;
+  margin-right: 3px;
+}
+
 .end {
   display: flex;
   gap: 6px;
@@ -173,6 +208,9 @@ const chase = computed(() => {
  */
 .brand {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .brand .name {
   margin: 0;

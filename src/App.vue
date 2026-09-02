@@ -73,8 +73,32 @@ const countdownLabel = computed(() => {
 
 const streak = computed(() => stats.dayStreak())
 
+/**
+ * The mode to open on.
+ *
+ * Remembered, because the menu was a decision standing between arriving and
+ * playing, and every decision before the first roll costs someone who has not
+ * played yet. Medium is the opening hand for a first visit: it is the variant
+ * the game is named after, and the run preview and the one-time tip already
+ * teach its only novel rule.
+ */
+const LAST_MODE = 'shutTheCube.lastMode'
+const rememberedMode = () => {
+  try {
+    const saved = localStorage.getItem(LAST_MODE)
+    return MODE_LIST.some((m) => m.key === saved) ? saved : 'medium'
+  } catch {
+    return 'medium'
+  }
+}
+
 const start = (key, options = {}) => {
   match.reset()
+  try {
+    localStorage.setItem(LAST_MODE, key)
+  } catch {
+    // A preference that cannot be stored still holds for this visit.
+  }
   // Pass and play needs both players on one board, which the daily already
   // guarantees — but a match is a private contest, so it stays unseeded.
   const seeded = players.value === 1 && daily.value
@@ -108,7 +132,15 @@ onMounted(() => {
   const sharedSeed = params.get('s')
   if (dared && MODE_LIST.some((m) => m.key === dared)) {
     start(dared, sharedSeed !== null ? { seed: sharedSeed } : {})
+    return
   }
+
+  /*
+   * Otherwise open straight onto a board, ready to roll. The menu is one tap
+   * away on the header, and everything it offered — the other modes, the
+   * daily, the boards — is still there for anyone who goes looking.
+   */
+  start(rememberedMode())
 })
 onUnmounted(() => {
   window.removeEventListener('keydown', onMenuKeydown)
