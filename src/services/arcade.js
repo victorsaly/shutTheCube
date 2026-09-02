@@ -43,6 +43,9 @@ const call = async (path, { method = 'GET', body, token, timeout = 6000 } = {}) 
   try {
     const response = await fetch(`${BASE}${path}`, {
       method,
+      // The board is usually read seconds after posting to it, and a cached
+      // copy from before the post looks exactly like the post having failed.
+      cache: 'no-store',
       signal: controller.signal,
       headers: {
         ...(body ? { 'content-type': 'application/json' } : {}),
