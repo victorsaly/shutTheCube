@@ -123,4 +123,8 @@ a CDN-hosted stylesheet changed. In 2026 it was rewritten on Vue 3 and Vite with
 dependencies and nothing loaded from a CDN at runtime, then extended with the cube modes, sound,
 sharing, the daily challenge and the leaderboard.
 
+## License
+
+[MIT](LICENSE)
+
 Made by [Victor Saly](https://victorsaly.com).
