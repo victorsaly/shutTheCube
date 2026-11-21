@@ -8,7 +8,6 @@ import { reminderAvailable } from '@/services/reminder'
 import { useInstallPrompt } from '@/composables/useInstallPrompt'
 import ReminderSwitch from './ReminderSwitch.vue'
 import StatsPanel from './StatsPanel.vue'
-import { canSignIn } from '@/services/native'
 
 defineEmits(['scores'])
 
@@ -75,7 +74,7 @@ const streak = computed(() => stats.dayStreak())
         </button>
       </div>
       <ReminderSwitch v-if="reminderAvailable" class="setting-row" />
-      <div v-if="canSignIn || arcade.signedIn" class="setting">
+      <div class="setting">
         <span>
           Your name on the daily board
           <small>{{ arcade.signedIn ? `Posting as ${arcade.name}` : 'Not signed in' }}</small>

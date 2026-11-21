@@ -8,6 +8,7 @@ import {
   readToken,
   rename,
   signIn,
+  signInWithApple,
   submitScore,
   whoAmI,
   writeToken
@@ -133,6 +134,23 @@ export const useArcadeStore = defineStore('arcade', () => {
     signIn()
   }
 
+  /**
+   * Sign in with Apple. The app never leaves, so there is nothing to park:
+   * the session arrives, and the score that prompted it is posted at once.
+   */
+  const startAppleSignIn = async (pending = null) => {
+    error.value = ''
+    busy.value = true
+    const claimed = await signInWithApple()
+    busy.value = false
+    if (!claimed) return false
+    token.value = readToken()
+    player.value = { name: claimed.name }
+    if (pending) await postScore(pending)
+    await postBacklog()
+    return true
+  }
+
   const signOut = () => {
     writeToken(null)
     token.value = null
@@ -239,6 +257,7 @@ export const useArcadeStore = defineStore('arcade', () => {
     restore,
     finishSignIn,
     startSignIn,
+    startAppleSignIn,
     signOut,
     setName,
     deleteAccount,

@@ -4,7 +4,7 @@ import { useArcadeStore } from '@/stores/arcade'
 import { MODE_LIST } from '@/stores/modes'
 import { dayNumber, todayStamp } from '@/services/random'
 import AppIcon from '@/components/AppIcon.vue'
-import { canSignIn } from '@/services/native'
+import { appleSignIn } from '@/services/native'
 
 defineProps({ embedded: { type: Boolean, default: false } })
 defineEmits(['close'])
@@ -189,15 +189,24 @@ const MEDALS = {}
         <p v-if="arcade.error" class="err micro" role="alert">{{ arcade.error }}</p>
       </template>
 
-      <!-- The iPhone app cannot offer sign-in until it can offer Apple's. -->
-      <p v-else-if="!canSignIn" class="micro fine">
-        Posting a score from the app arrives with sign-in, in a later version. Your daily results
-        are kept on this device until then.
-      </p>
-
       <template v-else>
-        <button type="button" class="signin" @click="arcade.startSignIn">
-          Sign in with Google to post your score
+        <!-- Apple's own button comes first in the iPhone app, as Apple asks. -->
+        <button
+          v-if="appleSignIn"
+          type="button"
+          class="signin apple"
+          :disabled="arcade.busy"
+          @click="arcade.startAppleSignIn()"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path
+              d="M16.37 12.6c-.02-2.2 1.8-3.260 1.880-3.310-1.020-1.500-2.620-1.700-3.190-1.730-1.360-.140-2.650.800-3.340.800-.690 0-1.750-.780-2.880-.760-1.480.020-2.850.860-3.610 2.190-1.540 2.670-.390 6.620 1.110 8.790.730 1.060 1.610 2.250 2.750 2.210 1.100-.040 1.520-.710 2.860-.710 1.330 0 1.710.710 2.880.690 1.190-.020 1.940-1.080 2.670-2.150.840-1.230 1.190-2.420 1.210-2.480-.030-.010-2.320-.890-2.340-3.540zM14.180 6.130c.610-.740 1.020-1.760.910-2.780-.880.040-1.940.580-2.570 1.320-.560.650-1.060 1.700-.920 2.700.980.080 1.980-.500 2.580-1.240z"
+            />
+          </svg>
+          Sign in with Apple
+        </button>
+        <button type="button" class="signin" @click="arcade.startSignIn()">
+          {{ appleSignIn ? 'Sign in with Google' : 'Sign in with Google to post your score' }}
         </button>
         <p class="micro fine">
           Your name and nothing else. No email, no tracking, and you can delete it in one click.
@@ -448,6 +457,22 @@ const MEDALS = {}
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+}
+.signin.apple {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  border-color: #000000;
+  background: #000000;
+  color: #ffffff;
+}
+.signin.apple svg {
+  fill: currentcolor;
+}
+.signin.apple:disabled {
+  opacity: 0.6;
 }
 .signin:hover {
   background: var(--accent);

@@ -18,14 +18,11 @@ export const platform = Capacitor.getPlatform()
  * Where a sign-in started in the app is sent back to: the app's own address.
  * The leaderboard service lists it, and the phone routes it to this app.
  */
-export const APP_REDIRECT = 'com.victorsaly.shutthecube://auth'
+export const APP_ID = 'com.victorsaly.shutthecube'
+export const APP_REDIRECT = `${APP_ID}://auth`
 
 /**
- * Whether signing in can be offered here.
- *
- * Everywhere but the iPhone app, for now. Apple requires Sign in with Apple
- * beside any other sign-in, and that needs the developer account the app does
- * not have yet; until it does, offering Google alone on iOS would get the app
- * rejected.
+ * Sign in with Apple is offered in the iPhone app, where Apple requires it
+ * beside any other sign-in. Elsewhere the one sign-in is Google's.
  */
-export const canSignIn = !isNative || platform === 'android'
+export const appleSignIn = platform === 'ios'

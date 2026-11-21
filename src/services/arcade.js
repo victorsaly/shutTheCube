@@ -8,7 +8,7 @@
  * caller — it returns null and lets the interface stay quiet.
  */
 
-import { APP_REDIRECT, isNative } from './native'
+import { APP_ID, APP_REDIRECT, isNative } from './native'
 
 const BASE = import.meta.env.VITE_ARCADE_API ?? 'https://api.victorsaly.com'
 
@@ -81,6 +81,43 @@ export const signIn = async () => {
   }
   const back = `${window.location.origin}${window.location.pathname}`
   window.location.assign(`${BASE}/v1/auth/start?redirect=${encodeURIComponent(back)}`)
+}
+
+/**
+ * Sign in with Apple, in the iPhone app.
+ *
+ * iOS shows its own sheet and hands back a signed identity token, which the
+ * service checks against Apple's keys. Unlike Google's there is no trip to a
+ * browser and no one-time code: the session comes straight back. The name is
+ * something Apple gives the device once, on the very first sign-in, so it is
+ * passed along as a suggestion when it is there.
+ *
+ * Returns the player, or null if they backed out or it did not work.
+ */
+export const signInWithApple = async () => {
+  try {
+    const { SignInWithApple } = await import('@capacitor-community/apple-sign-in')
+    const { response } = await SignInWithApple.authorize({
+      clientId: APP_ID,
+      redirectURI: APP_REDIRECT,
+      scopes: 'name'
+    })
+    if (!response?.identityToken) return null
+    const { ok, data } = await call('/v1/auth/apple', {
+      method: 'POST',
+      body: {
+        identityToken: response.identityToken,
+        authorizationCode: response.authorizationCode ?? null,
+        name: response.givenName ?? null
+      }
+    })
+    if (!ok || !data?.token) return null
+    writeToken(data.token)
+    return { name: data.name }
+  } catch {
+    // Dismissing Apple's sheet arrives here too, and is not an error to show.
+    return null
+  }
 }
 
 /**

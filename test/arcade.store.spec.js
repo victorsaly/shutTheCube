@@ -67,6 +67,45 @@ describe('signing in', () => {
     expect(arcade.signedIn).toBe(false)
   })
 
+  it('signs in with Apple and posts the score that prompted it', async () => {
+    vi.doMock('@capacitor-community/apple-sign-in', () => ({
+      SignInWithApple: {
+        authorize: async () => ({
+          response: { identityToken: 'apple-jwt', authorizationCode: 'code', givenName: 'Ada' }
+        })
+      }
+    }))
+    const fetchMock = vi.fn(async (url) =>
+      String(url).endsWith('/v1/auth/apple')
+        ? jsonResponse({ token: 'tok', name: 'Ada' })
+        : jsonResponse({ rank: 3 })
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    expect(await arcade.startAppleSignIn()).toBe(true)
+
+    expect(arcade.signedIn).toBe(true)
+    expect(arcade.name).toBe('Ada')
+    const sent = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(sent).toEqual({ identityToken: 'apple-jwt', authorizationCode: 'code', name: 'Ada' })
+    vi.doUnmock('@capacitor-community/apple-sign-in')
+  })
+
+  it('stays signed out when Apple\'s sheet is dismissed', async () => {
+    vi.doMock('@capacitor-community/apple-sign-in', () => ({
+      SignInWithApple: {
+        authorize: async () => {
+          throw new Error('cancelled')
+        }
+      }
+    }))
+    vi.stubGlobal('fetch', vi.fn())
+
+    expect(await arcade.startAppleSignIn()).toBe(false)
+    expect(arcade.signedIn).toBe(false)
+    vi.doUnmock('@capacitor-community/apple-sign-in')
+  })
+
   it('scrubs the code from the URL so it cannot be spent twice', async () => {
     window.history.replaceState({}, '', '/?auth=handoff-code&mode=medium')
     vi.stubGlobal(

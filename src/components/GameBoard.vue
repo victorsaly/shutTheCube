@@ -6,7 +6,7 @@ import { useStatsStore } from '@/stores/stats'
 import { useArcadeStore } from '@/stores/arcade'
 import { SPECIALS } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
-import { canSignIn } from '@/services/native'
+import { appleSignIn } from '@/services/native'
 import { sound } from '@/services/sound'
 import { buzz } from '@/services/haptics'
 import { reminderAvailable, reminderOn, syncReminder } from '@/services/reminder'
@@ -152,7 +152,8 @@ watch(
 )
 
 /* Signing in navigates away, so the finished game travels with it. */
-const postAndSignIn = () => arcade.startSignIn(submission())
+const postAndSignIn = () =>
+  appleSignIn ? arcade.startAppleSignIn(submission()) : arcade.startSignIn(submission())
 
 /* Whether the reminder was off when this result appeared; it stays on screen
    once offered, so turning it on does not make the switch vanish. */
@@ -637,13 +638,15 @@ const onAction = async () => {
           <b class="num">#{{ arcade.lastRank }}</b> on today’s {{ game.mode.label }} board
         </p>
         <button
-          v-else-if="rankable && !arcade.signedIn && canSignIn"
+          v-else-if="rankable && !arcade.signedIn"
           type="button"
           class="post-cta"
           @click="postAndSignIn"
         >
           Put this score on the daily board
-          <small>Sign in with Google · your name only, no email</small>
+          <small>
+            Sign in with {{ appleSignIn ? 'Apple' : 'Google' }} · your name only, no email
+          </small>
         </button>
         <p v-else-if="arcade.postError" class="unranked-line" role="status">
           {{ arcade.postError }}

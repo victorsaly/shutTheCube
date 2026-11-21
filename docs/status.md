@@ -31,7 +31,14 @@ Not done yet:
     the live service does not yet accept requests from the apps.
   - Before submission: Apple also expects its tokens to be revoked when an account is deleted.
 - Not yet on a real phone. Seen in the iPhone SE simulator and a Pixel 5 emulator only.
-- Signing, TestFlight and Play testing wait on the seller decision.
+- Apple account (set up 21 Nov 2026): the membership already existed (Individual, Team `Z452L5C5VZ`),
+  so the seller is Victor's own name. Now registered: the App ID `com.victorsaly.shutthecube` with
+  Sign in with Apple, the App Store Connect record "Shut The Cube" (SKU `shutthecube`), and a Sign in
+  with Apple key, "Arcade Sign in with Apple", Key ID `Q6U7WLLM9C`. The key file itself is Victor's to
+  download and keep; it is never to be committed.
+- Still to do for the iPhone: the Sign in with Apple button in the app, token revocation on account
+  deletion in `arcade-api` (needs the key as a Worker secret), then TestFlight.
+- Play testing needs a Google Play developer account.
 
 Building Android needs Java 21: `JAVA_HOME=$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home`.
 

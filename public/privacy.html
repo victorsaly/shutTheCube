@@ -40,7 +40,7 @@
           </svg>
           <span>Shut The Cube</span>
         </a>
-        <p class="eyebrow">Last updated September 2, 2026</p>
+        <p class="eyebrow">Last updated November 21, 2026</p>
         <h1>Privacy Policy</h1>
       </header>
       <article>
@@ -51,14 +51,16 @@
         <p>Shut The Cube stores game progress, high scores, averages, win rates, streaks, and display preferences in your browser's local storage. This information stays on your device and is used only to make the game work between visits. No account is needed and nothing is sent anywhere.</p>
 
         <h2>If you sign in to the leaderboard</h2>
-        <p>Signing in uses Google. We ask Google only for the <code>openid</code> and <code>profile</code> scopes, which means we receive an opaque account identifier and your basic profile name. <strong>We do not request or receive your email address.</strong></p>
+        <p>On the website and in the Android app, signing in uses Google. We ask Google only for the <code>openid</code> and <code>profile</code> scopes, which means we receive an opaque account identifier and your basic profile name. <strong>We do not request or receive your email address.</strong></p>
+        <p>In the iPhone app you can sign in with Apple instead. Apple tells us an opaque identifier for your account and nothing else; your first name is passed along once, as a suggested display name, and we never receive your email address.</p>
         <p>What we store on our own server is:</p>
         <ul>
-          <li>the opaque identifier Google gives us for your account, so we recognise you next time;</li>
-          <li>a display name, which starts as your Google first name and which you can change to anything you like;</li>
+          <li>the opaque identifier Google or Apple gives us for your account, so we recognise you next time;</li>
+          <li>a display name, which starts as your first name and which you can change to anything you like;</li>
           <li>the scores you post &mdash; the score, whether you shut the box, how many rolls it took, which daily board it was, and the list of moves you played.</li>
         </ul>
         <p>The move list is kept so that a submitted score can be checked against the board it claims to come from. It is what stops the leaderboard filling up with invented scores.</p>
+        <p>If you signed in with Apple, we also keep one token Apple issues at sign-in. It has a single use: when you delete your data, it lets us tell Apple to withdraw the game's access to your Apple Account, as Apple requires. It is deleted along with everything else.</p>
         <p>We do not store your email address, your Google profile picture, or any Google access or refresh token. We do not ask Google for permission to read anything else in your account, and we could not do so if we wanted to.</p>
         <p>Your display name and score are shown publicly on the leaderboard to anyone who opens it. Please do not use a name you would rather strangers did not see.</p>
 
@@ -70,7 +72,7 @@
         <p>Where UK and EU data protection law applies, the basis for storing your name and scores is your consent, given by choosing to sign in, and withdrawn by deleting your data or signing out. The leaderboard runs on Cloudflare Workers and Cloudflare D1, and data is held on Cloudflare's network. The controller is Victor Saly; you can reach me at <a href="mailto:info@victorsaly.com">info@victorsaly.com</a> with any question or request about your data.</p>
 
         <h2>Third-party services</h2>
-        <p>The game is hosted through GitHub Pages, and the leaderboard through Cloudflare. Both may process limited technical information, such as IP address and request logs, to deliver the service under their own policies. Signing in sends you to Google, whose own privacy policy covers that step. The game itself loads no third-party scripts at runtime, including Google's &mdash; sign-in works by sending your browser to Google and back, not by embedding their code in the page.</p>
+        <p>The game is hosted through GitHub Pages, and the leaderboard through Cloudflare. Both may process limited technical information, such as IP address and request logs, to deliver the service under their own policies. Signing in sends you to Google, or uses Apple's own sign-in on an iPhone; their privacy policies cover that step. The game itself loads no third-party scripts at runtime, including Google's &mdash; sign-in works by sending your browser to Google and back, not by embedding their code in the page.</p>
         <p>There is no advertising, no third-party tracking, and no analytics cookie.</p>
 
         <h2>Changes to this policy</h2>
