@@ -4,27 +4,30 @@ Updated 21 November 2026.
 
 ## Where it is
 
-Design B ("The Daily") is built in the web app on the branch `redesign-b`. Nothing is committed or deployed.
-177 tests pass and the production build succeeds.
+Design B ("The Daily") is live at shutthecube.com. The native shell is on the branch `native-shell`:
+Capacitor 8 with an iOS and an Android project, both building and running in a simulator.
 
-Built:
+Built on the web (live):
 
-- Four tabs: Today, Play, Scores, You. The app opens on Today.
-- Today: the day's board for each mode with a true preview, the week row, the run of days, free play.
-- The board: new tiles and colours, the roll written as a sum, one score, Ninja's clock as a bar.
-- The result: a share card with the final board as blocks, the final dice and why the game ended.
-- Pass and play: a hand-over screen that hides Player 1's score.
-- The static pages (how to play, about, privacy, the challenge landing pages) in the new look, with the
-  rules rewritten to match the game, and a real 404 page.
-- The icons: the same five-tile mark in the new colours, on deep green for the home screen.
-- The social share images: one per mode and the default, drawn from real tiles in the new look.
+- Four tabs, the new board, tiles, result and hand-over, the static pages, a 404, icons, social images.
+
+Built in the native shell (branch only):
+
+- Bundle ID `com.victorsaly.shutthecube`, app icon and splash, portrait lock, safe areas.
+- Android's back button. No service worker inside the app.
+- A compact layout for short screens, which also fixes the live site on an iPhone SE.
 
 Not done yet:
 
-- The You tab has sound only. Vibration and the daily reminder wait for the native shell; Sign in with
-  Apple waits for `arcade-api`. Rename, sign out and delete-my-account are on the Scores tab.
-- Not yet played on a real phone. Checked in Chrome at 390 pt and at desktop width only.
+- Sign-in inside the app. Google refuses sign-in from a web view, so the app hides it until native
+  sign-in (Sign in with Apple, and Google's native flow) is built. Needs `arcade-api`.
+- Whether `arcade-api` accepts requests from the app's origin has not been checked.
+- The native reasons: vibration through the native API, the daily reminder, the native share sheet.
+- Not yet on a real phone. Seen in the iPhone SE simulator and a Pixel 5 emulator only.
+- Signing, TestFlight and Play testing wait on the seller decision.
+
+Building Android needs Java 21: `JAVA_HOME=$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home`.
 
 ## Next
 
-A play-through on real phones.
+The native reasons (step 6), then sign-in (step 7).

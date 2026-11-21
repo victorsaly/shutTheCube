@@ -5,6 +5,7 @@ import { useArcadeStore } from '@/stores/arcade'
 import { isMuted, setMuted } from '@/services/sound'
 import { useInstallPrompt } from '@/composables/useInstallPrompt'
 import StatsPanel from './StatsPanel.vue'
+import { isNative } from '@/services/native'
 
 defineEmits(['scores'])
 
@@ -50,7 +51,7 @@ const streak = computed(() => stats.dayStreak())
           <span />
         </button>
       </div>
-      <div class="setting">
+      <div v-if="!isNative || arcade.signedIn" class="setting">
         <span>
           Your name on the daily board
           <small>{{ arcade.signedIn ? `Posting as ${arcade.name}` : 'Not signed in' }}</small>

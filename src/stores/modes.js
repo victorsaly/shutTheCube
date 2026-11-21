@@ -64,13 +64,16 @@ export const SPECIALS = {
     key: 'wild',
     mark: '★',
     name: 'Wild',
-    hint: 'Counts as any number you still need.'
+    hint: 'Counts as any number you still need.',
+    /* The same rule for a screen with no room for a sentence. */
+    brief: 'any number'
   },
   locked: {
     key: 'locked',
     mark: '◆',
     name: 'Locked',
-    hint: 'Plays on its own, and only when it equals the whole roll.'
+    hint: 'Plays on its own, and only when it equals the whole roll.',
+    brief: 'alone, as the whole roll'
   }
 }
 

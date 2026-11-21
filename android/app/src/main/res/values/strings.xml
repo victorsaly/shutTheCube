@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Shut The Cube</string>
+    <string name="title_activity_main">Shut The Cube</string>
+    <string name="package_name">com.victorsaly.shutthecube</string>
+    <string name="custom_url_scheme">com.victorsaly.shutthecube</string>
+</resources>

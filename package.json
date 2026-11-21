@@ -14,9 +14,17 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "social": "node scripts/gen-social.mjs",
-    "icons": "node scripts/gen-icons.mjs"
+    "icons": "node scripts/gen-icons.mjs",
+    "native": "vite build && cap sync",
+    "native:assets": "node scripts/gen-native-assets.mjs && capacitor-assets generate --ios --android --iconBackgroundColor \"#14573b\" --splashBackgroundColor \"#f2f4f0\" --splashBackgroundColorDark \"#f2f4f0\"",
+    "ios": "npm run native && cap open ios",
+    "android": "npm run native && cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/ios": "^8.6.2",
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource-variable/inter": "^5.3.0",
     "lodash-es": "^4.17.21",
@@ -24,6 +32,8 @@
     "vue": "^3.5.22"
   },
   "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.2",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/test-utils": "^2.5.0",

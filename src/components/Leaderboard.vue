@@ -4,6 +4,7 @@ import { useArcadeStore } from '@/stores/arcade'
 import { MODE_LIST } from '@/stores/modes'
 import { dayNumber, todayStamp } from '@/services/random'
 import AppIcon from '@/components/AppIcon.vue'
+import { isNative } from '@/services/native'
 
 defineProps({ embedded: { type: Boolean, default: false } })
 defineEmits(['close'])
@@ -187,6 +188,13 @@ const MEDALS = {}
         </div>
         <p v-if="arcade.error" class="err micro" role="alert">{{ arcade.error }}</p>
       </template>
+
+      <!-- Google will not sign anyone in from inside an app's web view, so
+           the installed app says so plainly until native sign-in arrives. -->
+      <p v-else-if="isNative" class="micro fine">
+        Posting a score from the app arrives with sign-in, in a later version. Your daily results
+        are kept on this device until then.
+      </p>
 
       <template v-else>
         <button type="button" class="signin" @click="arcade.startSignIn">

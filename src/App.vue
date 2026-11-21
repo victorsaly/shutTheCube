@@ -6,6 +6,7 @@ import { useArcadeStore } from '@/stores/arcade'
 import { MODE_LIST } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
 import { todayStamp } from '@/services/random'
+import { isNative } from '@/services/native'
 import BrandMark from '@/components/BrandMark.vue'
 import GameBoard from '@/components/GameBoard.vue'
 import GameHeader from '@/components/GameHeader.vue'
@@ -84,9 +85,33 @@ const onKeydown = (event) => {
   if (n >= 1 && n <= MODE_LIST.length) start(MODE_LIST[n - 1].key)
 }
 
+/*
+ * Android's back button. It steps out the way the screen suggests: a game
+ * that has not started (or has finished) closes, any other tab returns to
+ * Today, and from Today the app goes to the background. A game in progress
+ * is left alone, because one stray swipe from the edge should not throw a
+ * board away; the close button in the header asks twice for the same reason.
+ */
+let backHandle = null
+const listenForBack = async () => {
+  const { App: NativeApp } = await import('@capacitor/app')
+  backHandle = await NativeApp.addListener('backButton', () => {
+    if (game.isVisible) {
+      const inProgress = game.numberPlay > 0 && !game.isFinished
+      if (inProgress || match.active) return
+      game.isVisible = false
+    } else if (tab.value !== 'today') {
+      tab.value = 'today'
+    } else {
+      NativeApp.minimizeApp()
+    }
+  })
+}
+
 onMounted(() => {
   onMobile.value = isMobile()
   window.addEventListener('keydown', onKeydown)
+  if (isNative) listenForBack()
   // Optional throughout: a failure here leaves the game exactly as it was.
   arcade.restore()
 
@@ -100,7 +125,10 @@ onMounted(() => {
     start(dared, { seed: sharedSeed })
   }
 })
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown)
+  backHandle?.remove()
+})
 </script>
 
 <template>

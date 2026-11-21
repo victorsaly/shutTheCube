@@ -6,6 +6,7 @@ import { useStatsStore } from '@/stores/stats'
 import { useArcadeStore } from '@/stores/arcade'
 import { SPECIALS } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
+import { isNative } from '@/services/native'
 import { haptic, sound } from '@/services/sound'
 import { useShake } from '@/composables/useShake'
 import AppIcon from './AppIcon.vue'
@@ -511,7 +512,8 @@ const onAction = async () => {
             <li v-for="item in legend" :key="item.key">
               <span class="legend-mark" aria-hidden="true">{{ item.mark }}</span>
               <b>{{ item.name }}</b>
-              {{ item.hint }}
+              <span class="roomy">{{ item.hint }}</span>
+              <span class="tight">{{ item.brief }}</span>
             </li>
           </ul>
           <p v-if="showRunTip" class="run-tip">
@@ -624,7 +626,7 @@ const onAction = async () => {
           <b class="num">#{{ arcade.lastRank }}</b> on today’s {{ game.mode.label }} board
         </p>
         <button
-          v-else-if="rankable && !arcade.signedIn"
+          v-else-if="rankable && !arcade.signedIn && !isNative"
           type="button"
           class="post-cta"
           @click="postAndSignIn"
@@ -1238,6 +1240,93 @@ const onAction = async () => {
   color: #ffffff;
   font-size: 0.875rem;
   white-space: nowrap;
+}
+
+/* The short wording of a rule only shows where the long one cannot fit. */
+.roomy,
+.tight {
+  margin-left: 0.25rem;
+}
+.tight {
+  display: none;
+}
+
+/*
+ * Short screens (an iPhone SE, a small Android). Everything under the board
+ * is fixed height, so on a short screen it was the board that paid: nine rows
+ * were left with tiles 22px high. Here the roll and the picked tiles share
+ * one line, the rules take their short wording, and the first-game tip
+ * steps aside, which gives the board back about a third of the screen.
+ */
+@media (max-height: 740px) {
+  .Game {
+    gap: 0.375rem;
+  }
+  .clock {
+    height: 2rem;
+  }
+  .timer {
+    font-size: 1.0625rem;
+  }
+  .footer {
+    gap: 0.375rem;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+  .sum {
+    flex-flow: row wrap;
+    align-items: center;
+    gap: 0.375rem 0.625rem;
+    padding: 0.5rem 0.75rem;
+  }
+  .sum-top {
+    gap: 0.4rem;
+  }
+  .dice-button {
+    --die: 2rem;
+    gap: 0.4rem;
+  }
+  .op {
+    font-size: 1.125rem;
+  }
+  .total {
+    font-size: 1.75rem;
+    line-height: 2rem;
+  }
+  .sum-help {
+    display: none;
+  }
+  .picked {
+    min-height: 2rem;
+    margin-left: auto;
+    gap: 0.25rem 0.375rem;
+  }
+  .chip-tile {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+  }
+  .to-go {
+    height: 2rem;
+    padding: 0 0.5rem;
+    font-size: 0.8125rem;
+  }
+  .notes {
+    min-height: 1.125rem;
+  }
+  .run-tip,
+  .roomy {
+    display: none;
+  }
+  .tight {
+    display: inline;
+  }
+  .actions,
+  .actions .tool {
+    min-height: 2.75rem;
+  }
+  .action-button {
+    min-height: 3rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,0 +1,9 @@
+{
+  "appId": "com.victorsaly.shutthecube",
+  "appName": "Shut The Cube",
+  "webDir": "dist",
+  "backgroundColor": "#f2f4f0",
+  "ios": {
+    "contentInset": "never"
+  }
+}
