@@ -7,7 +7,7 @@ offline once loaded.
 
 **Play it at [shutthecube.com](https://shutthecube.com/)**
 
-![Shut The Cube in Medium mode: a nine-row board of numbered tiles above two dice](docs/images/cube-mode.jpg)
+![Shut The Cube in Medium mode: a nine-row board of coloured number tiles, and below it the roll written as a sum](docs/images/cube-mode.jpg)
 
 [How to play](https://shutthecube.com/how-to-play.html) ·
 [About](https://shutthecube.com/about.html) ·
@@ -29,7 +29,7 @@ offline once loaded.
 | **Ninja** | 9 rows | Medium against the clock: 30 seconds a turn, and the game ends if you run out. |
 
 <p>
-  <img src="docs/images/classic-mode.jpg" alt="Beginner mode: one row of nine tiles and two dice" width="100%">
+  <img src="docs/images/classic-mode.jpg" alt="Beginner mode: one row of nine tall tiles, and the roll of 7 written as a sum below it" width="100%">
 </p>
 
 On the nine-row boards:
@@ -43,27 +43,29 @@ On the nine-row boards:
 - When the whole board is worth 6 or less, the second die is dropped automatically.
 
 <p>
-  <img src="docs/images/menu.jpg" alt="The menu: Solo or Pass and play, the Daily challenge, and the three mode cards" width="49%">
-  <img src="docs/images/cube-mode-mobile.jpg" alt="Medium mode on a phone, with run badges on some tiles" width="49%">
+  <img src="docs/images/today.jpg" alt="The Today tab: a preview of the day's board, the week row, and free play" width="49%">
+  <img src="docs/images/cube-mode-mobile.jpg" alt="Medium mode on a phone, with run badges on some tiles and one tile picked" width="49%">
 </p>
 
 ## Features
 
-- **Daily challenge.** Turn on *Daily* and every mode deals the same board and dice to everyone
-  that day; it changes at local midnight. Only your first attempt counts.
+- **Daily challenge.** The app opens on the Today tab, which deals each mode one board a day: the
+  same tiles and dice for everyone, changing at local midnight. Only your first attempt counts. A
+  week row shows the days you played.
 - **Leaderboard (optional).** Sign in with Google to put your daily score on the board, with
   today's and all-time rankings per mode. A daily finished before signing in can still be posted
   afterwards. Everything else works without signing in.
-- **Pass & play.** Two players on one device take turns on the identical board. Higher total wins;
-  a tie where both shut the box goes to whoever needed fewer rolls.
-- **Challenge links.** A finished game shares a Wordle-style block card and a link that deals the
-  recipient the same board, so there is something to beat.
+- **Pass & play.** Two players on one device take turns on the identical board. The first score
+  stays hidden until both have played. Higher total wins; a tie where both shut the box goes to
+  whoever needed fewer rolls.
+- **Challenge links.** A finished game shows the final board as a card of blocks, says why it
+  ended, and shares a link that deals the recipient the same board, so there is something to beat.
 - **Your stats.** Games played, best score, average and win rate per mode, kept in your browser.
 - **Keyboard, touch and shake.** <kbd>Space</kbd> rolls, arrow keys and <kbd>Enter</kbd> play
   tiles, <kbd>U</kbd> undoes, <kbd>H</kbd> shows a hint and cycles through the ways to make the
-  roll, and <kbd>1</kbd>–<kbd>3</kbd> start a mode from the menu. On a phone, shake to roll.
+  roll, and <kbd>1</kbd>–<kbd>3</kbd> start a mode from any tab. On a phone, shake to roll.
 - **Sound.** A small WebAudio marimba: each tile number plays its own note, so moves sound
-  musical. No audio files are downloaded. Mute from the header.
+  musical. No audio files are downloaded. Mute from the header or the You tab.
 - **Installable and offline.** A PWA that precaches the whole game.
 
 ## Tech stack
@@ -102,11 +104,11 @@ src/
   services/sound.js          WebAudio marimba and dice sounds
   services/share.js          share cards and challenge links
   stores/                    modes, game state, pass-and-play match, stats, leaderboard
-  components/                board, tiles, dice, menu cards, scores panel, logo
+  components/                the four tabs, board, tiles, dice, leaderboard, logo
 scripts/                     social image and icon generators (headless Chrome)
 test/                        unit, store and component tests
 public/challenge/            per-mode landing pages so shared links get their own preview card
-public/*.html                how to play, about and privacy pages
+public/*.html                how to play, about, privacy and 404 pages
 ```
 
 ## Deployment
