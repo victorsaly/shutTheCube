@@ -43,6 +43,30 @@ describe('signing in', () => {
     expect(localStorage.getItem('shutTheCube.session')).toBe('tok')
   })
 
+  it('finishes a sign-in handed over by the installed app', async () => {
+    // In the app the code arrives through the app's own address, not the page's.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse({ token: 'tok', name: 'Victor' }))
+    )
+
+    expect(await arcade.finishSignIn('handoff-code')).toBe(true)
+
+    expect(arcade.signedIn).toBe(true)
+    expect(arcade.name).toBe('Victor')
+  })
+
+  it('stays signed out when the handed-over code is refused or missing', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse({ error: 'expired' }, 400))
+    )
+
+    expect(await arcade.finishSignIn('spent-code')).toBe(false)
+    expect(await arcade.finishSignIn(null)).toBe(false)
+    expect(arcade.signedIn).toBe(false)
+  })
+
   it('scrubs the code from the URL so it cannot be spent twice', async () => {
     window.history.replaceState({}, '', '/?auth=handoff-code&mode=medium')
     vi.stubGlobal(

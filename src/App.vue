@@ -6,7 +6,7 @@ import { useArcadeStore } from '@/stores/arcade'
 import { MODE_LIST } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
 import { todayStamp } from '@/services/random'
-import { isNative } from '@/services/native'
+import { APP_REDIRECT, isNative } from '@/services/native'
 import { syncReminder } from '@/services/reminder'
 import { useStatsStore } from '@/stores/stats'
 import BrandMark from '@/components/BrandMark.vue'
@@ -110,11 +110,29 @@ const listenForBack = async () => {
   })
 }
 
+/*
+ * A sign-in started in the app finishes in the phone's browser, which sends
+ * the player to the app's own address. The phone hands that address to the
+ * app, and the one-time code on it becomes the session.
+ */
+let signInHandle = null
+const onAppSignIn = async () => {
+  const { App: NativeApp } = await import('@capacitor/app')
+  signInHandle = await NativeApp.addListener('appUrlOpen', async ({ url }) => {
+    if (!url?.startsWith(APP_REDIRECT)) return
+    const code = new URL(url).searchParams.get('auth')
+    // iOS leaves its browser sheet up until told; Android has none to close.
+    import('@capacitor/browser').then(({ Browser }) => Browser.close()).catch(() => {})
+    await arcade.finishSignIn(code)
+  })
+}
+
 onMounted(() => {
   onMobile.value = isMobile()
   window.addEventListener('keydown', onKeydown)
   if (isNative) {
     listenForBack()
+    onAppSignIn()
     // Top the fortnight of reminders back up, minus today if it is played.
     const stats = useStatsStore()
     syncReminder({ playedToday: MODE_LIST.some((m) => stats.dailyResult(m.key)) })
@@ -135,6 +153,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown)
   backHandle?.remove()
+  signInHandle?.remove()
 })
 </script>
 

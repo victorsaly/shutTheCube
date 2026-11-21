@@ -8,6 +8,8 @@
  * caller — it returns null and lets the interface stay quiet.
  */
 
+import { APP_REDIRECT, isNative } from './native'
+
 const BASE = import.meta.env.VITE_ARCADE_API ?? 'https://api.victorsaly.com'
 
 const TOKEN_KEY = 'shutTheCube.session'
@@ -62,8 +64,21 @@ const call = async (path, { method = 'GET', body, token, timeout = 6000 } = {}) 
   }
 }
 
-/** Send the browser to Google. It comes back to this page with `?auth=`. */
-export const signIn = () => {
+/**
+ * Send the player to Google.
+ *
+ * On the web the page itself goes, and comes back with `?auth=`. In the
+ * installed app that cannot work: Google refuses to sign anyone in from an
+ * app's own web view. So the app opens the phone's browser instead, and the
+ * service returns the player to the app's own address, which the phone hands
+ * back to the app (see `onAppSignIn` in App.vue).
+ */
+export const signIn = async () => {
+  if (isNative) {
+    const { Browser } = await import('@capacitor/browser')
+    await Browser.open({ url: `${BASE}/v1/auth/start?redirect=${encodeURIComponent(APP_REDIRECT)}` })
+    return
+  }
   const back = `${window.location.origin}${window.location.pathname}`
   window.location.assign(`${BASE}/v1/auth/start?redirect=${encodeURIComponent(back)}`)
 }

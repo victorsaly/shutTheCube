@@ -66,6 +66,26 @@ export const useArcadeStore = defineStore('arcade', () => {
   const name = computed(() => player.value?.name ?? '')
 
   /**
+   * Trade a one-time code for a session, then post whatever was waiting.
+   *
+   * The code arrives in the page's address on the web, and through the app's
+   * own address in the installed app; both end here.
+   */
+  const finishSignIn = async (code) => {
+    if (typeof code !== 'string' || !code) return false
+    const claimed = await claimSession(code)
+    if (!claimed) return false
+    token.value = readToken()
+    player.value = { name: claimed.name }
+    // The score they signed in to post, if that is why they signed in.
+    const parked = takeParkedScore()
+    if (parked) await postScore(parked)
+    // Anything played on this device before signing in goes up too.
+    await postBacklog()
+    return true
+  }
+
+  /**
    * Pick up a session on load.
    *
    * Two cases: we have just come back from Google with a one-time code in the
@@ -84,17 +104,7 @@ export const useArcadeStore = defineStore('arcade', () => {
         '',
         `${window.location.pathname}${query ? `?${query}` : ''}`
       )
-      const claimed = await claimSession(code)
-      if (claimed) {
-        token.value = readToken()
-        player.value = { name: claimed.name }
-        // The score they signed in to post, if that is why they signed in.
-        const parked = takeParkedScore()
-        if (parked) await postScore(parked)
-        // Anything played on this device before signing in goes up too.
-        await postBacklog()
-        return
-      }
+      if (await finishSignIn(code)) return
     }
     if (!token.value) return
     const me = await whoAmI(token.value)
@@ -227,6 +237,7 @@ export const useArcadeStore = defineStore('arcade', () => {
     signedIn,
     name,
     restore,
+    finishSignIn,
     startSignIn,
     signOut,
     setName,

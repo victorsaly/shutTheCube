@@ -6,7 +6,7 @@ import { useStatsStore } from '@/stores/stats'
 import { useArcadeStore } from '@/stores/arcade'
 import { SPECIALS } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
-import { isNative } from '@/services/native'
+import { canSignIn } from '@/services/native'
 import { sound } from '@/services/sound'
 import { buzz } from '@/services/haptics'
 import { reminderAvailable, reminderOn, syncReminder } from '@/services/reminder'
@@ -637,7 +637,7 @@ const onAction = async () => {
           <b class="num">#{{ arcade.lastRank }}</b> on today’s {{ game.mode.label }} board
         </p>
         <button
-          v-else-if="rankable && !arcade.signedIn && !isNative"
+          v-else-if="rankable && !arcade.signedIn && canSignIn"
           type="button"
           class="post-cta"
           @click="postAndSignIn"

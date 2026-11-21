@@ -22,9 +22,14 @@ Built in the native shell (branch only):
 
 Not done yet:
 
-- Sign-in inside the app. Google refuses sign-in from a web view, so the app hides it until native
-  sign-in (Sign in with Apple, and Google's native flow) is built. Needs `arcade-api`.
-- Whether `arcade-api` accepts requests from the app's origin has not been checked.
+- Sign-in. Built but not switched on (branch `native-sign-in` here, `app-sign-in` in `arcade-api`):
+  - Android: Google sign-in opens the phone's browser and returns to the app's own address.
+    It works only once the `arcade-api` branch is deployed.
+  - iPhone: still hidden. Apple requires Sign in with Apple beside Google; the service can
+    check Apple's tokens, but the app side needs the Apple Developer account.
+  - The leaderboard does not load inside either app until `arcade-api` is deployed, because
+    the live service does not yet accept requests from the apps.
+  - Before submission: Apple also expects its tokens to be revoked when an account is deleted.
 - Not yet on a real phone. Seen in the iPhone SE simulator and a Pixel 5 emulator only.
 - Signing, TestFlight and Play testing wait on the seller decision.
 
@@ -32,4 +37,5 @@ Building Android needs Java 21: `JAVA_HOME=$(brew --prefix openjdk@21)/libexec/o
 
 ## Next
 
-Sign-in (step 7): Sign in with Apple and Google's native flow, in `arcade-api` and the app.
+Deploy the `arcade-api` branch (Victor's call), then finish Sign in with Apple once the developer
+account exists.
