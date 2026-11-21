@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Page not found | Shut The Cube</title>
+    <!--
+      GitHub Pages serves this file for any path that does not exist, at
+      whatever depth, so every address in it is absolute. That is right for
+      shutthecube.com; under a project path on github.io the stylesheet would
+      not load and the page falls back to plain, readable HTML.
+    -->
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#f2f4f0" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png" />
+    <link rel="stylesheet" href="/static/pages.css" />
+  </head>
+  <body>
+    <main class="lost">
+      <header>
+        <a class="lockup" href="/" aria-label="Shut The Cube, back to the game">
+          <svg class="mark" width="34" height="34" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+            <rect x="3" y="3" width="58" height="58" rx="15" fill="#ffffff" stroke="#15231c" stroke-width="3"/>
+            <rect x="11" y="11" width="15" height="15" rx="4.5" fill="#a2f5bf"/>
+            <rect x="38" y="11" width="15" height="15" rx="4.5" fill="#6cb2eb"/>
+            <rect x="11" y="38" width="15" height="15" rx="4.5" fill="#d6bbfc"/>
+            <rect x="38" y="38" width="15" height="15" rx="4.5" fill="#fff382"/>
+            <rect x="24.5" y="24.5" width="15" height="15" rx="4.5" fill="#e9ede8"/>
+          </svg>
+          <span>Shut The Cube</span>
+        </a>
+      </header>
+
+      <!-- A row with two tiles left open, a 4 and a 4: the page number. -->
+      <div class="row" aria-hidden="true">
+        <span></span><span></span><span></span><span class="open">4</span><span></span><span></span><span class="open b">4</span><span></span><span></span>
+      </div>
+
+      <h1>This page is shut.</h1>
+      <p class="intro">Error 404: there is nothing at this address. The game is one tap away, and so are the rules.</p>
+
+      <div class="actions">
+        <a class="play" href="/">Play Shut The Cube</a>
+        <a class="quiet" href="/how-to-play.html">How to play</a>
+      </div>
+    </main>
+  </body>
+</html>

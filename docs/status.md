@@ -14,10 +14,11 @@ Built:
 - The board: new tiles and colours, the roll written as a sum, one score, Ninja's clock as a bar.
 - The result: a share card with the final board as blocks, the final dice and why the game ended.
 - Pass and play: a hand-over screen that hides Player 1's score.
+- The static pages (how to play, about, privacy, the challenge landing pages) in the new look, with the
+  rules rewritten to match the game, and a real 404 page.
 
 Not done yet:
 
-- The static pages (how to play, about, privacy, the challenge pages) still wear the old dark look.
 - The app icon, social images and README screenshots still show the old design.
 - The You tab has sound only. Vibration and the daily reminder wait for the native shell; Sign in with
   Apple waits for `arcade-api`. Rename, sign out and delete-my-account are on the Scores tab.
@@ -25,4 +26,5 @@ Not done yet:
 
 ## Next
 
-Step 3 and 4 of the plan: the small finish (static pages, 404, icons), then a play-through on real phones.
+The rest of the small finish (app icon, social images, README screenshots), then a play-through on real
+phones.

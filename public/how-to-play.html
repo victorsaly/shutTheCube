@@ -8,8 +8,8 @@
     <link rel="icon" type="image/png" sizes="16x16" href="static/favicon-16x16.png" />
     <link rel="shortcut icon" href="static/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="static/apple-touch-icon.png" />
-    <meta name="theme-color" content="#0d2a1f" />
-    <meta name="description" content="Learn how to play Shut The Cube, a browser dice game based on Shut the Box. Read the rules for Classic, Medium, and Ninja modes." />
+    <meta name="theme-color" content="#f2f4f0" />
+    <meta name="description" content="Learn how to play Shut The Cube, a browser dice game based on Shut the Box. Read the rules for Beginner, Medium and Ninja." />
     <link rel="canonical" href="https://shutthecube.com/how-to-play.html" />
     <meta property="og:type" content="article" />
     <meta property="og:title" content="How to Play Shut The Cube | Shut the Box Rules" />
@@ -25,52 +25,57 @@
   <body>
     <main>
       <header class="masthead">
-        <a class="lockup" href="./" aria-label="Shut The Cube — back to the game">
+        <a class="lockup" href="./" aria-label="Shut The Cube, back to the game">
           <svg class="mark" width="34" height="34" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-            <rect x="3" y="3" width="58" height="58" rx="15" fill="rgba(9,29,22,.45)" stroke="#eaf3ee" stroke-width="3"/>
+            <rect x="3" y="3" width="58" height="58" rx="15" fill="#ffffff" stroke="#15231c" stroke-width="3"/>
             <rect x="11" y="11" width="15" height="15" rx="4.5" fill="#a2f5bf"/>
             <rect x="38" y="11" width="15" height="15" rx="4.5" fill="#6cb2eb"/>
             <rect x="11" y="38" width="15" height="15" rx="4.5" fill="#d6bbfc"/>
             <rect x="38" y="38" width="15" height="15" rx="4.5" fill="#fff382"/>
-            <rect x="24.5" y="24.5" width="15" height="15" rx="4.5" fill="#0a1f17" stroke="rgba(234,243,238,.35)" stroke-width="1.5"/>
+            <rect x="24.5" y="24.5" width="15" height="15" rx="4.5" fill="#e9ede8"/>
           </svg>
           <span>Shut The Cube</span>
         </a>
-        <p class="eyebrow">Shut the Box, reimagined</p>
-        <h1>How to Play Shut The Cube</h1>
-        <p class="intro">A free dice-and-tiles browser game with the familiar Shut the Box challenge and a nine-layer cube twist.</p>
+        <h1 class="top">How to play</h1>
+        <p class="intro">Shut the Box, the pub dice game, plus a nine-row board where a matching column collapses in one move.</p>
       </header>
       <article>
-        <h2>Objective</h2>
-        <p>Roll the dice and close every tile. On each turn, choose one or more open tiles whose values add up exactly to your roll. When you cannot make a valid combination, the game ends. Clear the board to Shut the Box.</p>
+        <h2>The aim</h2>
+        <p>Shut every tile. Each turn you roll the dice, then pick open tiles that add up to exactly what you rolled. When no tiles can make the roll, the game ends. Your score is the total of the tiles you shut.</p>
 
-        <h2>How a Turn Works</h2>
+        <h2>A turn</h2>
         <ol>
-          <li>Roll the dice.</li>
-          <li>Select open tiles that add up to the roll.</li>
-          <li>Commit the matching combination and roll again.</li>
+          <li>Roll the dice. Their total is the number to make.</li>
+          <li>Pick open tiles that add up to it. The sum under the board shows what you have picked and how much is still to go.</li>
+          <li>Match it exactly and those tiles shut. Roll again.</li>
         </ol>
-        <p>In Classic mode, you may roll one die once all remaining tiles are 6 or lower.</p>
+        <p>In Beginner, once the 7, 8 and 9 are shut you may roll one die. When 6 or less is left on any board, the second die is dropped for you.</p>
 
-        <h2>Game Modes</h2>
+        <h2>Three modes</h2>
         <ul class="modes">
-          <li><strong>Beginner</strong>Classic one-row Shut the Box.</li>
-          <li><strong>Medium</strong>Nine rows. Matching tile columns collapse together for bonus points.</li>
-          <li><strong>Ninja</strong>The nine-row cube game with 30 seconds per turn.</li>
+          <li><strong>Beginner</strong>One row, tiles 1 to 9. The classic pub game.</li>
+          <li><strong>Medium</strong>Nine rows. Matching columns collapse together for a bonus.</li>
+          <li><strong>Ninja</strong>Nine rows against the clock. 30 seconds a turn.</li>
         </ul>
 
-        <h2>The Cube Bonus</h2>
-        <p>In the nine-row modes, playing a tile can also claim matching faces immediately above and below it. The claimed run scores as a bonus, but only the tiles you selected count toward the current dice roll. A badge previews how many tiles a move will claim.</p>
+        <h2>Columns that collapse</h2>
+        <p>On the nine-row boards, playing a tile also takes the same number directly above and below it, as far as the run continues. The extra tiles score as a bonus; only the tile you picked counts toward the roll. A small badge on a tile shows how many tiles it will take.</p>
 
-        <h2>Special Tiles and Events</h2>
-        <p>Medium and Ninja games can include special tiles and occasional between-turn events. A Wild tile can count as whatever value is still needed. A Locked tile can only be played alone and must match the entire roll. Lucky third-die, reshuffle, and wild-tile events can change a turn, but every closed tile always scores its face value.</p>
+        <h2>Special tiles and events</h2>
+        <p>Medium and Ninja boards have a few special tiles. A <strong>Wild</strong> tile, marked with a star, counts as any number you still need. A <strong>Locked</strong> tile, marked with a diamond, plays only on its own, when it equals the whole roll. About one turn in six brings an event: a lucky third die, a reshuffle of the rows, or a tile turning wild. Every shut tile still scores its face value.</p>
 
-        <h2>Controls</h2>
-        <p>Press Space to roll. Use Tab to reach the board, arrow keys to move between tiles, Enter to select a tile, U to undo a selection, and H for a hint. On supported phones, shake to roll.</p>
+        <h2>The Daily</h2>
+        <p>The Today tab deals one board a day for each mode, the same tiles and dice for everyone, new at midnight. Your first try is the one that counts. Sign in if you want your name on the day's leaderboard; everything else works without it.</p>
+
+        <h2>Pass and play</h2>
+        <p>Two players take turns on one device with the identical board. The first score stays hidden until both have played. The higher total wins; if both shut the box, fewer rolls wins.</p>
+
+        <h2>Keys and gestures</h2>
+        <p>On a phone, tap the tiles and shake to roll. On a keyboard, Space rolls, the arrow keys move between tiles and Enter picks one, U undoes a pick and H shows a hint.</p>
 
         <a class="play" href="./">Play Shut The Cube</a>
       </article>
-      <footer><a href="./">Shut The Cube</a> · <a href="about.html">About</a> · <a href="privacy.html">Privacy</a></footer>
+      <footer><a href="./">Shut The Cube</a> <a href="about.html">About</a> <a href="privacy.html">Privacy</a></footer>
     </main>
   </body>
 </html>
