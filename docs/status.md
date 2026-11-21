@@ -16,15 +16,16 @@ Built:
 - Pass and play: a hand-over screen that hides Player 1's score.
 - The static pages (how to play, about, privacy, the challenge landing pages) in the new look, with the
   rules rewritten to match the game, and a real 404 page.
+- The icons: the same five-tile mark in the new colours, on deep green for the home screen.
 
 Not done yet:
 
-- The app icon, social images and README screenshots still show the old design.
+- The social share images and README screenshots still show the old design.
 - The You tab has sound only. Vibration and the daily reminder wait for the native shell; Sign in with
   Apple waits for `arcade-api`. Rename, sign out and delete-my-account are on the Scores tab.
 - Not yet played on a real phone. Checked in Chrome at 390 pt and at desktop width only.
 
 ## Next
 
-The rest of the small finish (app icon, social images, README screenshots), then a play-through on real
+The rest of the small finish (social images, README screenshots), then a play-through on real
 phones.
