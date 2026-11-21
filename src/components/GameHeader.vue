@@ -4,9 +4,8 @@ import { useGameStore } from '@/stores/game'
 import { useMatchStore } from '@/stores/match'
 import { useStatsStore } from '@/stores/stats'
 import { isMuted, setMuted } from '@/services/sound'
+import { useTweenedNumber } from '@/composables/useTweenedNumber'
 import AppIcon from './AppIcon.vue'
-import BrandMark from './BrandMark.vue'
-import TweenedNumber from './TweenedNumber.vue'
 
 const game = useGameStore()
 const match = useMatchStore()
@@ -19,8 +18,8 @@ const toggleMute = () => {
 }
 
 /*
- * Restart and Menu both throw a game away, and both sit one tap from the
- * board — so mid-game they arm on the first tap and fire on the second.
+ * Restart and Leave both throw a game away, and both sit one tap from the
+ * board, so mid-game they arm on the first tap and fire on the second.
  * An untouched game (or a finished one) still leaves in one tap.
  */
 const armed = ref('')
@@ -46,207 +45,142 @@ const toMenu = () =>
   })
 const doRestart = () => guarded('restart', () => game.restart())
 
+const kind = computed(() =>
+  match.active ? 'Pass & play' : game.isDaily ? 'Daily' : 'Free play'
+)
+
 /*
- * The chase.
- *
- * A personal best sitting in the corner is a fact; the gap to it, counting
- * down as tiles are banked, is a reason to keep going. It appears only once
- * there is a best to chase, and only in a solo game — a pass-and-play match
- * is its own contest and already has an opponent.
+ * The chase: the gap to your best, counting down as tiles are banked. Only
+ * once there is a best to chase, and only solo, since a pass-and-play match
+ * already has an opponent.
  */
 const best = computed(() => stats.bestFor(game.modeKey))
 const chase = computed(() => {
-  if (match.active || !best.value || game.state === 'isStart') return null
+  if (match.active || !best.value || game.state === 'isStart' || game.isFinished) return ''
   const gap = best.value - game.sumTilesTaken
-  return gap > 0
-    ? { behind: true, gap, label: `${gap} to beat` }
-    : { behind: false, gap: -gap, label: gap === 0 ? 'level with best' : `${-gap} past best` }
+  return gap > 0 ? `${gap} to beat` : gap === 0 ? 'level with best' : `${-gap} past best`
 })
+const sub = computed(() => {
+  if (armed.value === 'menu') return 'Tap again to leave'
+  if (armed.value === 'restart') return 'Tap again to restart'
+  // Pass and play has the longest title, so there the mode moves down a line.
+  const lead = match.active ? `${game.mode.label} · ` : ''
+  if (game.numberPlay === 0) return lead + (best.value && !match.active ? `Best ${best.value}` : 'Ready')
+  return lead + (chase.value ? `Roll ${game.numberPlay} · ${chase.value}` : `Roll ${game.numberPlay}`)
+})
+
+/* At the hand-over, Player 2 has not played yet, so the first score stays hidden. */
+const scoreHidden = computed(() => match.active && match.stage === 'p1' && game.isFinished)
+const shown = useTweenedNumber(
+  computed(() => game.sumTilesTaken),
+  400
+)
 </script>
 
 <template>
   <header class="bar">
-    <!-- Fixed, equal end columns keep the brand on the centre line. -->
     <div class="end">
-      <button type="button" class="chip" :class="{ armed: armed === 'menu' }"
-        :title="armed === 'menu' ? 'Tap again to leave' : 'Back to menu'"
+      <button
+        type="button"
+        class="chip"
+        :class="{ armed: armed === 'menu' }"
         :aria-label="armed === 'menu' ? 'Tap again to leave the game' : 'Back to menu'"
-        @click="toMenu">
-        <AppIcon name="home" />
+        @click="toMenu"
+      >
+        <AppIcon name="close" />
       </button>
-      <span v-if="armed === 'menu'" class="confirm-note left" aria-live="polite">Tap again</span>
-    </div>
-
-    <div class="slot">
-      <TweenedNumber compact class="readout-play" title="Play" :value="game.numberPlay" />
+      <button
+        type="button"
+        class="chip"
+        :class="{ armed: armed === 'restart' }"
+        :aria-label="armed === 'restart' ? 'Tap again to restart this game' : 'Restart this game'"
+        @click="doRestart"
+      >
+        <AppIcon name="refresh" />
+      </button>
     </div>
 
     <div class="brand">
-      <p class="name display"><BrandMark :size="20" /> Shut The Cube</p>
-      <!-- The game opens straight onto a board, so this is how the modes,
-           the daily and the boards are found. A label nobody can press is no
-           use as the only way back. -->
-      <button type="button" class="mode micro" :class="{ armed: armed === 'menu' }"
-        :title="armed === 'menu' ? 'Tap again to leave' : 'Change mode, or see the boards'"
-        @click="toMenu">
-        <span v-if="game.isDaily" class="daily-tag">Daily #{{ game.dayIndex }}</span>
-        {{ game.mode.label }}
-        <span v-if="best && !chase" class="best">· best {{ best }}</span>
-        <span class="caret" aria-hidden="true">▾</span>
-      </button>
-    </div>
-
-    <div class="slot">
-      <TweenedNumber compact class="readout-total" title="Total" :value="game.sumTilesTaken" />
-      <!-- Live gap to your best: the number that makes the last few turns
-           matter. Announced politely so it is not read out every tile. -->
-      <p v-if="chase" class="chase micro" :class="{ ahead: !chase.behind }" aria-live="polite">
-        <span class="num">{{ chase.label }}</span>
-      </p>
+      <p class="name display">{{ match.active ? kind : `${kind} · ${game.mode.label}` }}</p>
+      <p class="sub" :class="{ warn: armed }" aria-live="polite">{{ sub }}</p>
     </div>
 
     <div class="end right">
-      <button type="button" class="chip" :title="muted ? 'Sound off' : 'Sound on'"
-        :aria-label="muted ? 'Turn sound on' : 'Turn sound off'" :aria-pressed="muted"
-        @click="toggleMute">
+      <button
+        type="button"
+        class="chip"
+        :aria-label="muted ? 'Turn sound on' : 'Turn sound off'"
+        :aria-pressed="muted"
+        @click="toggleMute"
+      >
         <AppIcon :name="muted ? 'soundOff' : 'sound'" />
       </button>
-      <!-- Labelled restart, not an X: an X reads as "close" next to a home
-           button that already goes back. -->
-      <button type="button" class="chip" :class="{ armed: armed === 'restart' }"
-        :title="armed === 'restart' ? 'Tap again to restart' : 'Restart'"
-        :aria-label="armed === 'restart' ? 'Tap again to restart this game' : 'Restart this game'"
-        @click="doRestart">
-        <AppIcon name="refresh" />
-      </button>
-      <span v-if="armed === 'restart'" class="confirm-note right" aria-live="polite">Tap again</span>
+      <p class="score" :class="{ hidden: scoreHidden }">
+        <strong class="num">{{ shown }}</strong>
+        <span>points</span>
+      </p>
     </div>
   </header>
 </template>
 
 <style scoped>
 .bar {
-  position: relative;
   flex: none;
   display: grid;
-  grid-template-columns: 5.2rem 1fr minmax(0, auto) 1fr 5.2rem;
+  grid-template-columns: 1fr minmax(0, auto) 1fr;
   align-items: center;
-  gap: 0.4rem;
-  padding: max(0.4rem, env(safe-area-inset-top)) 0.6rem 0.2rem;
+  gap: 0.5rem;
+  padding: max(0.5rem, env(safe-area-inset-top)) 0.75rem 0.375rem;
 }
-/* The gap to your best, under the running total. Sized down and given its
-   own line so it reads as a caption rather than competing with the score. */
-.chase {
-  margin: 2px 0 0;
-  text-align: center;
-  color: var(--muted);
-  white-space: nowrap;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  font-size: 0.58rem;
-}
-.chase.ahead {
-  color: var(--accent);
-  font-weight: 600;
-}
-
-/* The mode line doubles as the way back to the menu. A button is inline by
-   default, which put it alongside the wordmark instead of under it. */
-.mode {
-  display: block;
-  background: none;
-  border: 0;
-  padding: 2px 6px;
-  border-radius: 7px;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-.mode:hover {
-  background: rgb(234 243 238 / 8%);
-}
-.mode.armed {
-  color: var(--bad);
-}
-.caret {
-  opacity: 0.5;
-  margin-left: 2px;
-}
-/* Playing the day's shared board is worth knowing while you are on it. */
-.daily-tag {
-  color: var(--accent);
-  font-weight: 600;
-  margin-right: 3px;
-}
-
 .end {
   display: flex;
-  gap: 6px;
-  justify-content: flex-start;
+  align-items: center;
+  gap: 0.375rem;
 }
 .end.right {
   justify-content: flex-end;
 }
-.slot {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.readout-play {
-  --readout: var(--bone);
-}
-.readout-total {
-  --readout: var(--sel);
-}
 
-/*
- * The centre column may shrink and the label may clip, because the alternative
- * is a nowrap label holding the column open and pushing the readouts under the
- * buttons — which is what a narrow phone used to do once a best existed.
- */
 .brand {
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  text-align: center;
 }
-.brand .name {
+.name {
   margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
   font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 0.02em;
-  color: var(--bone);
-  white-space: nowrap;
-}
-.mode {
-  margin: 2px 0 0;
-  font-size: 10px;
+  font-size: 1.0625rem;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.sub {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.sub.warn {
+  color: var(--bad);
+  font-weight: 600;
+}
 
 .chip {
-  width: 36px;
-  height: 36px;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
   display: grid;
   place-items: center;
-  color: var(--bone);
-  background: rgb(9 29 22 / 55%);
+  color: var(--ink);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 50%;
   cursor: pointer;
-  font-size: 1rem;
-  transition: border-color 0.12s, background 0.12s;
+  font-size: 1.05rem;
+  transition: border-color 0.12s;
 }
 .chip:hover {
-  border-color: color-mix(in srgb, var(--accent) 75%, transparent);
-  background: rgb(9 29 22 / 80%);
+  border-color: var(--line-strong);
 }
 .chip[aria-pressed='true'] {
   color: var(--muted);
@@ -254,55 +188,32 @@ const chase = computed(() => {
 .chip.armed {
   color: var(--bad);
   border-color: var(--bad);
-  animation: chip-arm 0.9s ease-in-out infinite;
-}
-@keyframes chip-arm {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--bad) 45%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 0 5px color-mix(in srgb, var(--bad) 0%, transparent);
-  }
-}
-.confirm-note {
-  position: absolute;
-  top: 100%;
-  margin-top: 3px;
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--bad);
-  white-space: nowrap;
-  z-index: 7;
-}
-.confirm-note.left {
-  left: 0.6rem;
-}
-.confirm-note.right {
-  right: 0.6rem;
-}
-@media (prefers-reduced-motion: reduce) {
-  .chip.armed {
-    animation: none;
-  }
 }
 
-/*
- * Five things do not fit across a 320px bar. The record is the one that goes:
- * it is on the menu card and again on the game-over card, while the live
- * readouts have nowhere else to be.
- */
-@media (max-width: 380px) {
-  .brand .name,
-  .mode .best {
+.score {
+  margin: 0;
+  min-width: 2.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.05;
+}
+.score strong {
+  font-weight: 700;
+  font-size: 1.375rem;
+}
+.score span {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.score.hidden {
+  visibility: hidden;
+}
+
+/* A 320px phone cannot hold four round buttons and a title: sound gives way. */
+@media (max-width: 350px) {
+  .end.right .chip {
     display: none;
-  }
-  .bar {
-    grid-template-columns: 4.9rem 1fr minmax(0, auto) 1fr 4.9rem;
-    gap: 0.3rem;
-    padding-left: 0.4rem;
-    padding-right: 0.4rem;
   }
 }
 </style>

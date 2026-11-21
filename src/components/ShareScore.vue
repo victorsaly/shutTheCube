@@ -29,32 +29,14 @@ const onShare = async () => {
 </script>
 
 <template>
-  <button type="button" class="share" aria-live="polite" @click="onShare">
+  <button type="button" class="share btn-primary" aria-live="polite" @click="onShare">
     <AppIcon :name="state === 'idle' ? 'share' : 'check'" />
-    {{ state === 'shared' ? 'Shared' : state === 'copied' ? 'Copied' : 'Share your score' }}
+    {{ state === 'shared' ? 'Shared' : state === 'copied' ? 'Copied' : 'Share result' }}
   </button>
 </template>
 
 <style scoped>
 .share {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  margin-top: 0.6rem;
-  padding: 0.55rem 1.1rem;
-  font: inherit;
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--bone);
-  background: none;
-  border: 1px solid rgb(234 243 238 / 32%);
-  border-radius: 999px;
-  cursor: pointer;
-  transition: border-color 0.1s;
-}
-.share:hover {
-  border-color: color-mix(in srgb, var(--accent) 75%, transparent);
+  width: 100%;
 }
 </style>

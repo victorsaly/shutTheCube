@@ -66,6 +66,10 @@ const anyPlayed = computed(() => MODE_LIST.some((m) => stats.hasPlayed(m.key)))
 </template>
 
 <style scoped>
+.panel.bare {
+  width: auto;
+  padding: 0.5rem 0 0;
+}
 .panel {
   text-align: left;
   width: min(420px, 100%);
@@ -78,7 +82,7 @@ h2 {
   margin: 0 0 0.75rem;
   font-size: 1.05rem;
   font-weight: 600;
-  color: var(--bone);
+  color: var(--ink);
 }
 .empty {
   color: var(--muted);
@@ -89,7 +93,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.82rem;
-  color: var(--bone);
+  color: var(--ink);
 }
 th,
 td {
@@ -110,11 +114,11 @@ thead th:first-child {
   font-weight: 600;
 }
 tbody tr + tr {
-  border-top: 1px solid rgb(234 243 238 / 8%);
+  border-top: 1px solid var(--line);
 }
 .best {
   font-weight: 700;
-  color: var(--bonus);
+  color: var(--accent);
 }
 .rate {
   color: var(--muted);
@@ -135,7 +139,7 @@ tbody tr + tr {
 .link {
   background: none;
   border: 0;
-  color: var(--bone);
+  color: var(--ink);
   font: inherit;
   font-size: 0.82rem;
   text-decoration: underline;

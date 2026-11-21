@@ -2,77 +2,84 @@
 
 /*
  * The nine tile faces, as Tailwind theme tokens (gameServices.js assigns one
- * class per face — the names date from Tailwind 0.x). The values are the
- * game's own: pastels tuned against the deep forest ground, worst-case
- * separation ΔE 64.1. They are identity; leave them alone.
+ * class per face; the names date from Tailwind 0.x and no longer describe the
+ * hue). Nine separate hues at an even weight, chosen for the light ground:
+ * the old pale yellows vanished on white and the red outweighed the rest.
+ * Each face has a darker shade of itself for its raised edge (--edge-N).
  */
 @theme {
-  --color-green-lighter: #a2f5bf; /* face 1 */
-  --color-purple-lighter: #d6bbfc; /* face 2 */
-  --color-blue-light: #6cb2eb; /* face 3 */
-  --color-purple-light: #a779e9; /* face 4 */
-  --color-yellow-lighter: #fff9c2; /* face 5 */
-  --color-indigo-lighter: #b2b7ff; /* face 6 */
-  --color-red-light: #ef5753; /* face 7 */
-  --color-red-lighter: #f9acaa; /* face 8 */
-  --color-yellow-light: #fff382; /* face 9 */
+  --color-green-lighter: #8fdda8; /* face 1, green */
+  --color-purple-lighter: #c8b4f5; /* face 2, lilac */
+  --color-blue-light: #84c2f1; /* face 3, sky */
+  --color-purple-light: #7dd3c8; /* face 4, teal */
+  --color-yellow-lighter: #f7d55c; /* face 5, yellow */
+  --color-indigo-lighter: #c3dc6a; /* face 6, lime */
+  --color-red-light: #f4907c; /* face 7, coral */
+  --color-red-lighter: #f6abcb; /* face 8, pink */
+  --color-yellow-light: #f6b56b; /* face 9, orange */
+}
+.bg-green-lighter {
+  --edge-c: #62bd82;
+}
+.bg-purple-lighter {
+  --edge-c: #a48bdf;
+}
+.bg-blue-light {
+  --edge-c: #569fd6;
+}
+.bg-purple-light {
+  --edge-c: #4fb3a6;
+}
+.bg-yellow-lighter {
+  --edge-c: #d9b32e;
+}
+.bg-indigo-lighter {
+  --edge-c: #9dbb3f;
+}
+.bg-red-light {
+  --edge-c: #d96a55;
+}
+.bg-red-lighter {
+  --edge-c: #de82ab;
+}
+.bg-yellow-light {
+  --edge-c: #db9340;
 }
 
 /*
- * Theme. Shut The Cube's own world — the deep forest — organised into two
- * layers that must never trade places:
- *
- *   identity  --accent, set by the mode you are playing. It colours the
- *             chrome: the wordmark's glow, the selected pill, your best,
- *             hover glows, focus rings. Never a rule of the game.
- *   meaning   what the board says with colour: selected (--sel), a bonus
- *             run (--bonus), danger (--bad), a shut tile (--hole). These
- *             stay the same in every mode, so they always read as rules.
+ * Theme: "The Daily". A light, calm ground; the tiles are the only strong
+ * colour on a screen, and one deep green carries every primary action.
  */
 :root {
-  /* ground */
-  --ground-1: #14402e;
-  --ground-2: #0d2a1f;
-  --ground-3: #091d16;
-  --ink-2: #123227; /* raised surface: panels, pills */
+  --bg: #f2f4f0;
+  --surface: #ffffff;
+  --sunk: #e9ede8; /* a shut tile, a track, a segmented control's well */
+  --line: #dce2dc;
+  --line-strong: #8a968d;
 
-  /* ink */
-  --bone: #eaf3ee;
-  --muted: #9fb4a8;
-  --line: rgb(234 243 238 / 16%);
+  --ink: #15231c;
+  --muted: #536259;
 
-  /* identity — overridden per mode below */
-  --accent: #51d88a;
+  --accent: #14573b;
+  --accent-soft: #dff3e7;
+  --on-accent: #ffffff;
+  --bad: #a83a1b;
+  --bad-fill: #e8663d;
+  --tile-ink: #15231c;
 
-  /* meaning */
-  --sel: #ffe36b;
-  --bonus: #7ff0ae;
-  --bad: #ff8f6b;
-  --tile-ink: #16241d;
-  --hole: #0a1f17;
-
-  /* voices */
-  --font-display: 'Fredoka', 'Avenir Next', system-ui, sans-serif;
-  --font-num: 'Spline Sans Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
-}
-[data-mode='beginner'] {
-  --accent: #4dd0c0;
-}
-[data-mode='medium'] {
-  --accent: #6cb2eb;
-}
-[data-mode='ninja'] {
-  --accent: #ff8f6b;
+  --font-display: 'Bricolage Grotesque Variable', 'Avenir Next', system-ui, sans-serif;
+  --font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Counts sit in the display face with tabular figures so they never jitter. */
+  --font-num: var(--font-display);
 }
 
 /* ---------- base ---------- */
 
 #app,
 body {
-  font-family: Avenir, 'Avenir Next', system-ui, Helvetica, Arial, sans-serif;
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   -webkit-user-select: none;
   user-select: none;
 }
@@ -80,21 +87,12 @@ body {
 body {
   margin: 0;
   min-height: 100dvh;
-  color: var(--bone);
-  background: var(--ground-2);
-}
-/* The gradient lives on a fixed layer: `background-attachment: fixed`
-   repaints the whole gradient on every scroll frame on mobile. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(170deg, var(--ground-1) 0%, var(--ground-2) 55%, var(--ground-3) 100%);
+  color: var(--ink);
+  background: var(--bg);
 }
 
 a {
-  color: var(--bone);
+  color: var(--accent);
 }
 
 /*
@@ -108,10 +106,9 @@ label,
 input,
 summary {
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* The display voice: the wordmark, verdicts, celebrations, the big CTA.
-   The numeral voice: readouts and timers — mono, so counts never jitter. */
 .display {
   font-family: var(--font-display);
 }
@@ -127,14 +124,14 @@ input:focus-visible {
   outline-offset: 3px;
 }
 
-/* Key names, inline (<kbd>Space</kbd>) — drawn as a key cap everywhere. */
+/* Key names, inline (<kbd>Space</kbd>), drawn as a key cap everywhere. */
 kbd {
   font: inherit;
   font-size: 0.82em;
-  border: 1px solid var(--line);
+  border: 1px solid currentcolor;
   border-radius: 5px;
   padding: 0 0.35em;
-  color: var(--bone);
+  opacity: 0.75;
 }
 
 /*
@@ -154,11 +151,6 @@ kbd {
     display: inline;
   }
 }
-
-/* ---------- shared grammar ---------- */
-
-/* Say it for the input the player actually has: keyboard wording on fine
-   pointers, plain wording on touch. */
 .pointer-coarse {
   display: none;
 }
@@ -171,223 +163,146 @@ kbd {
   }
 }
 
-/* Uppercase micro-label: captions, readout titles, hints. */
+/* ---------- shared grammar ---------- */
+
+/* Small label above a heading or beside a value. */
 .micro {
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 0.8125rem;
   color: var(--muted);
 }
-
-/* Toggle pill. aria-pressed inverts it; the accent only glows, never fills. */
-.pill {
-  padding: 10px 18px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font: inherit;
-  font-size: 13px;
+.eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
-  background: rgb(9 29 22 / 60%);
-  cursor: pointer;
-  transition: all 0.1s;
-}
-.pill small {
-  display: block;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: none;
-  margin-top: 2px;
-  opacity: 0.75;
-}
-.pill:hover {
-  border-color: color-mix(in srgb, var(--accent) 75%, transparent);
-  color: var(--bone);
-}
-.pill[aria-pressed='true'] {
-  color: var(--tile-ink);
-  background: var(--bone);
-  border-color: var(--bone);
-  box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 45%, transparent);
-}
-.pill[aria-pressed='true']:hover {
-  color: var(--tile-ink);
 }
 
-/* The one solid button on a screen, in the mode's own colour. */
-.cta {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 16px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #10291d;
-  background: var(--accent);
-  border: 0;
-  border-radius: 999px;
-  padding: 15px 40px;
-  cursor: pointer;
-  transition: transform 0.09s, box-shadow 0.09s;
-}
-.cta:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 36px color-mix(in srgb, var(--accent) 35%, transparent);
+/* A white card on the ground. */
+.card-surface,
+.panel-glass {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
 }
 
-/* Outlined companion action. */
-.ghost {
+/* The one solid button on a screen. */
+.btn-primary {
+  min-height: 3.5rem;
+  padding: 0 1.25rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  padding: 12px 24px;
+  gap: 0.6rem;
+  border: 0;
+  border-radius: 1rem;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.125rem;
+  cursor: pointer;
+  transition: transform 0.09s, filter 0.09s;
+}
+.btn-primary:hover {
+  filter: brightness(1.12);
+}
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* Its outlined companion. */
+.btn-quiet {
+  min-height: 3rem;
+  padding: 0 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.875rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.1s;
+}
+.btn-quiet:hover:not(:disabled) {
+  border-color: var(--line-strong);
+}
+.btn-quiet:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Segmented control: a sunk well with one raised choice. */
+.seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 1rem;
+  background: var(--sunk);
+}
+.seg > button {
+  min-height: 2.75rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+.seg > button[aria-pressed='true'],
+.seg > button[aria-selected='true'] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgb(21 35 28 / 12%);
+}
+
+/* Small toggle pill, kept for the leaderboard's rename row. */
+.pill {
+  padding: 0.5rem 0.9rem;
   border: 1px solid var(--line);
   border-radius: 999px;
   font: inherit;
-  font-size: 13px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--bone);
-  background: rgb(9 29 22 / 60%);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
   cursor: pointer;
-  transition: border-color 0.1s;
-  text-decoration: none;
 }
-.ghost:hover {
-  border-color: color-mix(in srgb, var(--accent) 75%, transparent);
+.pill:hover {
+  border-color: var(--line-strong);
 }
 
-/* Keyboard hint row. */
-.kbd-row {
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  opacity: 0.85;
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.kbd-row b {
-  display: inline-block;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 1px 6px;
-  font-weight: 500;
-  color: var(--bone);
-  margin-right: 4px;
-}
-
-/* Glass panel: results, stats, help. */
-.panel-glass {
-  background: rgb(13 42 31 / 88%);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  box-shadow: 0 18px 58px rgb(0 0 0 / 45%);
-}
-
-/* ---------- aurora ---------- */
 /*
- * Ambient drifting light in the forest's own colours, plus grain, behind
- * everything. Field one wears the mode's accent so the room takes its tint.
- * Phones get the light without the drift: the fields are painted once and
- * never animated, so nothing repaints while the board is being played.
+ * ---------- board sizing ----------
+ * Measured against the board area (a size container). On a phone nine
+ * columns cannot reach 44pt wide, so a tile is allowed to be taller than it
+ * is wide: the height takes what the screen has, up to about 1.2 times the
+ * width, and that is what brings the touch target up to size.
  */
-.aurora {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-.aurora i {
-  position: absolute;
-  display: block;
-  border-radius: 50%;
-  filter: blur(90px);
-}
-.aurora i:nth-child(1) {
-  width: 55vmax;
-  height: 55vmax;
-  left: -12vmax;
-  top: -14vmax;
-  background: radial-gradient(circle, var(--accent), transparent 65%);
-  opacity: 0.1;
-}
-.aurora i:nth-child(2) {
-  width: 44vmax;
-  height: 44vmax;
-  right: -10vmax;
-  top: 24vh;
-  background: radial-gradient(circle, #7ff0ae, transparent 65%);
-  opacity: 0.06;
-}
-.aurora i:nth-child(3) {
-  width: 38vmax;
-  height: 38vmax;
-  left: 28vw;
-  bottom: -16vmax;
-  background: radial-gradient(circle, #ffe36b, transparent 65%);
-  opacity: 0.05;
-}
-@media (min-width: 641px) and (prefers-reduced-motion: no-preference) {
-  .aurora i {
-    will-change: transform;
-  }
-  .aurora i:nth-child(1) {
-    animation: drift1 34s ease-in-out infinite alternate;
-  }
-  .aurora i:nth-child(2) {
-    animation: drift2 27s ease-in-out infinite alternate;
-  }
-  .aurora i:nth-child(3) {
-    animation: drift3 41s ease-in-out infinite alternate;
-  }
-}
-@keyframes drift1 {
-  to {
-    transform: translate(9vw, 7vh) scale(1.15);
-  }
-}
-@keyframes drift2 {
-  to {
-    transform: translate(-8vw, -6vh) scale(0.9);
-  }
-}
-@keyframes drift3 {
-  to {
-    transform: translate(-10vw, -5vh) scale(1.2);
-  }
-}
-.aurora::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.3;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  mix-blend-mode: overlay;
-}
-
-/* ---------- board sizing (measured, not guessed — see git history) ---------- */
 .board-metrics {
-  --gap: clamp(3px, 0.9vmin, 9px);
-  --board-max: 44rem;
-  --tile: min(
-    calc((min(100cqw, var(--board-max)) - 8 * var(--gap)) / 9),
-    calc((100cqh - (var(--rows) - 1) * var(--gap)) / var(--rows)),
-    5.5rem
-  );
-  --tile-font: clamp(0.75rem, calc(var(--tile) * 0.46), 2.75rem);
-  --tile-h: var(--tile);
+  --gap: clamp(3px, 0.8vmin, 8px);
+  --pad: 6px;
+  --board-max: 40rem;
+  --w: calc((min(100cqw, var(--board-max)) - 2 * var(--pad) - 2px - 8 * var(--gap)) / 9);
+  --h: calc((100cqh - 2 * var(--pad) - 2px - var(--rows) * var(--gap)) / var(--rows));
+  --tile: min(var(--w), calc(var(--h) * 1.05), 5rem);
+  --tile-h: min(var(--h), calc(var(--w) * 1.22), 5rem);
+  --tile-font: clamp(0.8rem, calc(var(--tile) * 0.5), 2.5rem);
 }
-
 .board-metrics.single-row {
-  --tile-h: min(calc(var(--tile) * 1.9), calc(100cqh * 0.62));
-  --tile-font: clamp(1rem, calc(var(--tile) * 0.62), 3.25rem);
+  --tile-h: min(calc(var(--tile) * 2.8), calc(100cqh * 0.7), 9rem);
+  --tile-font: clamp(1rem, calc(var(--tile) * 0.66), 3rem);
 }
 
 /* Screen-reader-only text that still gets announced. */

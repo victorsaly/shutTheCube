@@ -32,17 +32,17 @@ defineProps({
 <style scoped>
 .mark {
   display: block;
-  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 30%, transparent));
+  
 }
 .frame {
-  fill: rgb(9 29 22 / 45%);
-  stroke: var(--bone);
+  fill: #ffffff;
+  stroke: var(--ink);
   stroke-width: 3;
 }
 /* The centre tile is already shut — and it breathes, like the box waiting. */
 .shut {
-  fill: var(--hole);
-  stroke: rgb(234 243 238 / 35%);
+  fill: var(--sunk);
+  stroke: none;
   stroke-width: 1.5;
   transform-origin: 32px 32px;
   animation: shut-breathe 3.6s ease-in-out infinite alternate;

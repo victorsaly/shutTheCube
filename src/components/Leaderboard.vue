@@ -53,7 +53,7 @@ const confirmDelete = async () => {
 }
 
 /* Only the top three get a mark; beyond that a number reads better. */
-const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
+const MEDALS = {}
 </script>
 
 <template>
@@ -245,21 +245,22 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
   border-radius: 8px;
 }
 .close:hover {
-  color: var(--bone);
+  color: var(--ink);
 }
 
 .when {
   display: flex;
   gap: 4px;
-  padding: 3px;
-  border-radius: 9px;
-  background: rgb(0 0 0 / 20%);
+  padding: 4px;
+  border-radius: 1rem;
+  background: var(--sunk);
 }
 .when-tab {
   flex: 1;
+  min-height: 2.75rem;
   padding: 6px 4px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 0.75rem;
   background: transparent;
   color: var(--muted);
   font: inherit;
@@ -267,8 +268,8 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
   cursor: pointer;
 }
 .when-tab[aria-selected='true'] {
-  background: var(--ink-2);
-  color: var(--bone);
+  background: var(--surface);
+  color: var(--ink);
   font-weight: 600;
 }
 
@@ -278,19 +279,21 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
 }
 .tab {
   flex: 1;
+  min-height: 2.75rem;
   padding: 7px 4px;
-  border-radius: 9px;
+  border-radius: 999px;
+  background: var(--surface);
   border: 1px solid var(--line);
-  background: transparent;
-  color: var(--muted);
+  color: var(--ink);
   font: inherit;
-  font-size: 0.85rem;
+  font-weight: 600;
+  font-size: 0.875rem;
   cursor: pointer;
 }
 .tab[aria-selected='true'] {
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
-  border-color: var(--accent);
-  color: var(--bone);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #ffffff;
   font-weight: 600;
 }
 
@@ -310,8 +313,7 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 46vh;
-  overflow-y: auto;
+  
 }
 .row {
   display: grid;
@@ -322,12 +324,11 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
   border-radius: 9px;
 }
 .row:nth-child(odd) {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg);
 }
 /* Your own row has to be findable in a glance down a list of twenty. */
 .row.me {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-  outline: 1px solid var(--accent);
+  background: var(--accent-soft);
 }
 .rank {
   font-size: 0.95rem;
@@ -350,8 +351,9 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
   padding: 1px 5px;
   border-radius: 4px;
   background: var(--accent);
-  color: var(--tile-ink);
+  color: var(--on-accent);
   font-weight: 700;
+  font-size: 0.6875rem;
   letter-spacing: 0.06em;
 }
 .rolls {
@@ -383,7 +385,7 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
   color: var(--muted);
 }
 .signed-in b {
-  color: var(--bone);
+  color: var(--ink);
 }
 .acts {
   display: flex;
@@ -401,7 +403,7 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
   font-size: 0.78rem;
 }
 .linkish:hover {
-  color: var(--bone);
+  color: var(--ink);
 }
 .linkish.danger:hover {
   color: var(--bad);
@@ -417,8 +419,8 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
   padding: 7px 10px;
   border-radius: 9px;
   border: 1px solid var(--line);
-  background: rgba(0, 0, 0, 0.25);
-  color: var(--bone);
+  background: var(--surface);
+  color: var(--ink);
   font: inherit;
 }
 .pill.small {
@@ -434,15 +436,15 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
   padding: 11px 14px;
   border-radius: 11px;
   border: 1px solid var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  color: var(--bone);
+  background: var(--accent-soft);
+  color: var(--ink);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
 .signin:hover {
   background: var(--accent);
-  color: var(--tile-ink);
+  color: var(--on-accent);
 }
 .fine {
   margin: 0;

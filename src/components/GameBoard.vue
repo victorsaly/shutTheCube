@@ -12,9 +12,7 @@ import AppIcon from './AppIcon.vue'
 import Confetti from './Confetti.vue'
 import DiceFace from './DiceFace.vue'
 import ShareScore from './ShareScore.vue'
-import SelectedTiles from './SelectedTiles.vue'
 import TileRow from './TileRow.vue'
-import TweenedNumber from './TweenedNumber.vue'
 
 /* The board asks the shell to show the leaderboard; it does not own the menu. */
 const emit = defineEmits(['scores'])
@@ -27,15 +25,17 @@ const toast = ref('')
 const actionEl = ref(null)
 
 const BUTTON = {
-  isNext: { message: 'ROLL DICE', colour: 'action-accent', icon: 'dice' },
-  isOver: { message: 'PLAY AGAIN', colour: 'action-bad', icon: 'refresh' },
-  isStart: { message: 'START GAME', colour: 'action-accent', icon: 'dice' },
-  isWin: { message: 'PLAY AGAIN', colour: 'action-accent', icon: 'check' }
+  isNext: 'Roll the dice',
+  isStart: 'Roll to start',
+  isOver: 'Play again',
+  isWin: 'Play again'
 }
+/* What the one primary button says right now, or null during a turn. */
 const button = computed(() => {
-  const base = BUTTON[game.state] ?? null
-  if (!base || !match.active || !game.isFinished) return base
-  return { ...base, message: match.stage === 'p1' ? 'PASS TO PLAYER 2' : 'REMATCH' }
+  const message = BUTTON[game.state] ?? null
+  if (!message) return null
+  if (!match.active || !game.isFinished) return { message }
+  return { message: match.stage === 'p1' ? "I'm Player 2. Start" : 'Rematch' }
 })
 const matchDone = computed(() => match.active && match.stage === 'done')
 const matchVerdict = computed(() =>
@@ -148,13 +148,56 @@ watch(
 /* Signing in navigates away, so the finished game travels with it. */
 const postAndSignIn = () => arcade.startSignIn(submission())
 
-/* The tray never sits empty: between turns it says what it is for. */
-const trayHint = computed(() =>
-  game.state === 'isStart'
-    ? 'Rolls, moves and calls show up here.'
-    : game.state === 'isNext'
-      ? 'Roll again — then pick tiles that match.'
-      : ''
+/* Player 1 has finished and Player 2 has not started: the hand-over. */
+const isHandover = computed(() => match.active && match.stage === 'p1' && game.isFinished)
+
+// ------------------------------------------------------------ the result
+
+const openTiles = computed(() => game.tiles.flat().filter((t) => !t.isTaken))
+const COUNT_WORDS = { 1: 'One tile', 2: 'Two tiles', 3: 'Three tiles' }
+
+const endTitle = computed(() => {
+  if (matchDone.value) return matchVerdict.value
+  if (game.state === 'isWin') return 'Box shut.'
+  const left = COUNT_WORDS[openTiles.value.length]
+  return left ? `${left} from shut.` : 'Game over'
+})
+
+const rollsLabel = computed(() => `${game.numberPlay} ${game.numberPlay === 1 ? 'roll' : 'rolls'}`)
+
+const listOf = (values) =>
+  values.length > 1 ? `${values.slice(0, -1).join(', ')} and ${values.at(-1)}` : `${values[0]}`
+
+/* Why the game ended, in one sentence, from the dice and tiles still showing. */
+const endReason = computed(() => {
+  if (game.state === 'isWin') return `Every tile shut in ${rollsLabel.value}.`
+  if (game.note === 'Out of time') return 'The clock ran out.'
+  const rolled = game.diceSum
+  const faces = openTiles.value.map((t) => t.index).sort((a, b) => b - a)
+  const total = faces.reduce((a, b) => a + b, 0)
+  if (faces.length === 1 && total < rolled) return `You rolled ${rolled}. Only the ${faces[0]} was left.`
+  if (faces.length > 1 && faces.length <= 4) {
+    return total < rolled
+      ? `You rolled ${rolled}. The ${listOf(faces)} that were left only make ${total}.`
+      : `You rolled ${rolled}. The ${listOf(faces)} that were left cannot make it.`
+  }
+  return `You rolled ${rolled}, and no open tiles add up to it.`
+})
+
+const resultLabel = computed(() => {
+  if (match.active) return `Pass & play · ${game.mode.label}`
+  return game.isDaily ? `Daily #${game.dayIndex} · ${game.mode.label}` : `Free play · ${game.mode.label}`
+})
+
+/* The final board as blocks: the same picture the shared card draws in text. */
+const blocks = computed(() => game.tiles.flat().map((t) => ({ id: t.id, shut: t.isTaken })))
+const shutCount = computed(() => blocks.value.filter((b) => b.shut).length)
+
+// --------------------------------------------------------------- the sum
+
+/* Bonus tiles a run pulled in do not count toward the roll, so they are counted apart. */
+const bonusPicked = computed(
+  () => game.tiles.flat().filter((t) => t.isInUse && t.isCollateral).length
 )
 const shareResult = computed(() =>
   matchDone.value
@@ -344,238 +387,267 @@ const onAction = async () => {
   <div class="Game">
     <p class="visually-hidden" role="status" aria-live="polite">{{ game.announcement }}</p>
 
-    <div class="board-area">
-      <Confetti v-if="game.state === 'isWin'" />
-
-      <!-- Pass & play: whose game this is, said with the die itself — one pip
-           for Player 1, two for Player 2. Sits above the start overlay too, so
-           the person just handed the device knows before they touch anything. -->
-      <Transition name="pop">
-        <div
-          v-if="match.active && match.stage !== 'done'"
-          :key="match.stage"
-          class="player-flag"
-          role="status"
-        >
-          <svg class="flag-die" viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="1.5" y="1.5" width="21" height="21" rx="5.5" class="flag-body" />
-            <template v-if="match.stage === 'p1'">
-              <circle cx="12" cy="12" r="2.6" class="flag-pip" />
-            </template>
-            <template v-else>
-              <circle cx="8" cy="8" r="2.6" class="flag-pip" />
-              <circle cx="16" cy="16" r="2.6" class="flag-pip" />
-            </template>
-          </svg>
-          <span v-if="match.stage === 'p1'">Player 1</span>
-          <span v-else>Player 2 · beat <b class="num">{{ match.target }}</b></span>
-        </div>
-      </Transition>
+    <!-- ============================== playing ============================== -->
+    <template v-if="!game.isFinished">
+      <!-- Rendered whenever the mode is timed, and only filled during a turn:
+           the board sizes itself from the space left over, so a clock that
+           mounted and unmounted made every tile resize. -->
       <div
-        class="tile-position board-metrics"
-        :class="{ 'single-row': game.rows === 1 }"
-        :style="{ '--rows': game.rows }"
-        role="grid"
-        :aria-label="`${game.mode.label} board, ${game.rows} rows of 9 tiles`"
-        :aria-rowcount="game.rows"
-        @keydown="onGridKeydown"
+        v-if="game.mode.turnSeconds > 0"
+        class="clock card-surface"
+        :class="{ low: timerLow && inPlay, waiting: !inPlay }"
       >
-        <TileRow
-          v-for="(row, index) in game.tiles"
-          :key="index"
-          :tiles="row"
-          :row-index="index"
-          :cursor="cursor"
-          :play-click="playClick"
-        />
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" class="clock-icon">
+          <circle cx="12" cy="13" r="8" />
+          <path d="M12 9v4l2.500 2M9 2h6" />
+        </svg>
+        <span class="clock-track" aria-hidden="true">
+          <span
+            class="clock-fill"
+            :style="{ width: `${(game.secondsLeft / game.mode.turnSeconds) * 100}%` }"
+          />
+        </span>
+        <span class="timer num">
+          <span class="visually-hidden">Time left </span>{{ game.secondsLeft }}s
+        </span>
       </div>
 
-      <!--
-        The action sits over the middle of the board rather than below the
-        dice, so the roll is where the eye already is and never needs a reach
-        to the bottom of the screen. Space and Enter do the same thing.
-      -->
-      <Transition name="fade">
-        <div v-if="button && !game.isLoading" class="action-layer">
-          <!-- Shutting the box is the whole point of the game, so the result
-               leads and the button that starts the next one follows it. -->
-          <div v-if="game.isFinished" class="result panel-glass" :class="game.state">
-            <p class="result-eyebrow micro">
-              <template v-if="matchDone">Pass &amp; play — final</template>
-              <template v-else-if="match.active">Pass &amp; play — Player 1</template>
-              <template v-else>{{ game.state === 'isWin' ? 'You did it' : game.note }}</template>
-            </p>
-            <h2 class="result-title display">
-              {{ matchDone ? matchVerdict : game.state === 'isWin' ? 'BOX SHUT!' : 'Game over' }}
-            </h2>
-            <p v-if="matchDone" class="match-scores">
-              <span :class="{ winner: match.winner === 'p1' }">
-                P1 <strong class="num">{{ match.results.p1.score }}</strong>
-              </span>
-              <span :class="{ winner: match.winner === 'p2' }">
-                P2 <strong class="num">{{ match.results.p2.score }}</strong>
-              </span>
-            </p>
-            <p v-else class="result-score">
-              <strong class="num">{{ game.sumTilesTaken }}</strong>
-              <span>of {{ game.rows * 45 }} points</span>
-            </p>
-            <p v-if="match.active && match.stage === 'p1'" class="handoff">
-              Player 1 banked <b class="num">{{ game.sumTilesTaken }}</b> — hand the device over.
-            </p>
-            <p v-if="isPersonalBest" class="pb">
-              <AppIcon name="trophy" /> New personal best
-            </p>
-            <p v-else-if="game.state === 'isWin'" class="pb subtle">
-              Every tile shut in {{ game.numberPlay }} rolls
-            </p>
-            <!-- Where today's game landed against everyone else's, or the
-                 offer to put it there. Only ever for a ranked daily. -->
-            <p v-if="arcade.lastRank" class="rank-line micro">
-              <b class="num">#{{ arcade.lastRank }}</b> on today’s {{ game.mode.label }} board
-              &middot;
-              <button type="button" class="rank-link" @click="emit('scores')">See the board</button>
-            </p>
-            <button
-              v-else-if="rankable && !arcade.signedIn"
-              type="button"
-              class="post-cta"
-              @click="postAndSignIn"
-            >
-              Put this score on the daily board
-              <small>Sign in with Google · your name only, no email</small>
-            </button>
-            <p v-else-if="arcade.postError" class="unranked-line micro" role="status">
-              {{ arcade.postError }}
-            </p>
-            <p v-else-if="unranked" class="unranked-line micro">
-              Free play isn’t ranked — everyone needs the same board to compare.
-              Switch on <b>Daily</b> on the menu to play for the leaderboard.
-            </p>
+      <div class="board-area">
+        <!-- Pass & play: whose game this is, said before they touch anything. -->
+        <Transition name="pop">
+          <div
+            v-if="match.active && match.stage !== 'done'"
+            :key="match.stage"
+            class="player-flag"
+            role="status"
+          >
+            <span v-if="match.stage === 'p1'">Player 1</span>
+            <span v-else>Player 2 · beat <b class="num">{{ match.target }}</b></span>
+          </div>
+        </Transition>
 
-            <button type="button" class="again display" @click="onAction">
-              {{ button.message }} <kbd>Space</kbd>
+        <div
+          class="tile-position board-metrics"
+          :class="{ 'single-row': game.rows === 1 }"
+          :style="{ '--rows': game.rows }"
+          role="grid"
+          :aria-label="`${game.mode.label} board, ${game.rows} rows of 9 tiles`"
+          :aria-rowcount="game.rows"
+          @keydown="onGridKeydown"
+        >
+          <TileRow
+            v-for="(row, index) in game.tiles"
+            :key="index"
+            :tiles="row"
+            :row-index="index"
+            :cursor="cursor"
+            :play-click="playClick"
+          />
+        </div>
+
+        <!-- Runs, wilds and between-turn events announce themselves here. -->
+        <Transition name="pop">
+          <div v-if="game.celebration" :key="game.celebration.id" class="celebration">
+            <strong class="display">{{ game.celebration.title }}</strong>
+            <span>{{ game.celebration.detail }}</span>
+          </div>
+        </Transition>
+      </div>
+
+      <div class="footer">
+        <!-- The roll, written as the sum the player is filling in. -->
+        <div class="sum card-surface" :class="{ idle: game.state === 'isStart' }">
+          <div class="sum-top">
+            <button
+              type="button"
+              class="dice-button"
+              :disabled="inPlay"
+              :aria-label="inPlay ? 'Dice' : 'Roll the dice'"
+              @click="onAction"
+            >
+              <template v-for="(die, i) in game.activeDice" :key="die.id">
+                <span v-if="i > 0" class="op" aria-hidden="true">+</span>
+                <DiceFace :value="die.number" />
+              </template>
             </button>
-            <ShareScore v-if="!match.active || matchDone" :result="shareResult" />
+            <template v-if="game.state !== 'isStart'">
+              <span class="op" aria-hidden="true">=</span>
+              <strong class="total num">{{ game.diceSum }}</strong>
+            </template>
+            <span class="sum-help">
+              <template v-if="game.state === 'isStart'">Roll, then pick tiles that add up</template>
+              <template v-else-if="game.state === 'isNext'">Turn done</template>
+              <template v-else-if="game.waysToMatch.length > 1">
+                {{ game.waysToMatch.length }} ways to make {{ game.remainingToMatch }}
+              </template>
+              <template v-else>Pick tiles that add up</template>
+            </span>
           </div>
 
-          <button
-            v-else
-            ref="actionEl"
-            type="button"
-            class="action-button"
-            :class="button.colour"
-            @click="onAction"
-          >
-            <AppIcon :name="button.icon" class="action-icon" />
-            <span class="action-label display">{{ button.message }}</span>
-            <span class="action-hint on-keys">or press <kbd>Space</kbd></span>
-          </button>
-        </div>
-      </Transition>
-
-      <!-- Runs, wilds and between-turn events announce themselves here. -->
-      <Transition name="pop">
-        <div v-if="game.celebration" :key="game.celebration.id" class="celebration">
-          <strong class="display">{{ game.celebration.title }}</strong>
-          <span>{{ game.celebration.detail }}</span>
-        </div>
-      </Transition>
-    </div>
-
-    <div class="footer">
-      <div class="scoreline">
-        <div class="slot">
-          <TweenedNumber
-            v-if="game.mode.allowsRuns"
-            class="readout-bonus"
-            title="Bonus"
-            :value="game.gameBonus"
-          />
-          <TweenedNumber
-            v-else
-            class="readout-bonus"
-            title="Best"
-            :value="stats.bestFor(game.modeKey)"
-          />
+          <div class="picked" aria-live="polite">
+            <template v-if="inPlay">
+              <template v-for="(t, i) in game.selectedTiles" :key="t.id">
+                <span v-if="i > 0" class="op small" aria-hidden="true">+</span>
+                <span class="chip-tile num" :class="t.cssClass">{{ t.wildValue ?? t.index }}</span>
+              </template>
+              <span v-if="game.selectedTiles.length && game.remainingToMatch > 0" class="op small" aria-hidden="true">+</span>
+              <span v-if="game.remainingToMatch > 0" class="to-go">
+                <b class="num">{{ game.remainingToMatch }}</b> to go
+              </span>
+              <span v-if="bonusPicked" class="bonus-note">
+                and {{ bonusPicked }} bonus {{ bonusPicked === 1 ? 'tile' : 'tiles' }}
+              </span>
+            </template>
+            <span v-else-if="game.state === 'isNext'" class="idle-note">
+              <b class="num">{{ game.gamePoints }}</b> points that turn<template v-if="game.gameBonus">, <b class="num">{{ game.gameBonus }}</b> of them bonus</template>. Roll again.
+            </span>
+          </div>
         </div>
 
-        <div class="dice-cell">
-          <button
-            type="button"
-            class="dice-button"
-            :disabled="inPlay"
-            :aria-label="inPlay ? 'Dice' : 'Roll the dice'"
-            @click="onAction"
-          >
-            <DiceFace v-for="die in game.activeDice" :key="die.id" :value="die.number" />
-          </button>
-          <!-- Rendered whenever the mode is timed, and only *shown* during a
-               turn: the board sizes itself from the space the footer leaves,
-               so a timer that mounted and unmounted made every tile resize. -->
-          <p
-            v-if="game.mode.turnSeconds > 0"
-            class="timer num"
-            :class="{ low: timerLow && inPlay, waiting: !inPlay }"
-          >
-            <span class="visually-hidden">Time left </span>{{ game.secondsLeft }}s
+        <!-- One short block of help that changes with the move. Its height is
+             reserved so the board above never resizes as it speaks. -->
+        <div class="notes">
+          <ul v-if="legend.length" class="legend">
+            <li v-for="item in legend" :key="item.key">
+              <span class="legend-mark" aria-hidden="true">{{ item.mark }}</span>
+              <b>{{ item.name }}</b>
+              {{ item.hint }}
+            </li>
+          </ul>
+          <p v-if="showRunTip" class="run-tip">
+            A tile with a <span class="tip-badge" aria-hidden="true">2</span> badge takes that many
+            tiles in its column in one move.
           </p>
-        </div>
-
-        <div class="slot">
-          <TweenedNumber class="readout-points" title="Points" :value="game.gamePoints" />
-        </div>
-      </div>
-
-      <div class="turn-tools" :class="{ hidden: !inPlay }">
-        <button type="button" class="tool" :disabled="!game.canUndo" @click="doUndo">
-          <AppIcon name="undo" /> Undo <kbd>U</kbd>
-        </button>
-        <button type="button" class="tool" :disabled="!inPlay" @click="game.showHint()">
-          <AppIcon name="bulb" /> Hint <kbd>H</kbd>
-        </button>
-      </div>
-
-      <!-- The call tray: everything the game says lands here, and the panel
-           is visible even before it speaks so the space reads as reserved on
-           purpose rather than left over. -->
-      <div class="tray">
-        <ul v-if="legend.length" class="legend">
-          <li v-for="item in legend" :key="item.key">
-            <span class="legend-mark" aria-hidden="true">{{ item.mark }}</span>
-            <b>{{ item.name }}</b>
-            {{ item.hint }}
-          </li>
-        </ul>
-
-        <!-- Once on, this stays for the rest of the game — one layout change,
-             not a per-turn one, so it may sit outside the reserved caption. -->
-        <p v-if="showRunTip" class="run-tip">
-          Tiles wearing a <span class="tip-badge" aria-hidden="true">2</span> badge take the whole
-          column in one move<span class="pointer-fine"> — hover one to preview the run</span>.
-        </p>
-
-        <p v-if="game.mustRollSingleDie" class="single-note">
-          One die — only {{ game.openTotal }} left on the board
-        </p>
-
-        <div class="caption">
-          <template v-if="inPlay">
-            <SelectedTiles />
-            <p v-if="game.waysToMatch.length > 1" class="ways">
-              {{ game.waysToMatch.length }} ways to make {{ game.remainingToMatch }} —
-              <span class="on-keys"><kbd>H</kbd> cycles them</span>
-              <span class="on-touch">Hint cycles them</span>
-            </p>
-          </template>
-          <label
-            v-else-if="game.canRollSingleDie && game.state === 'isNext'"
-            class="single-die"
-          >
+          <p v-if="game.mustRollSingleDie" class="single-note">
+            One die: only {{ game.openTotal }} left on the board
+          </p>
+          <label v-if="game.canRollSingleDie && game.state === 'isNext'" class="single-die">
             <input type="checkbox" :checked="game.singleDie" @change="game.toggleSingleDie()" />
             Roll one die
           </label>
-          <p v-else-if="trayHint" class="tray-idle">{{ trayHint }}</p>
+        </div>
+
+        <div class="actions">
+          <template v-if="inPlay">
+            <button type="button" class="btn-quiet tool" :disabled="!game.canUndo" @click="doUndo">
+              <AppIcon name="undo" /> Undo <kbd>U</kbd>
+            </button>
+            <button type="button" class="btn-quiet tool" @click="game.showHint()">
+              <AppIcon name="bulb" /> Hint <kbd>H</kbd>
+            </button>
+          </template>
+          <button
+            v-else-if="button"
+            ref="actionEl"
+            type="button"
+            class="btn-primary action-button"
+            :disabled="game.isLoading"
+            @click="onAction"
+          >
+            <AppIcon name="dice" />
+            {{ button.message }}
+            <kbd>Space</kbd>
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <!-- ============================== finished ============================= -->
+    <div v-else class="result-view">
+      <Confetti v-if="game.state === 'isWin'" />
+
+      <!-- The hand-over: Player 1's score stays out of sight until both have played. -->
+      <div v-if="isHandover" class="result handover">
+        <div class="players">
+          <div class="player card-surface">
+            <span class="player-who">Player 1</span>
+            <strong class="display">Done</strong>
+            <span class="player-note">Score hidden</span>
+          </div>
+          <div class="player card-surface next">
+            <span class="player-who">Player 2</span>
+            <strong class="display">Your turn</strong>
+            <span class="player-note">Same board</span>
+          </div>
+        </div>
+        <h2 class="result-title display">Pass the phone to Player 2.</h2>
+        <p class="handoff">
+          You play the identical board. Player 1’s score stays hidden until you have both
+          finished.
+        </p>
+        <button type="button" class="btn-primary again" @click="onAction">
+          {{ button.message }}
+        </button>
+      </div>
+
+      <div v-else class="result" :class="game.state">
+        <!-- The card is the thing that gets shared, so it carries the whole
+             result on its own: which game, how it ended, the board, the score. -->
+        <div class="share-card" :class="{ won: game.state === 'isWin' && !matchDone }">
+          <p class="eyebrow result-eyebrow">Shut The Cube · {{ resultLabel }}</p>
+          <h2 class="result-title display">{{ endTitle }}</h2>
+          <div
+            class="blocks"
+            :class="{ 'one-row': game.rows === 1 }"
+            role="img"
+            :aria-label="`The final board: ${shutCount} of ${blocks.length} tiles shut`"
+          >
+            <span v-for="b in blocks" :key="b.id" :class="{ shut: b.shut }" />
+          </div>
+          <p v-if="matchDone" class="match-scores">
+            <span :class="{ winner: match.winner === 'p1' }">
+              Player 1 <strong class="num">{{ match.results.p1.score }}</strong>
+            </span>
+            <span :class="{ winner: match.winner === 'p2' }">
+              Player 2 <strong class="num">{{ match.results.p2.score }}</strong>
+            </span>
+          </p>
+          <p v-else class="result-score">
+            <strong class="num">{{ game.sumTilesTaken }}</strong>
+            <span>of {{ game.rows * 45 }} points</span>
+            <span class="rolls">{{ shutCount }} of {{ blocks.length }} shut · {{ rollsLabel }}</span>
+          </p>
+        </div>
+
+        <div v-if="!matchDone" class="reason">
+          <span class="final-dice">
+            <DiceFace v-for="die in game.activeDice" :key="die.id" :value="die.number" />
+          </span>
+          <p>{{ endReason }}</p>
+        </div>
+
+        <p v-if="isPersonalBest" class="pb"><AppIcon name="trophy" /> New personal best</p>
+
+        <!-- Where today's game landed against everyone else's, or the offer
+             to put it there. Only ever for a ranked daily. -->
+        <p v-if="arcade.lastRank" class="rank-line">
+          <b class="num">#{{ arcade.lastRank }}</b> on today’s {{ game.mode.label }} board
+        </p>
+        <button
+          v-else-if="rankable && !arcade.signedIn"
+          type="button"
+          class="post-cta"
+          @click="postAndSignIn"
+        >
+          Put this score on the daily board
+          <small>Sign in with Google · your name only, no email</small>
+        </button>
+        <p v-else-if="arcade.postError" class="unranked-line" role="status">
+          {{ arcade.postError }}
+        </p>
+        <p v-else-if="unranked" class="unranked-line">
+          Free play isn’t ranked. Play today’s board from the Today tab to post a score.
+        </p>
+
+        <ShareScore v-if="!match.active || matchDone" :result="shareResult" />
+
+        <div class="result-actions">
+          <button type="button" class="btn-quiet again" @click="onAction">
+            {{ button.message }} <kbd>Space</kbd>
+          </button>
+          <button v-if="rankable" type="button" class="btn-quiet" @click="emit('scores')">
+            Today’s scores
+          </button>
         </div>
       </div>
     </div>
@@ -591,541 +663,56 @@ const onAction = async () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-}
-
-/* The board and the action share one centred stacking context. This is also
-   the query container the tiles size themselves against. */
-.board-area {
-  position: relative;
-  flex: 1;
-  display: grid;
-  place-items: center;
-  min-height: 0;
-  padding: 0 0.5rem;
-  container-type: size;
-}
-.tile-position {
-  position: relative;
-  z-index: 1;
-}
-
-.player-flag {
-  position: absolute;
-  top: 0.45rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 6;
-  display: inline-flex;
-  align-items: center;
   gap: 0.5rem;
-  padding: 0.35rem 0.85rem;
-  border-radius: 999px;
-  background: rgb(9 29 22 / 85%);
-  border: 1px solid var(--line);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--bone);
-  white-space: nowrap;
-  pointer-events: none;
+  min-height: 0;
 }
-.player-flag b {
-  color: var(--sel);
-  font-size: 0.85rem;
-}
-.flag-die {
-  width: 19px;
-  height: 19px;
+
+/* ---------- Ninja's clock ---------- */
+.clock {
   flex: none;
-}
-.flag-body {
-  fill: var(--bone);
-  stroke: #10291d;
-  stroke-width: 1.6;
-}
-.flag-pip {
-  fill: #10291d;
-}
-
-.action-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  display: grid;
-  place-content: center;
+  margin: 0 0.75rem;
+  height: 2.5rem;
+  padding: 0 0.875rem;
+  display: flex;
+  align-items: center;
   gap: 0.75rem;
-  background: radial-gradient(
-    ellipse at center,
-    rgb(9 29 22 / 88%) 0%,
-    rgb(9 29 22 / 72%) 45%,
-    rgb(9 29 22 / 45%) 100%
-  );
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-}
-.action-button {
-  display: grid;
-  justify-items: center;
-  gap: 0.15rem;
-  padding: 1.15rem 2.4rem 1rem;
-  border: 0;
-  border-bottom: 6px solid rgb(0 0 0 / 35%);
-  border-radius: 22px;
-  cursor: pointer;
-  font: inherit;
-  color: #10291d;
-  box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
-  transition: transform 0.09s, filter 0.09s, box-shadow 0.09s;
-  animation:
-    action-in 0.34s cubic-bezier(0.2, 1.3, 0.4, 1),
-    action-breathe 2.6s ease-in-out 0.4s infinite;
-}
-.action-accent {
-  background: var(--accent);
-}
-.action-bad {
-  background: var(--bad);
-}
-/* It is a tile, so it behaves like one: rises to the hover, presses to the click. */
-.action-button:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.06);
-  box-shadow:
-    0 12px 30px rgb(0 0 0 / 45%),
-    0 0 40px color-mix(in srgb, var(--accent) 35%, transparent);
-}
-@keyframes action-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-@keyframes action-breathe {
-  0%,
-  100% {
-    box-shadow:
-      0 10px 28px rgb(0 0 0 / 45%),
-      0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
-  }
-  50% {
-    box-shadow:
-      0 10px 28px rgb(0 0 0 / 45%),
-      0 0 34px color-mix(in srgb, var(--accent) 30%, transparent);
-  }
-}
-.action-icon {
-  font-size: 1.5rem;
-}
-.action-label {
-  font-size: 1.15rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-}
-.action-hint {
-  font-size: 0.7rem;
-  opacity: 0.72;
-}
-.action-hint kbd {
-  color: inherit;
-  border-color: currentcolor;
-}
-.action-button:active {
-  transform: translateY(2px);
-  border-bottom-width: 2px;
-}
-
-.result {
-  display: grid;
-  justify-items: center;
-  gap: 0.3rem;
-  padding: 1.5rem 1.75rem 1.25rem;
-  max-width: 22rem;
-  animation: result-in 0.32s cubic-bezier(0.2, 1.3, 0.4, 1);
-}
-@keyframes result-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.94);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-.result-eyebrow {
-  margin: 0;
-}
-.result-title {
-  margin: 0;
-  font-size: clamp(1.9rem, 8vmin, 3rem);
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  line-height: 1.1;
-  color: var(--bone);
-}
-.isWin .result-title {
-  color: var(--bonus);
-  text-shadow: 0 0 26px color-mix(in srgb, var(--bonus) 45%, transparent);
-}
-.isOver .result-title {
+  border-radius: 0.875rem;
   color: var(--bad);
 }
-.match-scores {
-  margin: 0.45rem 0 0;
-  display: flex;
-  gap: 1.4rem;
-  color: var(--muted);
-  font-size: 0.85rem;
+.clock-icon {
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
 }
-.match-scores strong {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--bone);
-  margin-left: 0.3rem;
-}
-.match-scores .winner,
-.match-scores .winner strong {
-  color: var(--bonus);
-}
-.handoff {
-  margin: 0.35rem 0 0;
-  font-size: 0.82rem;
-  color: var(--bone);
-}
-.handoff b {
-  color: var(--sel);
-}
-.result-score {
-  margin: 0.35rem 0 0;
-  display: flex;
-  align-items: baseline;
-  gap: 0.35rem;
-  color: var(--bone);
-}
-.result-score strong {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--sel);
-}
-.result-score span {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-.pb {
-  animation: pb-pop 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) 0.25s backwards;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin: 0.4rem 0 0;
-  background: var(--sel);
-  color: #22292f;
-  font-weight: 700;
-  font-size: 0.75rem;
+.clock-track {
+  flex: 1;
+  height: 0.625rem;
   border-radius: 999px;
-  padding: 0.2rem 0.7rem;
+  background: var(--sunk);
+  overflow: hidden;
 }
-@keyframes pb-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.6);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-.pb.subtle {
-  background: none;
-  color: var(--muted);
-  font-weight: 500;
-  padding: 0;
-}
-.unranked-line {
-  margin: 0 0 10px;
-  max-width: 34ch;
-  color: var(--muted);
-  text-transform: none;
-  letter-spacing: 0;
-  line-height: 1.5;
-}
-.unranked-line b {
-  color: var(--bone);
-}
-
-.rank-link {
-  background: none;
-  border: 0;
-  padding: 0;
-  color: var(--muted);
-  font: inherit;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-.rank-link:hover {
-  color: var(--bone);
-}
-
-/* The offer to post is the one action on a finished daily that is not "again",
-   so it reads as an invitation rather than a second primary button. */
-.post-cta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-  margin: 0 0 10px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  color: var(--bone);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-.post-cta small {
-  font-weight: 400;
-  font-size: 0.72rem;
-  color: var(--muted);
-}
-.post-cta:hover {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
-}
-
-.rank-line {
-  margin: 0 0 4px;
-  color: var(--muted);
-}
-.rank-line b {
-  color: var(--accent);
-  font-size: 1.05em;
-}
-
-.again {
-  margin-top: 1rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  letter-spacing: 0.06em;
-  color: #10291d;
-  background: var(--accent);
-  border: 0;
-  border-bottom: 4px solid rgb(0 0 0 / 35%);
-  border-radius: 14px;
-  padding: 0.7rem 1.4rem 0.6rem;
-  cursor: pointer;
-  transition: transform 0.09s, filter 0.09s, box-shadow 0.09s;
-}
-.isOver .again {
-  background: var(--bad);
-}
-.again kbd {
-  font-size: 0.7rem;
-  opacity: 0.75;
-  color: inherit;
-  border-color: currentcolor;
-}
-.again:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.06);
-  box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 30%, transparent);
-}
-.again:active {
-  transform: translateY(1px);
-  border-bottom-width: 2px;
-}
-
-/* Called-out moments: a run claimed, a wild played, an event fired. */
-/*
- * This lands on top of the board, so it can be over a pale tile as easily as
- * over the ground. Shadowed text alone could not hold both, so it sits on the
- * same dark plate as the tray below and is legible wherever it falls.
- */
-.celebration {
-  position: absolute;
-  left: 50%;
-  bottom: 12%;
-  translate: -50% 0;
-  z-index: 6;
-  display: grid;
-  justify-items: center;
-  gap: 0.1rem;
-  max-width: min(22rem, calc(100% - 2rem));
-  padding: 0.5rem 1.15rem 0.6rem;
-  background: rgb(9 29 22 / 92%);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
-  text-align: center;
-  pointer-events: none;
-}
-.celebration strong {
-  font-size: clamp(1.4rem, 6.5vmin, 2.2rem);
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  line-height: 1.1;
-  color: var(--sel);
-}
-.celebration span {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-.pop-enter-active {
-  animation: pop-in 0.35s cubic-bezier(0.2, 1.5, 0.4, 1);
-}
-.pop-leave-active {
-  transition: opacity 0.3s, transform 0.3s;
-}
-.pop-leave-to {
-  opacity: 0;
-  transform: translateY(-12px);
-}
-@keyframes pop-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.7);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.tray {
-  width: min(calc(100% - 1.5rem), 36rem);
-  margin: 0.35rem auto 0;
-  padding: 0.55rem 0.9rem 0.5rem;
-  background: rgb(9 29 22 / 55%);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-}
-.tray-idle {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-.run-tip {
-  margin: 0 0 0.4rem;
-  font-size: 0.78rem;
-  color: var(--bonus);
-}
-.tip-badge {
-  display: inline-grid;
-  place-items: center;
-  width: 15px;
-  height: 15px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #10291d;
-  background: var(--bonus);
-  border: 1px solid #10291d;
+.clock-fill {
+  display: block;
+  height: 100%;
   border-radius: 999px;
-  vertical-align: -2px;
-}
-.legend {
-  list-style: none;
-  margin: 0 0 0.35rem;
-  padding: 0 0.75rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 0.9rem;
-  justify-content: center;
-  font-size: 0.78rem;
-  color: var(--muted);
-}
-.legend li {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.3rem;
-}
-.legend b {
-  color: var(--bone);
-  font-weight: 600;
-}
-.legend-mark {
-  font-size: 0.85rem;
-  color: var(--bone);
-}
-
-.ways {
-  margin: 0.25rem 0 0;
-  font-size: 0.78rem;
-  color: var(--muted);
-}
-
-.footer {
-  flex: none;
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-}
-
-/*
- * Equal side columns keep the dice on the exact centre line of the board,
- * whichever readouts a mode happens to show.
- */
-.scoreline {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0 0.75rem;
-}
-.slot {
-  min-width: 0;
-  display: flex;
-  justify-content: center;
-}
-.readout-bonus {
-  --readout: var(--bonus);
-}
-.readout-points {
-  --readout: var(--sel);
-}
-.dice-cell {
-  display: grid;
-  justify-items: center;
-}
-.dice-button {
-  display: flex;
-  gap: 0.6rem;
-  padding: 0.3rem;
-  background: none;
-  border: 0;
-  border-radius: 0.8rem;
-  cursor: pointer;
-}
-.dice-button:not(:disabled):hover {
-  background: rgb(255 255 255 / 10%);
-  transform: translateY(-2px);
-}
-.dice-button {
-  transition: transform 0.12s, background 0.12s;
-}
-/* The dice are the turn's key information, so they never dim — only the
-   affordance to click them goes away once the roll has happened. */
-.dice-button:disabled {
-  cursor: default;
+  background: var(--bad-fill);
+  transition: width 1s linear;
 }
 .timer {
-  margin: 0.15rem 0 0;
-  color: var(--bone);
-  font-size: 0.85rem;
-}
-.timer.waiting {
-  visibility: hidden;
-}
-.timer.low {
-  color: var(--bad);
+  min-width: 2.6ch;
+  text-align: right;
   font-weight: 700;
+  font-size: 1.25rem;
+}
+.clock.waiting {
+  color: var(--muted);
+}
+.clock.waiting .clock-fill {
+  background: var(--line-strong);
+  transition: none;
+}
+.clock.low .timer {
   animation: timer-tick 1s ease-in-out infinite;
 }
 @keyframes timer-tick {
@@ -1134,125 +721,536 @@ const onAction = async () => {
     transform: scale(1);
   }
   50% {
-    transform: scale(1.12);
+    transform: scale(1.15);
   }
 }
 
-.turn-tools {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  margin: 0.3rem 0;
-  transition: opacity 0.2s;
+/* ---------- the board ---------- */
+/* The query container the tiles size themselves against. */
+.board-area {
+  position: relative;
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  margin: 0 0.5rem;
+  container-type: size;
 }
-/* Kept in the layout when idle so the footer never jumps height. */
-.turn-tools.hidden {
-  opacity: 0;
+.tile-position {
+  position: relative;
+  z-index: 1;
+  padding: var(--pad) var(--pad) calc(var(--pad) - var(--gap));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+}
+
+.player-flag {
+  position: absolute;
+  top: -0.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
   pointer-events: none;
 }
-.tool {
+
+/*
+ * A called-out moment lands on top of the board, so it can be over any tile
+ * colour. It sits on an ink plate and is legible wherever it falls.
+ */
+.celebration {
+  position: absolute;
+  left: 50%;
+  bottom: 10%;
+  translate: -50% 0;
+  z-index: 6;
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  max-width: min(22rem, calc(100% - 2rem));
+  padding: 0.6rem 1.25rem 0.7rem;
+  background: var(--ink);
+  border-radius: 1rem;
+  box-shadow: 0 12px 32px rgb(21 35 28 / 30%);
+  text-align: center;
+  pointer-events: none;
+}
+.celebration strong {
+  font-size: clamp(1.4rem, 6.5vmin, 2rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: #ffffff;
+}
+.celebration span {
+  font-size: 0.875rem;
+  color: #c9d5cd;
+}
+.pop-enter-active {
+  animation: pop-in 0.35s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.pop-leave-active {
+  transition: opacity 0.3s;
+}
+.pop-leave-to {
+  opacity: 0;
+}
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    scale: 0.7;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* ---------- under the board ---------- */
+.footer {
+  flex: none;
+  width: min(100%, 40rem);
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 0 0.75rem max(0.75rem, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sum {
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+.sum-top {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+.dice-button {
+  --die: 2.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0.75rem;
+  cursor: pointer;
+}
+.dice-button:disabled {
+  cursor: default;
+}
+.sum.idle .dice-button {
+  opacity: 0.45;
+}
+.op {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.375rem;
+  color: var(--muted);
+}
+.op.small {
+  font-size: 1.125rem;
+}
+.total {
+  font-weight: 700;
+  font-size: 2.5rem;
+  line-height: 2.75rem;
+}
+.sum-help {
+  margin-left: auto;
+  max-width: 7.5rem;
+  text-align: right;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  color: var(--muted);
+  text-wrap: balance;
+}
+
+/* Reserved to one chip's height, so picking a tile moves nothing. */
+.picked {
+  min-height: 2.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.5rem;
+}
+.chip-tile {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.5rem;
+  box-shadow: inset 0 0 0 2.5px var(--ink);
+  color: var(--tile-ink);
+  font-weight: 700;
+  font-size: 1.1875rem;
+  animation: chip-in 0.18s ease-out;
+}
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    scale: 0.7;
+  }
+}
+.to-go {
+  height: 2.5rem;
+  padding: 0 0.875rem;
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  font: inherit;
-  font-size: 0.78rem;
-  color: var(--bone);
-  background: rgb(255 255 255 / 12%);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 0.3rem 0.7rem;
-  cursor: pointer;
-  transition: border-color 0.1s;
+  border: 2px dashed var(--line-strong);
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
 }
-.tool:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--accent) 75%, transparent);
+.bonus-note,
+.idle-note {
+  font-size: 0.875rem;
+  color: var(--muted);
 }
-.tool:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.tool kbd {
-  font-size: 0.66rem;
-  opacity: 0.75;
+.idle-note b {
+  color: var(--ink);
 }
 
-.single-note {
+.notes {
+  min-height: 2.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.15rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+.notes p {
   margin: 0;
-  color: var(--bonus);
-  font-size: 0.78rem;
+}
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.9rem;
+  justify-content: center;
+}
+.legend-mark {
+  margin-right: 0.2rem;
+}
+.legend b,
+.legend-mark {
+  color: var(--ink);
+  font-weight: 600;
+}
+.run-tip,
+.single-note {
+  color: var(--accent);
+  font-weight: 500;
+}
+.tip-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--on-accent);
+  background: var(--accent);
+  border-radius: 999px;
+  vertical-align: -2px;
 }
 .single-die {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
-  color: var(--bone);
-  font-size: 0.82rem;
+  min-height: 2.75rem;
+  color: var(--ink);
+  font-size: 0.9375rem;
   cursor: pointer;
 }
-
-/* Reserved to fit its tallest tenant — a selected-tiles row, its sum line
-   AND the ways line together — so the board above never resizes as the tray
-   speaks. Measured against the real render — the <kbd> cap in the ways
-   line grows its line box past the type size. */
-.caption {
-  min-height: 5.3rem;
-  display: grid;
-  place-items: center;
-  padding: 0 0.5rem;
+.single-die input {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--accent);
 }
 
-.action-button:focus-visible,
-.dice-button:focus-visible,
-.tool:focus-visible,
-.single-die:focus-within {
-  outline: 3px solid var(--accent);
-  outline-offset: 3px;
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0.625rem;
+  min-height: 3.5rem;
+}
+.actions .tool {
+  min-height: 3.5rem;
+}
+.action-button:disabled {
+  opacity: 0.6;
+}
+
+/* ---------- the result ---------- */
+.result-view {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.25rem 0.75rem max(1rem, env(safe-area-inset-bottom));
+}
+.result {
+  width: min(100%, 26rem);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  animation: result-in 0.28s ease-out;
+}
+@keyframes result-in {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+
+.share-card {
+  padding: 1.25rem 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  border-radius: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.share-card.won {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.share-card.won .eyebrow,
+.share-card.won .result-score span {
+  color: #c9f5da;
+}
+.result-title {
+  margin: 0.25rem 0 0;
+  font-size: clamp(1.75rem, 8vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.blocks {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 3px;
+}
+.blocks span {
+  height: 1.125rem;
+  border-radius: 4px;
+  box-sizing: border-box;
+  border: 2px solid var(--ink);
+  background: var(--surface);
+}
+.blocks.one-row span {
+  height: 2.25rem;
+  border-radius: 6px;
+}
+.blocks .shut {
+  border: 0;
+  background: var(--accent);
+}
+.share-card.won .blocks .shut {
+  background: #7ff0ae;
+}
+.result-score {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.5rem;
+}
+.result-score strong {
+  font-size: 2.75rem;
+  line-height: 1;
+  font-weight: 700;
+}
+.result-score span {
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+.result-score .rolls {
+  margin-left: auto;
+  font-size: 0.875rem;
+}
+.match-scores {
+  margin: 0;
+  display: flex;
+  gap: 1.5rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+.match-scores strong {
+  display: block;
+  font-size: 2.25rem;
+  line-height: 1.1;
+  font-weight: 700;
+  color: var(--ink);
+}
+.match-scores .winner,
+.match-scores .winner strong {
+  color: var(--accent);
+}
+
+.reason {
+  padding: 0.75rem 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 1rem;
+  background: var(--sunk);
+}
+.final-dice {
+  --die: 2.125rem;
+  flex: none;
+  display: flex;
+  gap: 0.375rem;
+}
+.reason p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+.pb {
+  align-self: flex-start;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+.rank-line,
+.unranked-line {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.rank-line b {
+  color: var(--accent);
+  font-size: 1.05em;
+}
+/* The offer to post reads as an invitation, not a second primary button. */
+.post-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.75rem 0.875rem;
+  border-radius: 1rem;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.post-cta small {
+  font-weight: 400;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.result-actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0.625rem;
+}
+
+/* The hand-over. */
+.handover {
+  min-height: 100%;
+  justify-content: center;
+  gap: 1.25rem;
+}
+.players {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.625rem;
+}
+.player {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.player.next {
+  border: 2px solid var(--accent);
+}
+.player-who {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.player.next .player-who {
+  color: var(--accent);
+}
+.player strong {
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+.player-note {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.handoff {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--muted);
 }
 
 .toast {
-  color: var(--bone);
-  background: rgb(9 29 22 / 88%);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px 12px;
-  margin: 0 auto 8px;
-  max-width: 260px;
-  font-size: 14px;
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .tool kbd,
-  .action-hint,
-  .again kbd {
-    display: none;
-  }
+  position: fixed;
+  left: 50%;
+  bottom: 6rem;
+  translate: -50% 0;
+  z-index: 8;
+  margin: 0;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.75rem;
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 0.875rem;
+  white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .action-button,
-  .again,
-  .turn-tools {
-    transition: none;
-  }
-  .action-button:hover,
-  .again:hover {
-    transform: none;
-  }
   .pop-enter-active,
-  .pop-leave-active {
+  .pop-leave-active,
+  .result,
+  .chip-tile,
+  .clock.low .timer {
     animation: none;
     transition: none;
   }
-  .result,
-  .pb,
-  .action-button,
-  .timer.low {
-    animation: none;
-  }
-  .action-button:hover,
-  .again:hover,
-  .dice-button:not(:disabled):hover {
-    transform: none;
+  .clock-fill {
+    transition: none;
   }
 }
 </style>

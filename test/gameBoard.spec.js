@@ -32,12 +32,12 @@ describe('the result screen', () => {
     winTheGame()
     const board = mountBoard()
     const title = board.find('.result-title')
-    expect(title.text()).toBe('BOX SHUT!')
+    expect(title.text()).toBe('Box shut.')
     // The headline must be the largest thing on the panel.
     const again = board.find('.again')
     expect(again.exists()).toBe(true)
     expect(title.element.tagName).toBe('H2')
-    expect(again.text()).toContain('PLAY AGAIN')
+    expect(again.text()).toContain('Play again')
   })
 
   it('shows the score against the perfect score', () => {

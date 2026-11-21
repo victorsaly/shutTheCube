@@ -49,24 +49,23 @@ watch(
 
 <style scoped>
 .die {
-  width: clamp(38px, 11vmin, 74px);
-  height: clamp(38px, 11vmin, 74px);
+  width: var(--die, 2.75rem);
+  height: var(--die, 2.75rem);
   display: inline-block;
-  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 25%));
 }
 .body {
-  fill: #fdfdfb;
-  stroke: #22292f;
+  fill: #ffffff;
+  stroke: var(--ink);
   stroke-width: 5;
 }
 .pip {
-  fill: #22292f;
+  fill: var(--ink);
 }
 .inactive {
   opacity: 0.35;
 }
 .inactive .body {
-  fill: #cfd8d3;
+  fill: var(--sunk);
 }
 .rolling {
   animation: tumble 0.32s ease-out;

@@ -126,12 +126,11 @@ li {
 }
 
 /*
- * The legend under the board names the marks; this gives the rule at the tile
- * itself. Hover only — a tap on a phone plays the tile, so touch keeps the
- * legend, and the same words reach screen readers through the tile's label.
+ * The line under the board names the marks; this gives the rule at the tile
+ * itself. Hover only: a tap on a phone plays the tile, so touch keeps the
+ * line, and the same words reach screen readers through the tile's label.
  */
 .tip {
-  /* No box at all on a thumb, rather than a hidden one hanging off-screen. */
   display: none;
   position: absolute;
   bottom: calc(100% + 0.4rem);
@@ -140,16 +139,15 @@ li {
   z-index: 1;
   width: max-content;
   max-width: min(13rem, 60vw);
-  padding: 0.4rem 0.55rem;
-  border-radius: 0.4rem;
-  background: var(--ground-3);
-  border: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 0.72rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.6rem;
+  background: var(--ink);
+  color: #dfe6e1;
+  font-size: 0.75rem;
   font-weight: 400;
   line-height: 1.35;
   text-align: left;
-  box-shadow: 0 6px 18px rgb(0 0 0 / 45%);
+  box-shadow: 0 6px 18px rgb(21 35 28 / 30%);
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.12s linear;
@@ -157,7 +155,7 @@ li {
 }
 .tip b {
   display: block;
-  color: var(--bone);
+  color: #ffffff;
 }
 /* The top row has nothing above it but the header, so its tip hangs down. */
 .tip.below {
@@ -185,159 +183,122 @@ li:last-child .tip {
   }
 }
 
+/*
+ * A tile is a raised key: its face colour, an edge in a darker shade of the
+ * same hue, and a light line along the top. Three states that must never be
+ * confused, each carried by more than colour:
+ *
+ *   playable    full colour, raised edge
+ *   unplayable  faded and flat
+ *   shut        an empty, sunk slot
+ */
 .box {
+  --edge: max(3px, calc(var(--tile-h, var(--tile)) * 0.09));
+  --corner: max(5px, calc(var(--tile) * 0.24));
   position: relative;
   width: var(--tile);
   height: var(--tile-h, var(--tile));
   font-family: var(--font-display);
   font-size: var(--tile-font);
-  font-weight: 600;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
   display: grid;
   place-items: center;
-  padding: 0;
+  padding: 0 0 var(--edge);
   cursor: pointer;
-  color: #22292f;
+  color: var(--tile-ink);
   border: 0;
-  --edge: max(2px, calc(var(--tile) * 0.09));
-  --corner: max(3px, calc(var(--tile) * 0.14));
-  border-bottom: var(--edge) solid rgb(0 0 0 / 45%);
   border-radius: var(--corner);
+  box-shadow:
+    inset 0 calc(-1 * var(--edge)) 0 var(--edge-c, rgb(21 35 28 / 22%)),
+    inset 0 1px 0 rgb(255 255 255 / 55%);
   transition:
     transform 0.12s ease,
-    filter 0.2s linear,
-    background 0.2s linear;
+    opacity 0.2s linear,
+    box-shadow 0.12s ease;
 }
 .box:focus-visible {
   outline: 3px solid var(--accent);
-  outline-offset: 3px;
+  outline-offset: 2px;
   z-index: 2;
 }
 .box:active:not(:disabled) {
-  --edge: 2px;
   transform: translateY(1px);
 }
 
-/*
- * Three states that must never be confused, each carried by more than colour:
- *
- *   playable    full colour, full size, raised edge
- *   unplayable  colour drained, flat, set back
- *   shut        a dark hole in the board
- *
- * On this dark ground a tile cannot both recede in brightness and keep a
- * legible numeral — there is no combination that satisfies both — so the
- * unplayable state recedes by losing chroma (156 -> 40) while staying light.
- * Numeral 7.42:1, edge against the ground 7.07:1.
- */
 .isTaken {
-  color: #7d9188 !important;
+  color: transparent !important;
   cursor: default;
-  background: var(--hole) !important;
+  background: var(--sunk) !important;
   background-image: none !important;
-  border-bottom-color: var(--hole);
-  box-shadow: inset 0 2px 5px rgb(0 0 0 / 55%);
-  transform: scale(0.9);
+  box-shadow: inset 0 2px 3px rgb(21 35 28 / 12%);
+}
+.isTaken .special-mark {
+  display: none;
 }
 .isInUse {
-  color: #22292f !important;
   cursor: not-allowed;
-  background: var(--sel) !important;
-  background-image: none !important;
+  z-index: 1;
+  transform: translateY(-2px);
   box-shadow:
-    inset 0 0 0 max(2px, calc(var(--tile) * 0.08)) #22292f,
-    0 0 0 2px rgb(255 227 107 / 45%);
+    inset 0 0 0 max(2.5px, calc(var(--tile) * 0.08)) var(--ink),
+    0 4px 10px rgb(21 35 28 / 25%);
 }
 /*
- * A claimed combination is one move, so it reads as one colour. The bonus
- * tiles it pulled in are marked by a corner notch rather than a second hue.
+ * A claimed combination is one move. The bonus tiles it pulled in are marked
+ * by a corner dot rather than a second treatment.
  */
 .isCollateral::after {
   content: '';
   position: absolute;
-  right: 8%;
-  top: 8%;
-  width: 22%;
-  height: 22%;
-  max-width: 9px;
-  max-height: 9px;
+  right: 12%;
+  top: 12%;
+  width: 20%;
+  max-width: 8px;
+  aspect-ratio: 1;
   border-radius: 50%;
-  background: #22292f;
-  opacity: 0.5;
+  background: var(--ink);
 }
-/*
- * On the nine-row boards most tiles are unplayable most turns, so the two
- * states are pushed apart from both ends: a playable tile wears a light rim
- * and a soft halo on top of its raised edge, an unplayable one is drained
- * harder and its numeral recedes with it (75% ink on the light veil is still
- * ~5.5:1 — comfortably past the 3:1 large-text floor for numerals this big).
- */
-.isAvailable {
-  color: var(--tile-ink);
-  box-shadow:
-    0 2px 0 rgb(0 0 0 / 30%),
-    0 0 0 1px rgb(255 255 255 / 45%),
-    0 0 14px rgb(234 243 238 / 24%);
-}
-.isAvailable:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.07);
-  box-shadow:
-    0 4px 2px rgb(0 0 0 / 30%),
-    0 0 0 1px rgb(255 255 255 / 65%),
-    0 0 18px rgb(234 243 238 / 38%);
+@media (hover: hover) and (pointer: fine) {
+  .isAvailable:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.04);
+  }
 }
 .isNotAvailable {
-  color: rgb(22 36 29 / 75%) !important;
+  opacity: 0.35;
   cursor: not-allowed;
-  background-image: linear-gradient(rgb(188 200 194 / 82%), rgb(188 200 194 / 82%));
-  transform: scale(0.86);
-  border-bottom-color: transparent;
-  box-shadow: inset 0 0 0 1px rgb(22 36 29 / 14%);
+  padding-bottom: 0;
+  box-shadow: none;
 }
 
 /* Special tiles wear their mark; the colour stays the face's own. */
 .special-mark {
   position: absolute;
-  bottom: 2%;
-  left: 6%;
-  font-size: max(8px, calc(var(--tile) * 0.28));
+  bottom: calc(var(--edge) + 4%);
+  left: 8%;
+  font-size: max(8px, calc(var(--tile) * 0.26));
   line-height: 1;
-  opacity: 0.8;
   pointer-events: none;
 }
-/*
- * An inset shadow is clipped to the padding box, so it stopped short of the
- * raised bottom edge and the ring read as three-sided. A pseudo element
- * stretched past that edge carries it all the way round.
- */
 .isWild,
 .isLocked {
-  --mark-ring: #b06bd8;
+  --mark-ring: #6f3aa6;
 }
 .isLocked {
-  --mark-ring: #2779bd;
+  --mark-ring: #1d5fa3;
 }
 .isWild::before,
 .isLocked::before {
   content: '';
   position: absolute;
-  /*
-   * The border box, not the padding box: the face paints under the raised
-   * edge, and paints through it outright when the flat state clears its
-   * colour, so anything short of this leaves the ring sitting high.
-   */
-  inset: 0 0 calc(-1 * var(--edge)) 0;
-  border: max(2px, calc(var(--tile) * 0.07)) solid var(--mark-ring);
+  inset: 0;
+  border: max(2px, calc(var(--tile) * 0.06)) solid var(--mark-ring);
   border-radius: var(--corner);
   pointer-events: none;
 }
-/*
- * Shut and selected are states, and a state outranks a kind: they take the
- * whole tile back so their own ring reads. The corner glyph still says which
- * kind of tile it was.
- */
+/* Shut and picked are states, and a state outranks a kind. */
 .isTaken::before,
 .isInUse::before {
   display: none;
@@ -346,38 +307,38 @@ li:last-child .tip {
 /* A tile that would take a whole column with it. */
 .run-badge {
   position: absolute;
-  top: -4%;
-  right: -4%;
-  min-width: 42%;
+  top: -12%;
+  right: -10%;
+  min-width: 44%;
   max-width: 22px;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-  font-size: max(9px, calc(var(--tile) * 0.3));
+  font-family: var(--font-body);
+  font-size: max(9px, calc(var(--tile) * 0.28));
   font-weight: 700;
   line-height: 1;
-  color: #10291d;
-  background: var(--bonus);
-  border: 1.5px solid #10291d;
+  color: var(--on-accent);
+  background: var(--accent);
+  border: 1.5px solid var(--surface);
   border-radius: 999px;
   pointer-events: none;
 }
-.hasRun {
-  box-shadow:
-    0 2px 0 rgb(0 0 0 / 30%),
-    0 0 0 2px rgb(127 240 174 / 55%),
-    0 0 14px rgb(127 240 174 / 25%);
+.isTaken .run-badge,
+.isNotAvailable .run-badge {
+  display: none;
 }
 .isPreview {
-  outline: 3px solid var(--bonus);
-  outline-offset: 2px;
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
   z-index: 3;
-  filter: brightness(1.1);
 }
 
 .isHinted {
   animation: hint-pulse 1s ease-in-out 3;
-  box-shadow: 0 0 0 max(2px, calc(var(--tile) * 0.08)) #22292f;
+  outline: 3px solid var(--ink);
+  outline-offset: 1px;
+  z-index: 2;
 }
 @keyframes hint-pulse {
   0%,
@@ -415,8 +376,7 @@ li:last-child .tip {
   .box {
     transition: none;
   }
-  .isNotAvailable,
-  .isTaken {
+  .isInUse {
     transform: none;
   }
   .explosion {
@@ -424,8 +384,6 @@ li:last-child .tip {
   }
   .isHinted {
     animation: none;
-    outline: 3px dashed #22292f;
-    outline-offset: 2px;
   }
 }
 </style>
