@@ -3,7 +3,10 @@ import { computed, ref } from 'vue'
 import { useStatsStore } from '@/stores/stats'
 import { useArcadeStore } from '@/stores/arcade'
 import { isMuted, setMuted } from '@/services/sound'
+import { hapticsAvailable, hapticsOn, setHapticsOn, buzz } from '@/services/haptics'
+import { reminderAvailable } from '@/services/reminder'
 import { useInstallPrompt } from '@/composables/useInstallPrompt'
+import ReminderSwitch from './ReminderSwitch.vue'
 import StatsPanel from './StatsPanel.vue'
 import { isNative } from '@/services/native'
 
@@ -18,6 +21,13 @@ const soundOn = ref(!isMuted())
 const toggleSound = () => {
   soundOn.value = !soundOn.value
   setMuted(!soundOn.value)
+}
+const vibrate = ref(hapticsOn())
+const toggleVibrate = () => {
+  vibrate.value = !vibrate.value
+  setHapticsOn(vibrate.value)
+  // Turning it on answers with the thing itself.
+  if (vibrate.value) buzz('roll')
 }
 const streak = computed(() => stats.dayStreak())
 </script>
@@ -51,6 +61,20 @@ const streak = computed(() => stats.dayStreak())
           <span />
         </button>
       </div>
+      <div v-if="hapticsAvailable" class="setting">
+        <span id="set-vibrate">Vibration</span>
+        <button
+          type="button"
+          role="switch"
+          class="switch"
+          :aria-checked="vibrate"
+          aria-labelledby="set-vibrate"
+          @click="toggleVibrate"
+        >
+          <span />
+        </button>
+      </div>
+      <ReminderSwitch v-if="reminderAvailable" class="setting-row" />
       <div v-if="!isNative || arcade.signedIn" class="setting">
         <span>
           Your name on the daily board
@@ -130,7 +154,9 @@ h1 {
   font-size: 1rem;
   line-height: 1.3;
 }
-.setting + .setting {
+.setting + .setting,
+.setting + .setting-row,
+.setting-row + .setting {
   border-top: 1px solid var(--line);
 }
 .setting small {
@@ -140,43 +166,6 @@ h1 {
 }
 .small {
   min-height: 2.75rem;
-}
-
-/* A switch: 44pt tall to the thumb, a 32pt track to the eye. */
-.switch {
-  flex: none;
-  width: 3.25rem;
-  height: 2.75rem;
-  padding: 0.375rem 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-.switch span {
-  position: relative;
-  display: block;
-  width: 3.25rem;
-  height: 2rem;
-  border-radius: 1rem;
-  background: var(--line-strong);
-  transition: background 0.15s;
-}
-.switch span::after {
-  content: '';
-  position: absolute;
-  left: 3px;
-  top: 3px;
-  width: 1.625rem;
-  height: 1.625rem;
-  border-radius: 50%;
-  background: #ffffff;
-  transition: translate 0.15s;
-}
-.switch[aria-checked='true'] span {
-  background: var(--accent);
-}
-.switch[aria-checked='true'] span::after {
-  translate: 1.25rem 0;
 }
 
 .links {
@@ -197,10 +186,4 @@ h1 {
   color: var(--muted);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .switch span,
-  .switch span::after {
-    transition: none;
-  }
-}
 </style>

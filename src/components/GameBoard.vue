@@ -7,11 +7,14 @@ import { useArcadeStore } from '@/stores/arcade'
 import { SPECIALS } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
 import { isNative } from '@/services/native'
-import { haptic, sound } from '@/services/sound'
+import { sound } from '@/services/sound'
+import { buzz } from '@/services/haptics'
+import { reminderAvailable, reminderOn, syncReminder } from '@/services/reminder'
 import { useShake } from '@/composables/useShake'
 import AppIcon from './AppIcon.vue'
 import Confetti from './Confetti.vue'
 import DiceFace from './DiceFace.vue'
+import ReminderSwitch from './ReminderSwitch.vue'
 import ShareScore from './ShareScore.vue'
 import TileRow from './TileRow.vue'
 
@@ -141,6 +144,8 @@ const submission = () => ({
 watch(
   () => game.isFinished,
   (finished) => {
+    // Today's board is done, so today's reminder has nothing left to say.
+    if (finished && game.isDaily) syncReminder({ playedToday: true })
     if (!finished || !rankable.value) return
     arcade.postScore(submission())
   }
@@ -148,6 +153,10 @@ watch(
 
 /* Signing in navigates away, so the finished game travels with it. */
 const postAndSignIn = () => arcade.startSignIn(submission())
+
+/* Whether the reminder was off when this result appeared; it stays on screen
+   once offered, so turning it on does not make the switch vanish. */
+const offerReminder = ref(!reminderOn.value)
 
 /* Player 1 has finished and Player 2 has not started: the hand-over. */
 const isHandover = computed(() => match.active && match.stage === 'p1' && game.isFinished)
@@ -231,7 +240,7 @@ const timerLow = computed(() => game.mode.turnSeconds > 0 && game.secondsLeft <=
    instrument opens up as the board empties — see `sound.tap`. */
 const playClick = (face) => {
   sound.tap(face, game.sumTilesTaken / Math.max(1, game.rows * 45))
-  haptic(8)
+  buzz('tap')
 }
 
 const advance = () => {
@@ -240,12 +249,12 @@ const advance = () => {
   switch (game.state) {
     case 'isStart':
       sound.roll()
-      haptic(15)
+      buzz('roll')
       game.startGame()
       break
     case 'isNext':
       sound.roll()
-      haptic(15)
+      buzz('roll')
       game.nextTurn()
       break
     case 'isOver':
@@ -262,12 +271,14 @@ const advance = () => {
 watch(
   () => game.state,
   (state) => {
+    // A roll matched and its tiles shut: the firmest of the small nudges.
+    if (state === 'isNext') buzz('shut')
     if (state === 'isWin') {
       sound.win()
-      haptic([30, 60, 30, 60, 120])
+      buzz('win')
     } else if (state === 'isOver') {
       sound.over()
-      haptic(80)
+      buzz('over')
     }
   }
 )
@@ -642,6 +653,13 @@ const onAction = async () => {
         </p>
 
         <ShareScore v-if="!match.active || matchDone" :result="shareResult" />
+
+        <!-- Offered once, at the moment it is most wanted: a daily just
+             finished, in the installed app, with the reminder still off. -->
+        <ReminderSwitch
+          v-if="reminderAvailable && rankable && offerReminder"
+          class="reminder-offer card-surface"
+        />
 
         <div class="result-actions">
           <button type="button" class="btn-quiet again" @click="onAction">
@@ -1182,6 +1200,11 @@ const onAction = async () => {
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
   gap: 0.625rem;
+}
+
+.reminder-offer {
+  padding: 0.25rem 0.875rem;
+  border-radius: 1rem;
 }
 
 /* The hand-over. */

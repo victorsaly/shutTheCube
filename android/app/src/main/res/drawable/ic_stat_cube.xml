@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification icon: the five-tile mark in one colour, as Android asks. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="46"
+    android:viewportHeight="46">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M6.5,2h6a4.5,4.5 0,0 1,4.5 4.5v6a4.5,4.5 0,0 1,-4.5 4.5h-6a4.5,4.5 0,0 1,-4.5 -4.5v-6a4.5,4.5 0,0 1,4.500 -4.500z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M33.5,2h6a4.5,4.5 0,0 1,4.5 4.5v6a4.5,4.5 0,0 1,-4.5 4.5h-6a4.5,4.5 0,0 1,-4.5 -4.5v-6a4.5,4.5 0,0 1,4.500 -4.500z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M6.5,29h6a4.5,4.5 0,0 1,4.5 4.5v6a4.5,4.5 0,0 1,-4.5 4.5h-6a4.5,4.5 0,0 1,-4.5 -4.5v-6a4.5,4.5 0,0 1,4.500 -4.500z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M33.5,29h6a4.5,4.5 0,0 1,4.5 4.5v6a4.5,4.5 0,0 1,-4.5 4.5h-6a4.5,4.5 0,0 1,-4.5 -4.5v-6a4.5,4.5 0,0 1,4.500 -4.500z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M20,15.5h6a4.5,4.5 0,0 1,4.5 4.5v6a4.5,4.5 0,0 1,-4.5 4.5h-6a4.5,4.5 0,0 1,-4.5 -4.5v-6a4.5,4.5 0,0 1,4.500 -4.500z" />
+</vector>

@@ -112,19 +112,6 @@ const rattleTick = (when, vol) => {
   src.start(t)
 }
 
-/**
- * Haptics ride alongside the audio: a nudge you can feel on phones, a no-op
- * everywhere else. Deliberately independent of the mute switch — muting the
- * marimba should not numb the tiles.
- */
-export const haptic = (pattern) => {
-  try {
-    navigator.vibrate?.(pattern)
-  } catch {
-    // Not every browser offers it; never let it break a move.
-  }
-}
-
 const safely = (fn) => {
   try {
     fn()

@@ -1,3 +1,5 @@
+import { isNative } from './native'
+
 /**
  * Wordle-style shareable score cards. The row of blocks is the whole trick:
  * colour reads as a score at a glance in a chat, where a bare number reads
@@ -85,6 +87,17 @@ const soloCard = (result) => {
 export async function shareScore(result) {
   const text = scoreCard(result)
   const url = challengeUrl(result.modeKey, { seed: result.seed ?? null, day: result.day ?? null })
+  // The installed app uses the phone's own share sheet. Android's web view
+  // has no navigator.share at all, so without this there would be no sheet.
+  if (isNative) {
+    try {
+      const { Share } = await import('@capacitor/share')
+      await Share.share({ title: 'Shut The Cube', text, url, dialogTitle: 'Share your result' })
+      return 'shared'
+    } catch {
+      return 'cancelled'
+    }
+  }
   if (navigator.share) {
     try {
       await navigator.share({ title: 'Shut The Cube', text, url })

@@ -7,6 +7,8 @@ import { MODE_LIST } from '@/stores/modes'
 import { isMobile } from '@/services/gameServices'
 import { todayStamp } from '@/services/random'
 import { isNative } from '@/services/native'
+import { syncReminder } from '@/services/reminder'
+import { useStatsStore } from '@/stores/stats'
 import BrandMark from '@/components/BrandMark.vue'
 import GameBoard from '@/components/GameBoard.vue'
 import GameHeader from '@/components/GameHeader.vue'
@@ -111,7 +113,12 @@ const listenForBack = async () => {
 onMounted(() => {
   onMobile.value = isMobile()
   window.addEventListener('keydown', onKeydown)
-  if (isNative) listenForBack()
+  if (isNative) {
+    listenForBack()
+    // Top the fortnight of reminders back up, minus today if it is played.
+    const stats = useStatsStore()
+    syncReminder({ playedToday: MODE_LIST.some((m) => stats.dailyResult(m.key)) })
+  }
   // Optional throughout: a failure here leaves the game exactly as it was.
   arcade.restore()
 
