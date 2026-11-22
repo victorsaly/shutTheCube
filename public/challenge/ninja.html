@@ -26,16 +26,16 @@
     <meta name="twitter:title" content="Ninja challenge | Shut The Cube" />
     <meta name="twitter:description" content="Nine rows against the clock. 30 seconds a turn. Think you can beat it?" />
     <meta name="twitter:image" content="https://shutthecube.com/static/social/ninja.png" />
-    <meta http-equiv="refresh" content="0; url=../?mode=ninja" />
+    <meta http-equiv="refresh" content="0; url=../play/?mode=ninja" />
     <script>
       /* Carry the challenge's own query string across, so a shared seed
          (?s=) deals the recipient the very same board rather than merely
          the same mode. The meta refresh above is the no-JavaScript
          fallback and can only manage the mode. */
-      location.replace('../?mode=ninja' + location.search.replace(/^\?/, '&'))
+      location.replace('../play/?mode=ninja' + location.search.replace(/^\?/, '&'))
     </script>
   </head>
   <body style="margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f2f4f0; color: #15231c; font-family: system-ui, sans-serif">
-    <p>Dealing you in&hellip; <a href="../?mode=ninja" style="color: #14573b; font-weight: 600">Play the Ninja challenge</a></p>
+    <p>Dealing you in&hellip; <a href="../play/?mode=ninja" style="color: #14573b; font-weight: 600">Play the Ninja challenge</a></p>
   </body>
 </html>

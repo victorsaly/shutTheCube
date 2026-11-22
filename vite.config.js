@@ -38,6 +38,18 @@ export default defineConfig({
       }
     })
   ],
+  /*
+   * Two pages. The site at the root explains the game; the game itself is at
+   * /play/. The installed apps open the game directly (capacitor.config.json).
+   */
+  build: {
+    rollupOptions: {
+      input: {
+        site: fileURLToPath(new URL('./index.html', import.meta.url)),
+        play: fileURLToPath(new URL('./play/index.html', import.meta.url))
+      }
+    }
+  },
   define: { __APP_VERSION__: JSON.stringify(version) },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) }

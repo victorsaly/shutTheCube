@@ -1,0 +1,284 @@
+/*
+ * The product site's home page. It sits on top of pages.css, which already
+ * carries the fonts, the colours, links and the solid and outlined buttons;
+ * this file is only what the home page has that the help pages do not.
+ */
+.site main {
+  max-width: 68rem;
+  padding: 0 1.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+}
+.site h2 {
+  margin: 0 0 1rem;
+  font-size: clamp(1.875rem, 4.5vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.site h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+/* ---------- top bar ---------- */
+.top {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+}
+.top nav {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 1.25rem;
+  font-size: 0.9375rem;
+}
+.top nav a {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: none;
+}
+.top nav a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.top nav .quiet {
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  font-size: 0.9375rem;
+  border-radius: 0.875rem;
+}
+.top nav .quiet:hover {
+  text-decoration: none;
+}
+
+/* ---------- hero ---------- */
+.hero {
+  padding-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2.5rem 3rem;
+}
+.hero-copy {
+  flex: 999 1 24rem;
+  min-width: 0;
+}
+.hero h1 {
+  margin: 0;
+  font-size: clamp(2.5rem, 7vw, 4.25rem);
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+}
+.pitch {
+  margin: 1.25rem 0 0;
+  max-width: 34rem;
+  font-size: 1.1875rem;
+  color: var(--muted);
+}
+.get {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-top: 1.5rem;
+}
+.get .play {
+  margin-top: 0;
+}
+.store {
+  min-height: 3.25rem;
+  padding: 0 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  background: var(--ink);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  text-decoration: none;
+}
+.store svg {
+  fill: currentcolor;
+}
+.store:hover {
+  color: #ffffff;
+}
+/* Not a link yet, so it does not look pressable. */
+.store.soon {
+  background: var(--sunk);
+  color: var(--muted);
+}
+.note {
+  margin: 0.875rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+
+/* A plain phone outline around a real screenshot. */
+.phone {
+  flex: 0 1 18rem;
+  margin: 0 auto;
+}
+.phone img,
+.daily img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 0.5rem solid var(--ink);
+  border-radius: 2.5rem;
+  background: var(--bg);
+}
+
+/* ---------- how it works ---------- */
+.steps {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.75rem;
+}
+.steps li {
+  margin: 0;
+  max-width: none;
+  padding: 1.25rem;
+  border-radius: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.steps .n {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.25rem;
+  line-height: 1;
+  color: var(--accent);
+}
+.steps p {
+  color: var(--muted);
+}
+
+.site .modes {
+  margin: 0;
+}
+.site .modes li {
+  min-height: 9rem;
+  max-width: none;
+  padding: 1.25rem;
+  font-weight: 500;
+}
+.site .modes strong {
+  font-size: 1.625rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.375rem;
+}
+
+/* ---------- the daily ---------- */
+.daily {
+  padding: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2rem 3rem;
+  border-radius: 1.5rem;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.daily-copy {
+  flex: 999 1 22rem;
+  min-width: 0;
+}
+.daily .eyebrow {
+  margin: 0 0 0.375rem;
+  color: #c9f5da;
+}
+.daily h2 {
+  margin-bottom: 0.625rem;
+  line-height: 1.1;
+}
+.daily p {
+  color: #e3f7ea;
+}
+.daily img {
+  flex: 0 1 13rem;
+  width: 13rem;
+  margin: 0 auto;
+  border-color: #0c3a27;
+}
+.on-green {
+  margin-top: 1.25rem;
+  min-height: 3.25rem;
+  padding: 0 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 1rem;
+  background: #ffffff;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  text-decoration: none;
+}
+.on-green:hover {
+  color: var(--ink);
+  background: #e9f6ee;
+}
+.daily a:focus-visible {
+  outline-color: #ffffff;
+}
+
+/* ---------- facts ---------- */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem 2rem;
+  margin-bottom: 1rem;
+}
+.facts p {
+  color: var(--muted);
+}
+
+/* ---------- footer ---------- */
+.bottom {
+  max-width: 68rem;
+  margin: 2rem auto 0;
+  padding: 1.5rem 1.25rem 3rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 3rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+.bottom > div {
+  flex: 999 1 18rem;
+  min-width: 0;
+}
+.bottom strong {
+  color: var(--ink);
+}
+.bottom nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0 1.5rem;
+}
+.bottom nav a {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+}

@@ -179,9 +179,13 @@ const streak = computed(() => stats.dayStreak())
 }
 .head {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.375rem 0.75rem;
+}
+.head h1 {
+  white-space: nowrap;
 }
 h1 {
   margin: 0.125rem 0 0;

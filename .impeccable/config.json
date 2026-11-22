@@ -11,6 +11,15 @@
         "value": "inter",
         "createdAt": "2026-11-21T21:09:36.254Z",
         "reason": "user confirmed: 'keep inter' on 21 Nov 2026; body face of the approved option B design"
+      },
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-22T09:29:52.384Z",
+        "reason": "false positive: the check reads every heading as 16px because index.html links its stylesheets at static/…, which Vite serves from public/static/, so the check never loads them. Real sizes: h1 40-68px, h2 30-40px, h3 20px, body 16px."
       }
     ]
   }

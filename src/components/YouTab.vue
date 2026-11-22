@@ -88,9 +88,9 @@ const streak = computed(() => stats.dayStreak())
     </section>
 
     <nav class="links" aria-label="Game information">
-      <a href="how-to-play.html">How to play</a>
-      <a href="about.html">About</a>
-      <a href="privacy.html">Privacy</a>
+      <a href="../how-to-play.html">How to play</a>
+      <a href="../about.html">About</a>
+      <a href="../privacy.html">Privacy</a>
     </nav>
     <p class="version">Shut The Cube v{{ version }}</p>
   </div>

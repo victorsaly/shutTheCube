@@ -24,6 +24,14 @@ const draft = ref('')
 const entries = computed(() => arcade.board?.entries ?? [])
 const mine = computed(() => entries.value.find((e) => e.name === arcade.name) ?? null)
 
+/* An email, already addressed and saying which board is meant. */
+const reportLink = computed(() => {
+  const where = `${mode.value}, ${period.value === 'alltime' ? 'all time' : today}`
+  const subject = encodeURIComponent('Shut The Cube: report a name')
+  const body = encodeURIComponent(`Board: ${where}\nName to report: \nWhy: `)
+  return `mailto:info@victorsaly.com?subject=${subject}&body=${body}`
+})
+
 const load = () =>
   arcade.loadBoard({
     mode: mode.value,
@@ -154,6 +162,14 @@ const MEDALS = {}
         <span class="score num">{{ entry.score }}</span>
       </li>
     </ol>
+
+    <!-- Names are the one thing here that players write for each other to
+         see, so there is a plain way to flag one. The service screens names
+         already; this is for whatever gets past it. -->
+    <p v-if="entries.length" class="report micro">
+      Seen a name that should not be here?
+      <a :href="reportLink">Report a name</a>
+    </p>
 
     <footer class="board-foot">
       <template v-if="arcade.signedIn">
@@ -381,6 +397,19 @@ const MEDALS = {}
   font-variant-numeric: tabular-nums;
   min-width: 3ch;
   text-align: right;
+}
+
+.report {
+  margin: 0;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+.report a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  font-weight: 600;
 }
 
 .board-foot {

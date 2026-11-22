@@ -3,6 +3,9 @@
   "appName": "Shut The Cube",
   "webDir": "dist",
   "backgroundColor": "#f2f4f0",
+  "server": {
+    "appStartPath": "/play/index.html"
+  },
   "ios": {
     "contentInset": "never"
   },

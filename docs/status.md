@@ -20,6 +20,17 @@ Built in the native shell (branch only):
   own switch, a daily reminder at about 6pm that is off until asked for and skips days already played,
   and the phone's own share sheet for a result.
 
+Built on the branch `product-site`, not merged:
+
+- The product site at the root: what the game is, how it works, the three modes, the Daily,
+  privacy and support, with "Play in your browser" and an App Store button that reads "Coming
+  soon" until release (the real link is in a comment beside it in `index.html`).
+- The game moved to `/play/`. Old addresses still work: challenge links, sign-ins on their way
+  back, and copies installed to a home screen are sent on to `/play/`. The apps open the game
+  directly.
+- A "Report a name" link on the Scores tab, the App Store listing text and screenshots
+  (`docs/app-store-listing.md`, `docs/store/ios/`).
+
 Not done yet:
 
 - Sign-in works in the apps. Sign in with Apple was run end to end on Victor's iPhone on

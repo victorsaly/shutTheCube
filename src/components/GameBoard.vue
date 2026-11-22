@@ -512,7 +512,7 @@ const onAction = async () => {
               </span>
             </template>
             <span v-else-if="game.state === 'isNext'" class="idle-note">
-              <b class="num">{{ game.gamePoints }}</b> points that turn<template v-if="game.gameBonus">, <b class="num">{{ game.gameBonus }}</b> of them bonus</template>. Roll again.
+              Those tiles are shut. Roll again.
             </span>
           </div>
         </div>
