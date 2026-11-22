@@ -34,11 +34,15 @@ Not done yet:
   Sign in with Apple, the App Store Connect record "Shut The Cube" (SKU `shutthecube`), and a Sign in
   with Apple key, "Arcade Sign in with Apple", Key ID `Q6U7WLLM9C`. The key file itself is Victor's to
   download and keep; it is never to be committed.
-- Still to do for the iPhone: TestFlight.
+- TestFlight: version 1.0, build 1 was uploaded to App Store Connect on 22 Nov 2026. iPhone only for
+  now, because iPad support can be added later but never removed once released. To upload another:
+  `npm run native`, then from `ios/App` archive the Release scheme and export it with
+  `ios/ExportOptions.plist` (both with `-allowProvisioningUpdates`). Xcode raises the build number.
+- From April 2027 Apple will only accept builds made with Xcode 27.
 - Play testing needs a Google Play developer account.
 
 Building Android needs Java 21: `JAVA_HOME=$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home`.
 
 ## Next
 
-TestFlight, then a week of real play. Android needs a Google Play developer account.
+Add testers in TestFlight, then a week of real play. Android needs a Google Play developer account.
