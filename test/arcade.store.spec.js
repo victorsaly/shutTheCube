@@ -103,6 +103,25 @@ describe('signing in', () => {
 
     expect(await arcade.startAppleSignIn()).toBe(false)
     expect(arcade.signedIn).toBe(false)
+    // Backing out is not an error, so nothing is said about it.
+    expect(arcade.error).toBe('')
+    vi.doUnmock('@capacitor-community/apple-sign-in')
+  })
+
+  it('says so when Apple agrees and the leaderboard cannot be reached', async () => {
+    vi.doMock('@capacitor-community/apple-sign-in', () => ({
+      SignInWithApple: { authorize: async () => ({ response: { identityToken: 'apple-jwt' } }) }
+    }))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('offline')
+      })
+    )
+
+    expect(await arcade.startAppleSignIn()).toBe(false)
+    expect(arcade.signedIn).toBe(false)
+    expect(arcade.error).toContain('could not be reached')
     vi.doUnmock('@capacitor-community/apple-sign-in')
   })
 

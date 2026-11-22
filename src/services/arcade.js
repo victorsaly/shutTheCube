@@ -92,16 +92,23 @@ export const signIn = async () => {
  * something Apple gives the device once, on the very first sign-in, so it is
  * passed along as a suggestion when it is there.
  *
- * Returns the player, or null if they backed out or it did not work.
+ * Returns the player; `{ cancelled: true }` if they backed out of Apple's
+ * sheet; or null if Apple said yes and the leaderboard could not finish it.
  */
 export const signInWithApple = async () => {
+  let response
   try {
     const { SignInWithApple } = await import('@capacitor-community/apple-sign-in')
-    const { response } = await SignInWithApple.authorize({
+    ;({ response } = await SignInWithApple.authorize({
       clientId: APP_ID,
       redirectURI: APP_REDIRECT,
       scopes: 'name'
-    })
+    }))
+  } catch {
+    // Backing out of Apple's sheet arrives here, and is not a failure to report.
+    return { cancelled: true }
+  }
+  try {
     if (!response?.identityToken) return null
     const { ok, data } = await call('/v1/auth/apple', {
       method: 'POST',
@@ -115,7 +122,6 @@ export const signInWithApple = async () => {
     writeToken(data.token)
     return { name: data.name }
   } catch {
-    // Dismissing Apple's sheet arrives here too, and is not an error to show.
     return null
   }
 }

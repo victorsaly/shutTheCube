@@ -15,7 +15,7 @@
     "test:watch": "vitest",
     "social": "node scripts/gen-social.mjs",
     "icons": "node scripts/gen-icons.mjs",
-    "native": "vite build && cap sync",
+    "native": "VITE_ARCADE_API=https://api.victorsaly.com vite build && cap sync",
     "native:assets": "node scripts/gen-native-assets.mjs && capacitor-assets generate --ios --android --iconBackgroundColor \"#14573b\" --splashBackgroundColor \"#f2f4f0\" --splashBackgroundColorDark \"#f2f4f0\"",
     "ios": "npm run native && cap open ios",
     "android": "npm run native && cap open android"

@@ -143,7 +143,13 @@ export const useArcadeStore = defineStore('arcade', () => {
     busy.value = true
     const claimed = await signInWithApple()
     busy.value = false
-    if (!claimed) return false
+    if (claimed?.cancelled) return false
+    if (!claimed) {
+      // Apple said yes and the leaderboard did not answer. Saying nothing here
+      // looked exactly like the button doing nothing at all.
+      error.value = 'Apple signed you in, but the leaderboard could not be reached. Try again.'
+      return false
+    }
     token.value = readToken()
     player.value = { name: claimed.name }
     if (pending) await postScore(pending)

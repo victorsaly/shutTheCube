@@ -1,6 +1,6 @@
 # Shut The Cube: status
 
-Updated 21 November 2026.
+Updated 22 November 2026.
 
 ## Where it is
 
@@ -22,27 +22,23 @@ Built in the native shell (branch only):
 
 Not done yet:
 
-- Sign-in. Built but not switched on (branch `native-sign-in` here, `app-sign-in` in `arcade-api`):
-  - Android: Google sign-in opens the phone's browser and returns to the app's own address.
-    It works only once the `arcade-api` branch is deployed.
-  - iPhone: still hidden. Apple requires Sign in with Apple beside Google; the service can
-    check Apple's tokens, but the app side needs the Apple Developer account.
-  - The leaderboard does not load inside either app until `arcade-api` is deployed, because
-    the live service does not yet accept requests from the apps.
-  - Before submission: Apple also expects its tokens to be revoked when an account is deleted.
-- Not yet on a real phone. Seen in the iPhone SE simulator and a Pixel 5 emulator only.
+- Sign-in works in the apps. Sign in with Apple was run end to end on Victor's iPhone on
+  22 Nov 2026; the service holds the player and the token that revokes the sign-in on deletion.
+  Android signs in with Google through the phone's browser. Still to try on a phone: deleting
+  the account, posting a score, and Google sign-in on the iPhone.
+- App builds (`npm run native`) always use the live service. A local `.env.local` pointing the
+  game at a test service once put "localhost" into a phone build, where nothing could answer.
+- On a real iPhone since 22 Nov 2026 (signed, development build). Android has only been on an emulator.
 - Apple account (set up 21 Nov 2026): the membership already existed (Individual, Team `Z452L5C5VZ`),
   so the seller is Victor's own name. Now registered: the App ID `com.victorsaly.shutthecube` with
   Sign in with Apple, the App Store Connect record "Shut The Cube" (SKU `shutthecube`), and a Sign in
   with Apple key, "Arcade Sign in with Apple", Key ID `Q6U7WLLM9C`. The key file itself is Victor's to
   download and keep; it is never to be committed.
-- Still to do for the iPhone: the Sign in with Apple button in the app, token revocation on account
-  deletion in `arcade-api` (needs the key as a Worker secret), then TestFlight.
+- Still to do for the iPhone: TestFlight.
 - Play testing needs a Google Play developer account.
 
 Building Android needs Java 21: `JAVA_HOME=$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home`.
 
 ## Next
 
-Deploy the `arcade-api` branch (Victor's call), then finish Sign in with Apple once the developer
-account exists.
+TestFlight, then a week of real play. Android needs a Google Play developer account.

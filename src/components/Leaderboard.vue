@@ -208,6 +208,7 @@ const MEDALS = {}
         <button type="button" class="signin" @click="arcade.startSignIn()">
           {{ appleSignIn ? 'Sign in with Google' : 'Sign in with Google to post your score' }}
         </button>
+        <p v-if="arcade.error" class="err micro" role="alert">{{ arcade.error }}</p>
         <p class="micro fine">
           Your name and nothing else. No email, no tracking, and you can delete it in one click.
           The game works exactly the same signed out.
