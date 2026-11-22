@@ -22,9 +22,10 @@ Built in the native shell (branch only):
 
 Built on the branch `product-site`, not merged:
 
-- The product site at the root: what the game is, how it works, the three modes, the Daily,
-  privacy and support, with "Play in your browser" and an App Store button that reads "Coming
-  soon" until release (the real link is in a comment beside it in `index.html`).
+- The product site at the root sells the apps: App Store and Google Play badges that read "Coming
+  soon" until each store is live (the real links are in a comment beside them in `index.html`),
+  an "On your phone" section with the store screenshots and what the app adds, then how it
+  works, the modes, the Daily, privacy and support. "Play in your browser" is the second choice.
 - The game moved to `/play/`. Old addresses still work: challenge links, sign-ins on their way
   back, and copies installed to a home screen are sent on to `/play/`. The apps open the game
   directly.

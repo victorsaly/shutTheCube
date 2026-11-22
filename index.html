@@ -4,10 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <title>Shut The Cube | A daily dice game</title>
+    <title>Shut The Cube | The daily dice game for iPhone and Android</title>
     <meta
       name="description"
-      content="Shut The Cube is Shut the Box, the pub dice game, with a nine-row board and one shared board a day. Free, no ads, and it plays offline. Play it in your browser."
+      content="Shut The Cube is Shut the Box, the pub dice game, for iPhone and Android: a nine-row board and one shared board a day. Free, no ads, and it plays offline. Coming soon; play it now in your browser."
     />
     <link rel="canonical" href="https://shutthecube.com/" />
     <meta name="theme-color" content="#f2f4f0" />
@@ -50,7 +50,7 @@
         "url": "https://shutthecube.com/",
         "image": "https://shutthecube.com/static/android-chrome-256x256.png",
         "genre": ["Dice game", "Board game", "Puzzle game"],
-        "gamePlatform": ["Web browser", "iOS"],
+        "gamePlatform": ["Web browser", "iOS", "Android"],
         "applicationCategory": "GameApplication",
         "operatingSystem": "Any",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" },
@@ -104,27 +104,27 @@
         <div class="hero-copy">
           <h1>Roll the dice. Shut the cube.</h1>
           <p class="pitch">
-            Shut the Box, the pub dice game, and a nine-row board where a matching column collapses
-            in one move. A new board every day, the same for everyone. Free, no ads, and it plays
-            without a signal.
+            The pub dice game for your phone, nine rows deep. A new board every day, the same for
+            everyone. Free, no ads, and it plays without a signal. Coming soon to iPhone and Android.
           </p>
-          <div class="get">
-            <a class="play" href="play/">Play in your browser</a>
-            <!--
-              At release, replace this line with the link below. The app's
-              address already exists; it only works once the app is on sale.
-              <a class="store" href="https://apps.apple.com/app/id6837837034">Download on the App Store</a>
-            -->
-            <span class="store soon">
-              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                <path
-                  d="M16.37 12.6c-.02-2.2 1.8-3.26 1.88-3.31-1.02-1.5-2.62-1.7-3.19-1.73-1.36-.14-2.65.8-3.34.8-.69 0-1.75-.78-2.88-.76-1.48.02-2.85.86-3.61 2.19-1.54 2.67-.39 6.62 1.11 8.79.73 1.06 1.61 2.25 2.75 2.21 1.1-.04 1.52-.71 2.86-.71 1.33 0 1.71.71 2.88.69 1.19-.02 1.94-1.08 2.67-2.15.84-1.23 1.19-2.42 1.21-2.48-.03-.01-2.32-.89-2.34-3.54zM14.18 6.13c.61-.74 1.02-1.76.91-2.78-.88.04-1.94.58-2.57 1.32-.56.65-1.06 1.7-.92 2.7.98.08 1.98-.5 2.58-1.24z"
-                />
-              </svg>
-              Coming soon to the App Store
+          <!--
+            The store badges. Each is a "coming soon" label until its store
+            listing is live; on release day swap the span for a link:
+              App Store:   <a class="badge" href="https://apps.apple.com/app/id6837837034">…</a>
+              Google Play: <a class="badge" href="https://play.google.com/store/apps/details?id=com.victorsaly.shutthecube">…</a>
+          -->
+          <div class="badges">
+            <span class="badge soon ios" role="img" aria-label="App Store: coming soon">
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M16.37 12.6c-.02-2.2 1.8-3.26 1.88-3.31-1.02-1.5-2.62-1.7-3.19-1.73-1.36-.14-2.65.8-3.34.8-.69 0-1.75-.78-2.88-.76-1.48.02-2.85.86-3.610 2.190-1.540 2.670-.390 6.620 1.110 8.790.730 1.060 1.610 2.250 2.750 2.210 1.100-.040 1.520-.710 2.860-.710 1.330 0 1.710.710 2.880.690 1.190-.020 1.940-1.080 2.670-2.150.840-1.230 1.190-2.420 1.210-2.480-.030-.010-2.320-.890-2.340-3.540zM14.18 6.13c.61-.74 1.02-1.76.91-2.78-.88.04-1.94.58-2.57 1.32-.56.65-1.06 1.7-.92 2.7.98.08 1.98-.5 2.58-1.24z" /></svg>
+              <span><small>Coming soon to</small>App Store</span>
+            </span>
+            <span class="badge soon android" role="img" aria-label="Google Play: coming soon">
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M5 3.5v17a1 1 0 0 0 1.5.86l14.5-8.5a1 1 0 0 0 0-1.72L6.5 2.64A1 1 0 0 0 5 3.5z" /></svg>
+              <span><small>Coming soon to</small>Google Play</span>
             </span>
           </div>
-          <p class="note">Nothing to install to play it now. Android is on the way.</p>
+          <p class="now">Or <a href="play/">play it now in your browser</a>. Nothing to install.</p>
+
         </div>
         <div class="phone">
           <img
@@ -133,6 +133,45 @@
             height="844"
             alt="The game on a phone: a nine-row board of coloured number tiles, with the roll written underneath as a sum to fill in"
           />
+        </div>
+      </section>
+
+      <section class="phone-app" aria-labelledby="app-h">
+        <p class="eyebrow">On your phone</p>
+        <h2 id="app-h">Made for one thumb and five spare minutes.</h2>
+        <ul class="shots" aria-label="Screens from the app">
+          <li><img src="static/site/02-pick.jpg" width="900" height="1957" loading="lazy" alt="Roll. Pick the tiles that add up: the nine-row board with the roll written as a sum." /></li>
+          <li><img src="static/site/03-columns.jpg" width="900" height="1957" loading="lazy" alt="Match a column. Take the lot: tiles with badges showing how many they will take." /></li>
+          <li><img src="static/site/04-ninja.jpg" width="900" height="1957" loading="lazy" alt="Or race the clock: Ninja mode with thirty seconds a turn." /></li>
+          <li><img src="static/site/05-result.jpg" width="900" height="1957" loading="lazy" alt="See how close you got. Then share it: a finished game and its result card." /></li>
+        </ul>
+        <div class="features">
+          <div>
+            <h3>Feel every move</h3>
+            <p>A light tap as you pick a tile, a firmer one as a roll shuts, and something to celebrate when the box is shut.</p>
+          </div>
+          <div>
+            <h3>A nudge at six</h3>
+            <p>An optional reminder in the evening, only on days you have not played. Off until you turn it on.</p>
+          </div>
+          <div>
+            <h3>No signal needed</h3>
+            <p>Everything is on the phone. Play the day’s board on the Underground and it counts.</p>
+          </div>
+          <div>
+            <h3>Share the result</h3>
+            <p>Send the day’s card to a friend with your phone’s own share sheet, and dare them onto the same board.</p>
+          </div>
+        </div>
+        <div class="badges">
+          <span class="badge soon ios" role="img" aria-label="App Store: coming soon">
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M16.37 12.6c-.02-2.2 1.8-3.26 1.88-3.31-1.02-1.5-2.62-1.7-3.19-1.73-1.36-.14-2.65.8-3.34.8-.69 0-1.75-.78-2.88-.76-1.48.02-2.85.86-3.610 2.190-1.540 2.670-.390 6.620 1.110 8.790.730 1.060 1.610 2.250 2.750 2.210 1.100-.040 1.520-.710 2.860-.710 1.330 0 1.710.710 2.880.690 1.190-.020 1.940-1.080 2.670-2.150.840-1.230 1.190-2.420 1.210-2.480-.030-.010-2.320-.890-2.340-3.540zM14.18 6.13c.61-.74 1.02-1.76.91-2.78-.88.04-1.94.58-2.57 1.32-.56.65-1.06 1.7-.92 2.7.98.08 1.98-.5 2.58-1.24z" /></svg>
+              <span><small>Coming soon to</small>App Store</span>
+            </span>
+          <span class="badge soon android" role="img" aria-label="Google Play: coming soon">
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M5 3.5v17a1 1 0 0 0 1.5.86l14.5-8.5a1 1 0 0 0 0-1.72L6.5 2.64A1 1 0 0 0 5 3.5z" /></svg>
+              <span><small>Coming soon to</small>Google Play</span>
+            </span>
         </div>
       </section>
 
@@ -182,7 +221,6 @@
           src="static/site/today.jpg"
           width="390"
           height="844"
-          loading="lazy"
           alt="The Today screen: a preview of the day's board, the days played this week, and free play"
         />
       </section>
@@ -202,8 +240,8 @@
             </p>
           </div>
           <div>
-            <h3>Plays offline</h3>
-            <p>On a train, on a plane, in a pub cellar.</p>
+            <h3>Your record stays with you</h3>
+            <p>Games, bests and averages are kept on your phone, not on a server.</p>
           </div>
         </div>
         <p><a href="privacy.html">Read the privacy policy</a></p>
